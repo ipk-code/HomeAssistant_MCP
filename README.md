@@ -25,6 +25,7 @@ Home Assistant custom integration for MCP-driven Lovelace dashboard authoring.
 - `docs/api/tools.md`
 - `docs/guides/getting-started.md`
 - `docs/guides/home-assistant-installation.md`
+- `docs/guides/opencode-integration.md`
 - `docs/guides/security-model.md`
 - `docs/CONTRIBUTING.md`
 - `docs/CODE_OF_CONDUCT.md`
@@ -56,6 +57,31 @@ The project currently contains:
 
 ## Home Assistant And HACS
 
-The repository now includes `hacs.json` and the required `custom_components/homeassistant_mcp/` layout for HACS-based installation once the repository is published to GitHub.
+Install from HACS using the public custom repository:
 
-The next implementation step is wiring the stateless transport into Home Assistant HTTP views.
+- `https://github.com/ipk-code/HomeAssistant_MCP`
+
+After installation, add the integration in **Settings > Devices & services**.
+
+For complete setup instructions:
+
+- `docs/guides/home-assistant-installation.md`
+- `docs/guides/opencode-integration.md`
+
+## Logging
+
+The integration now emits Home Assistant-style logs for:
+
+- component and config-entry lifecycle events
+- HTTP view registration
+- malformed MCP requests
+- MCP tool execution failures
+- unexpected internal exceptions
+
+To debug it in Home Assistant:
+
+```yaml
+logger:
+  logs:
+    custom_components.homeassistant_mcp: debug
+```

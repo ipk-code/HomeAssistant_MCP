@@ -11,6 +11,7 @@ This directory contains the working documentation for `HomeAssistant_MCP`.
 - `api/tools.md`: v1 Lovelace tool catalog
 - `guides/getting-started.md`: local setup and test workflow
 - `guides/home-assistant-installation.md`: HACS and Home Assistant installation steps
+- `guides/opencode-integration.md`: OpenCode remote MCP setup and examples
 - `guides/security-model.md`: security assumptions and review checklist
 
 ## Audience

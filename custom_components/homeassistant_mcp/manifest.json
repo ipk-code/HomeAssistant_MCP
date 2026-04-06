@@ -3,8 +3,9 @@
   "name": "Home Assistant MCP",
   "codeowners": [],
   "config_flow": true,
-  "documentation": "https://github.com/home-assistant/core",
+  "documentation": "https://github.com/ipk-code/HomeAssistant_MCP",
   "integration_type": "service",
+  "issue_tracker": "https://github.com/ipk-code/HomeAssistant_MCP/issues",
   "iot_class": "local_push",
   "requirements": [
     "mcp==1.26.0"

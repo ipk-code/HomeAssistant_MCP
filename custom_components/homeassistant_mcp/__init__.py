@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 try:
@@ -16,6 +17,8 @@ except ModuleNotFoundError:  # pragma: no cover - exercised only outside HA runt
 from .const import DOMAIN
 from .http import async_register
 from .runtime import create_runtime
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def _runtime_root(hass: Any) -> Any:
@@ -30,6 +33,7 @@ def _runtime_root(hass: Any) -> Any:
 async def async_setup(hass: Any, config: dict) -> bool:
     """Set up the integration component."""
     async_register(hass)
+    _LOGGER.debug("Initialized Home Assistant MCP component")
     return True
 
 
@@ -38,9 +42,10 @@ async def async_setup_entry(
 ) -> bool:
     """Set up the integration from a config entry."""
     async_register(hass)
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = create_runtime(
-        _runtime_root(hass) / entry.entry_id
-    )
+    runtime_root = _runtime_root(hass) / entry.entry_id
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = create_runtime(runtime_root)
+    _LOGGER.info("Loaded Home Assistant MCP entry %s", entry.entry_id)
+    _LOGGER.debug("Home Assistant MCP storage path: %s", runtime_root)
     return True
 
 
@@ -49,4 +54,5 @@ async def async_unload_entry(
 ) -> bool:
     """Unload a config entry."""
     hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
+    _LOGGER.info("Unloaded Home Assistant MCP entry %s", entry.entry_id)
     return True

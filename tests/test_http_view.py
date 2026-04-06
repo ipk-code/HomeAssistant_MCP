@@ -1,5 +1,7 @@
 """Tests for Home Assistant-facing HTTP integration helpers."""
 
+# pyright: reportAttributeAccessIssue=false, reportGeneralTypeIssues=false
+
 from __future__ import annotations
 
 import json
@@ -76,15 +78,19 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_setup_entry_creates_runtime_in_storage_directory(self) -> None:
         await async_setup(self.hass, {})
-        await async_setup_entry(self.hass, self.entry)
+        with self.assertLogs("custom_components.homeassistant_mcp", level="INFO") as captured:
+            await async_setup_entry(self.hass, self.entry)
 
         runtime = self.hass.data[DOMAIN][self.entry.entry_id]
         expected_root = Path(self.tempdir.name) / STORAGE_DIRECTORY / self.entry.entry_id
         self.assertEqual(runtime.root_path, expected_root)
         self.assertIs(get_runtime(self.hass), runtime)
+        self.assertTrue(any("Loaded Home Assistant MCP entry" in line for line in captured.output))
 
-        await async_unload_entry(self.hass, self.entry)
+        with self.assertLogs("custom_components.homeassistant_mcp", level="INFO") as unload_logs:
+            await async_unload_entry(self.hass, self.entry)
         self.assertEqual(self.hass.data[DOMAIN], {})
+        self.assertTrue(any("Unloaded Home Assistant MCP entry" in line for line in unload_logs.output))
 
     async def test_post_round_trip_to_transport(self) -> None:
         await async_setup(self.hass, {})

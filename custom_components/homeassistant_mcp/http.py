@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from http import HTTPStatus
+import logging
 from typing import Any
 
 try:
@@ -41,13 +42,17 @@ except ModuleNotFoundError:  # pragma: no cover - exercised in unit tests only
 from .const import DOMAIN, STREAMABLE_HTTP_API
 from .runtime import IntegrationRuntime
 
+_LOGGER = logging.getLogger(__name__)
+
 
 def async_register(hass: Any) -> None:
     """Register the stateless MCP HTTP view once."""
     if hass.data.get(f"{DOMAIN}_http_registered"):
+        _LOGGER.debug("Home Assistant MCP HTTP view already registered")
         return
     hass.http.register_view(HomeAssistantMCPStreamableView())
     hass.data[f"{DOMAIN}_http_registered"] = True
+    _LOGGER.debug("Registered Home Assistant MCP HTTP view at %s", STREAMABLE_HTTP_API)
 
 
 def get_runtime(hass: Any) -> IntegrationRuntime:
@@ -58,8 +63,10 @@ def get_runtime(hass: Any) -> IntegrationRuntime:
     """
     runtimes = list(hass.data.get(DOMAIN, {}).values())
     if not runtimes:
+        _LOGGER.warning("Home Assistant MCP request received without an active runtime")
         raise RuntimeError("Home Assistant MCP is not configured")
     if len(runtimes) > 1:
+        _LOGGER.warning("Home Assistant MCP found multiple runtimes during request")
         raise RuntimeError("Home Assistant MCP found multiple runtimes")
     return runtimes[0]
 
@@ -72,6 +79,7 @@ class HomeAssistantMCPStreamableView(HomeAssistantView):
     requires_auth = True
 
     async def get(self, request: Any) -> Any:
+        _LOGGER.debug("Rejected unsupported GET request on %s", STREAMABLE_HTTP_API)
         return web.Response(
             status=HTTPStatus.METHOD_NOT_ALLOWED,
             text="Only POST method is supported",
@@ -79,6 +87,7 @@ class HomeAssistantMCPStreamableView(HomeAssistantView):
 
     async def post(self, request: Any) -> Any:
         hass = request.app[KEY_HASS]
+        _LOGGER.debug("Processing Home Assistant MCP POST request")
         try:
             runtime = get_runtime(hass)
         except RuntimeError as err:
@@ -96,6 +105,7 @@ class HomeAssistantMCPStreamableView(HomeAssistantView):
             content_type=request.content_type,
             body=await request.text(),
         )
+        _LOGGER.debug("Home Assistant MCP request completed with status %s", status)
         if payload is None:
             return web.Response(status=status)
         return web.json_response(status=status, data=payload)

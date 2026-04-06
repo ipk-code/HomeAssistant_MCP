@@ -100,13 +100,17 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(response["error"]["code"], -32600)
 
     def test_http_validation_rejects_bad_headers_and_bad_json(self) -> None:
-        status, response = self.transport.handle_http_request(
-            accept="text/plain", content_type=CONTENT_TYPE_JSON, body="{}"
-        )
+        with self.assertLogs(
+            "custom_components.homeassistant_mcp.mcp.transport", level="WARNING"
+        ) as captured:
+            status, response = self.transport.handle_http_request(
+                accept="text/plain", content_type=CONTENT_TYPE_JSON, body="{}"
+            )
         self.assertEqual(status, 400)
         self.assertIsNotNone(response)
         assert response is not None
         self.assertEqual(response["error"]["code"], -32600)
+        self.assertIn("Accept header is invalid", captured.output[0])
 
         status, response = self.transport.handle_http_request(
             accept=CONTENT_TYPE_JSON, content_type=CONTENT_TYPE_JSON, body="{"
@@ -128,18 +132,22 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(response["error"]["code"], -32013)
 
     def test_unknown_tool_returns_tool_error_result(self) -> None:
-        status, response = self.transport.handle_jsonrpc_message(
-            {
-                "jsonrpc": "2.0",
-                "id": "1",
-                "method": "tools/call",
-                "params": {"name": "lovelace.nope", "arguments": {}},
-            }
-        )
+        with self.assertLogs(
+            "custom_components.homeassistant_mcp.mcp.transport", level="WARNING"
+        ) as captured:
+            status, response = self.transport.handle_jsonrpc_message(
+                {
+                    "jsonrpc": "2.0",
+                    "id": "1",
+                    "method": "tools/call",
+                    "params": {"name": "lovelace.nope", "arguments": {}},
+                }
+            )
         self.assertEqual(status, 200)
         self.assertIsNotNone(response)
         assert response is not None
         self.assertTrue(response["result"]["isError"])
+        self.assertIn("MCP tool lovelace.nope failed", captured.output[0])
 
     def test_invalid_tool_arguments_are_rejected_before_dispatch(self) -> None:
         status, response = self.transport.handle_jsonrpc_message(

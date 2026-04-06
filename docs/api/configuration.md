@@ -14,6 +14,8 @@ There are no user-editable options in v1.
 - `storage_directory`: `.storage/homeassistant_mcp/<config_entry_id>`
 - `max_request_bytes`: `1048576` (1 MiB)
 - `single_config_entry`: `true`
+- `requires_home_assistant_auth`: `true`
+- `open_code_oauth_mode`: `false` recommended for the current token-based setup
 
 ## Recommended Settings
 

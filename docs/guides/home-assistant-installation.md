@@ -3,14 +3,14 @@
 ## Prerequisites
 
 - A Home Assistant instance with HACS installed
-- This repository published to a GitHub repository that HACS can access
+- Access to the public repository: `https://github.com/ipk-code/HomeAssistant_MCP`
 
 ## Install With HACS
 
 1. Open HACS in Home Assistant.
 2. Go to **Integrations**.
 3. Open the overflow menu and choose **Custom repositories**.
-4. Add the repository URL for this project.
+4. Add `https://github.com/ipk-code/HomeAssistant_MCP`.
 5. Select **Integration** as the category.
 6. Install **Home Assistant MCP** from HACS.
 7. Restart Home Assistant.
@@ -29,6 +29,24 @@ The current config flow creates one default entry with the recommended defaults.
 - The MCP stateless HTTP endpoint is exposed at `/api/homeassistant_mcp`.
 - Standard Home Assistant HTTP authentication still applies.
 - Dashboard files are managed internally under `.storage/homeassistant_mcp/<config_entry_id>`.
+- The integration currently supports one config entry with the default stateless transport and YAML dashboard mode.
+
+## Recommended Home Assistant Logger Configuration
+
+For troubleshooting, Home Assistant can enable debug logs for this integration:
+
+```yaml
+logger:
+  logs:
+    custom_components.homeassistant_mcp: debug
+```
+
+This integration uses Home Assistant-style logging levels:
+
+- `debug` for normal MCP request flow and setup details
+- `info` for entry load and unload lifecycle events
+- `warning` for malformed requests and unavailable runtime conditions
+- `exception` only for unexpected internal failures
 
 ## Repository Readiness For HACS
 
@@ -39,6 +57,6 @@ This repository now contains the main HACS-facing pieces:
 - `hacs.json`
 - `README.md`
 
-## Remaining Publishing Requirement
+## Next Step
 
-To install through HACS, the repository still needs to be pushed to a reachable GitHub remote. HACS installs from the published repository, not from the local filesystem path.
+After the integration is installed in Home Assistant, configure OpenCode as a remote MCP client using the guide in `docs/guides/opencode-integration.md`.
