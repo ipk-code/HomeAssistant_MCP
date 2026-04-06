@@ -15,14 +15,27 @@ class ToolSchemaValidator:
 
     def __init__(self, spec: dict[str, Any]) -> None:
         self._defs = spec.get("$defs", {})
-        self._schemas = {
+        self._input_schemas = {
             tool["name"]: tool["input_schema"] for tool in spec.get("tools", [])
+        }
+        self._output_schemas = {
+            tool["name"]: tool["output_schema"] for tool in spec.get("tools", [])
         }
 
     def validate_tool_arguments(self, tool_name: str, arguments: dict[str, Any]) -> None:
-        if tool_name not in self._schemas:
+        if tool_name not in self._input_schemas:
             raise KeyError(f"unknown tool: {tool_name}")
-        self._validate(self._schemas[tool_name], arguments, path="$")
+        self.validate_schema(self._input_schemas[tool_name], arguments)
+
+    def validate_tool_result(self, tool_name: str, result: Any) -> None:
+        """Validate a tool result against the published output schema."""
+        if tool_name not in self._output_schemas:
+            raise KeyError(f"unknown tool: {tool_name}")
+        self.validate_schema(self._output_schemas[tool_name], result)
+
+    def validate_schema(self, schema: dict[str, Any], value: Any) -> None:
+        """Validate any value against a supported schema fragment."""
+        self._validate(schema, value, path="$")
 
     def _validate(self, schema: Any, value: Any, *, path: str) -> None:
         if schema is True:

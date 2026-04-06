@@ -24,6 +24,9 @@ python3 -m pip install --break-system-packages ".[test]"
 If your platform needs to build native wheels for Home Assistant test
 dependencies, install a working C toolchain first.
 
+Once a compiler is available, prefer the real compiled dependencies over local
+compatibility shims when running the Home Assistant pytest suite.
+
 Run the full pytest suite:
 
 ```bash
