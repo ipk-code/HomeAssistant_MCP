@@ -1,0 +1,9 @@
+{
+  "name": "Home Assistant MCP",
+  "content_in_root": false,
+  "domains": [
+    "homeassistant_mcp"
+  ],
+  "homeassistant": "2025.2.0",
+  "render_readme": true
+}

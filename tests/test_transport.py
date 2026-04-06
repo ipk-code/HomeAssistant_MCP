@@ -140,3 +140,21 @@ class TransportTests(unittest.TestCase):
         self.assertIsNotNone(response)
         assert response is not None
         self.assertTrue(response["result"]["isError"])
+
+    def test_invalid_tool_arguments_are_rejected_before_dispatch(self) -> None:
+        status, response = self.transport.handle_jsonrpc_message(
+            {
+                "jsonrpc": "2.0",
+                "id": "1",
+                "method": "tools/call",
+                "params": {
+                    "name": "lovelace.create_dashboard",
+                    "arguments": {"dashboard_id": "main", "url_path": "main"},
+                },
+            }
+        )
+        self.assertEqual(status, 200)
+        self.assertIsNotNone(response)
+        assert response is not None
+        self.assertTrue(response["result"]["isError"])
+        self.assertIn("required", response["result"]["content"][0]["text"])

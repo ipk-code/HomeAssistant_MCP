@@ -21,8 +21,10 @@ Home Assistant custom integration for MCP-driven Lovelace dashboard authoring.
 
 - `docs/README.md`
 - `docs/api/overview.md`
+- `docs/api/configuration.md`
 - `docs/api/tools.md`
 - `docs/guides/getting-started.md`
+- `docs/guides/home-assistant-installation.md`
 - `docs/guides/security-model.md`
 - `docs/CONTRIBUTING.md`
 - `docs/CODE_OF_CONDUCT.md`
@@ -39,6 +41,7 @@ python3 -m unittest discover -s tests -p "test_*.py"
 - The API does not accept client-provided file system paths.
 - JSON Patch is limited to safe dashboard document scopes.
 - Repository writes are atomic to reduce the risk of partial state corruption.
+- MCP tool arguments are validated against the published v1 schema before dispatch.
 
 ## Status
 
@@ -47,7 +50,12 @@ The project currently contains:
 - a versioned API contract
 - a YAML dashboard repository abstraction
 - typed card helper normalization
+- true YAML rendering for generated dashboard files
 - restricted JSON Patch support
 - a stateless MCP-style transport handler
+
+## Home Assistant And HACS
+
+The repository now includes `hacs.json` and the required `custom_components/homeassistant_mcp/` layout for HACS-based installation once the repository is published to GitHub.
 
 The next implementation step is wiring the stateless transport into Home Assistant HTTP views.

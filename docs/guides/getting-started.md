@@ -15,10 +15,10 @@ python3 -m unittest discover -s tests -p "test_*.py"
 
 ## Current Development Focus
 
-1. Add Home Assistant-native request and auth handling on top of the current HTTP adapter.
-2. Expand integration-level tests around Home Assistant views.
+1. Expand Home Assistant integration behavior beyond the current stateless endpoint.
+2. Add more integration-level tests around Home Assistant views and runtime wiring.
 3. Keep YAML dashboard mutations secure and deterministic.
 
 ## Notes
 
-The repository currently renders dashboard output as JSON text into `.yaml` files because JSON is valid YAML and keeps the implementation dependency-free for now.
+The repository now renders true YAML for managed Lovelace dashboard output files.

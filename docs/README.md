@@ -6,9 +6,11 @@ This directory contains the working documentation for `HomeAssistant_MCP`.
 
 - `CONTRIBUTING.md`: contribution and development workflow
 - `CODE_OF_CONDUCT.md`: contributor behavior expectations
+- `api/configuration.md`: current defaults, limits, and configuration behavior
 - `api/overview.md`: MCP API shape and transport scope
 - `api/tools.md`: v1 Lovelace tool catalog
 - `guides/getting-started.md`: local setup and test workflow
+- `guides/home-assistant-installation.md`: HACS and Home Assistant installation steps
 - `guides/security-model.md`: security assumptions and review checklist
 
 ## Audience

@@ -16,6 +16,7 @@ from .errors import (
     DashboardValidationError,
 )
 from .patch import apply_json_patch
+from .serialization import dump_yaml
 from .validation import (
     apply_metadata_patch,
     ensure_expected_version,
@@ -343,7 +344,7 @@ class YamlDashboardRepository:
         )
         self._write_text_atomically(
             self._render_path(dashboard_id),
-            json.dumps(self._render_dashboard(document), indent=2, sort_keys=True) + "\n",
+            dump_yaml(self._render_dashboard(document)),
         )
 
     def _write_text_atomically(self, path: Path, content: str) -> None:

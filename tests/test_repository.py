@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -48,9 +47,11 @@ class RepositoryTests(unittest.TestCase):
         self.assertTrue(managed.exists())
         self.assertTrue(rendered.exists())
 
-        rendered_payload = json.loads(rendered.read_text(encoding="utf-8"))
-        self.assertEqual(rendered_payload["title"], "Main Dashboard")
-        self.assertEqual(rendered_payload["views"][0]["cards"][0]["type"], "heading")
+        rendered_payload = rendered.read_text(encoding="utf-8")
+        self.assertIn("title: 'Main Dashboard'\n", rendered_payload)
+        self.assertIn("views:\n", rendered_payload)
+        self.assertIn("      type: heading\n", rendered_payload)
+        self.assertNotIn("{", rendered_payload)
 
     def test_list_and_get_dashboard(self) -> None:
         self._create_dashboard()

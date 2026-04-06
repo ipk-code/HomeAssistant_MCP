@@ -8,6 +8,7 @@ from typing import Any
 
 from ..const import API_VERSION, MAX_REQUEST_BYTES, TITLE
 from ..lovelace.errors import LovelaceMCPError
+from .schema import ToolSchemaValidationError
 from .server import ToolRegistry, load_api_contract
 
 CONTENT_TYPE_JSON = "application/json"
@@ -124,7 +125,7 @@ class StatelessMCPTransport:
                         "isError": False,
                     },
                 }
-            except (KeyError, LovelaceMCPError) as err:
+            except (KeyError, LovelaceMCPError, ToolSchemaValidationError) as err:
                 return HTTPStatus.OK, {
                     "jsonrpc": "2.0",
                     "id": request_id,

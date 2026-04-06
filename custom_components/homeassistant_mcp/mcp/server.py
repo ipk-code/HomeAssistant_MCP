@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from ..lovelace.repository import YamlDashboardRepository
+from .schema import ToolSchemaValidator
 
 
 @dataclass(frozen=True)
@@ -34,8 +35,11 @@ class ToolRegistry:
 
     def __init__(self, repository: YamlDashboardRepository) -> None:
         self._repository = repository
+        spec, _ = load_api_contract()
+        self._validator = ToolSchemaValidator(spec)
 
     def call(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        self._validator.validate_tool_arguments(name, arguments)
         if name == "lovelace.list_dashboards":
             return {"dashboards": self._repository.list_dashboards()}
         if name == "lovelace.get_dashboard":
