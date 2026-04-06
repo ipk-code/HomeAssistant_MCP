@@ -1,0 +1,69 @@
+"""Tests for tool contract loading and registry dispatch."""
+
+from __future__ import annotations
+
+from tempfile import TemporaryDirectory
+import unittest
+
+from custom_components.homeassistant_mcp.lovelace.repository import YamlDashboardRepository
+from custom_components.homeassistant_mcp.mcp.server import ToolRegistry, load_api_contract
+
+
+class ToolRegistryTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tempdir = TemporaryDirectory()
+        self.addCleanup(self.tempdir.cleanup)
+        repository = YamlDashboardRepository(self.tempdir.name)
+        self.registry = ToolRegistry(repository)
+
+    def test_contract_loader_exposes_all_tools(self) -> None:
+        payload, tools = load_api_contract()
+        self.assertEqual(payload["api_version"], "1.0.0")
+        self.assertEqual(len(tools), 17)
+        self.assertEqual(tools[0].name, "lovelace.list_dashboards")
+
+    def test_registry_dispatches_dashboard_and_card_calls(self) -> None:
+        dashboard = self.registry.call(
+            "lovelace.create_dashboard",
+            {
+                "dashboard_id": "main",
+                "title": "Main",
+                "url_path": "main",
+                "views": [{"view_id": "overview", "title": "Overview", "path": "overview", "cards": []}],
+            },
+        )
+        self.assertEqual(dashboard["metadata"]["dashboard_id"], "main")
+
+        result = self.registry.call(
+            "lovelace.create_card",
+            {
+                "dashboard_id": "main",
+                "view_id": "overview",
+                "expected_version": 0,
+                "card": {"kind": "tile", "entity_id": "light.kitchen"},
+            },
+        )
+        self.assertEqual(result["dashboard_id"], "main")
+        self.assertEqual(result["view_id"], "overview")
+        self.assertEqual(result["card"]["kind"], "tile")
+
+    def test_validate_dashboard_tool_returns_normalized_document(self) -> None:
+        normalized = self.registry.call(
+            "lovelace.validate_dashboard",
+            {
+                "dashboard": {
+                    "metadata": {
+                        "dashboard_id": "main",
+                        "title": "Main",
+                        "url_path": "main",
+                        "mode": "yaml",
+                        "show_in_sidebar": True,
+                        "require_admin": False,
+                    },
+                    "views": [],
+                    "dashboard_version": 0,
+                }
+            },
+        )
+        self.assertTrue(normalized["valid"])
+        self.assertEqual(normalized["normalized_dashboard"]["metadata"]["dashboard_id"], "main")
