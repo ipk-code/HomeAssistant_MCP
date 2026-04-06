@@ -3,6 +3,9 @@
   "name": "Home Assistant MCP",
   "codeowners": [],
   "config_flow": true,
+  "dependencies": [
+    "http"
+  ],
   "documentation": "https://github.com/ipk-code/HomeAssistant_MCP",
   "integration_type": "service",
   "issue_tracker": "https://github.com/ipk-code/HomeAssistant_MCP/issues",

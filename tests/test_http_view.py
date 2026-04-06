@@ -60,6 +60,12 @@ class _FakeRequest:
         return json.dumps(self._body)
 
 
+def _response_json(response) -> dict:
+    if hasattr(response, "data"):
+        return response.data
+    return json.loads(response.text)
+
+
 class HttpViewTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.tempdir = TemporaryDirectory()
@@ -127,7 +133,8 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
             },
         )
         list_response = await view.post(list_request)
-        payload = json.loads(list_response.data["result"]["content"][0]["text"])
+        response_payload = _response_json(list_response)
+        payload = json.loads(response_payload["result"]["content"][0]["text"])
         self.assertEqual(payload["dashboards"][0]["dashboard_id"], "main")
 
     async def test_post_without_runtime_returns_not_found(self) -> None:
@@ -140,4 +147,4 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
             )
         )
         self.assertEqual(response.status, 404)
-        self.assertEqual(response.data["error"]["code"], -32004)
+        self.assertEqual(_response_json(response)["error"]["code"], -32004)
