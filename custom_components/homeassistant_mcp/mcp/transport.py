@@ -1,1 +1,148 @@
-"""Stateless Streamable HTTP transport will live here."""
+"""Stateless Streamable HTTP transport helpers for MCP requests."""
+
+from __future__ import annotations
+
+from http import HTTPStatus
+import json
+from typing import Any
+
+from ..const import API_VERSION, TITLE
+from ..lovelace.errors import LovelaceMCPError
+from .server import ToolRegistry, load_api_contract
+
+CONTENT_TYPE_JSON = "application/json"
+
+
+class StatelessMCPTransport:
+    """Minimal stateless MCP transport facade over the tool registry."""
+
+    def __init__(self, registry: ToolRegistry) -> None:
+        self._registry = registry
+
+    def handle_http_request(
+        self, *, accept: str, content_type: str, body: str
+    ) -> tuple[int, dict[str, Any] | None]:
+        """Validate an HTTP request and dispatch a JSON-RPC message."""
+        if CONTENT_TYPE_JSON not in accept:
+            return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                None, -32600, f"Client must accept {CONTENT_TYPE_JSON}"
+            )
+        if content_type != CONTENT_TYPE_JSON:
+            return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                None, -32600, f"Content-Type must be {CONTENT_TYPE_JSON}"
+            )
+        try:
+            message = json.loads(body)
+        except json.JSONDecodeError:
+            return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                None, -32700, "Request body must be valid JSON"
+            )
+        return self.handle_jsonrpc_message(message)
+
+    def handle_jsonrpc_message(
+        self, message: dict[str, Any]
+    ) -> tuple[int, dict[str, Any] | None]:
+        """Handle a single JSON-RPC request in stateless mode."""
+        if not isinstance(message, dict):
+            return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                None, -32600, "JSON-RPC request must be an object"
+            )
+        if message.get("jsonrpc") != "2.0":
+            return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                message.get("id"), -32600, "jsonrpc must be '2.0'"
+            )
+
+        method = message.get("method")
+        params = message.get("params") or {}
+
+        if not isinstance(method, str):
+            return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                message.get("id"), -32600, "method must be a string"
+            )
+        if not isinstance(params, dict):
+            return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                message.get("id"), -32602, "params must be an object"
+            )
+
+        request_id = message.get("id")
+        if request_id is None:
+            return HTTPStatus.ACCEPTED, None
+
+        if method == "initialize":
+            return HTTPStatus.OK, {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": {
+                    "protocolVersion": params.get("protocolVersion", "1.0"),
+                    "serverInfo": {"name": TITLE, "version": API_VERSION},
+                    "capabilities": {"tools": {"listChanged": False}},
+                },
+            }
+
+        if method == "ping":
+            return HTTPStatus.OK, {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": {},
+            }
+
+        if method == "tools/list":
+            _, contracts = load_api_contract()
+            return HTTPStatus.OK, {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": {
+                    "tools": [
+                        {
+                            "name": contract.name,
+                            "description": contract.description,
+                            "inputSchema": contract.input_schema,
+                        }
+                        for contract in contracts
+                    ]
+                },
+            }
+
+        if method == "tools/call":
+            tool_name = params.get("name")
+            arguments = params.get("arguments") or {}
+            if not isinstance(tool_name, str) or not isinstance(arguments, dict):
+                return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                    request_id, -32602, "tools/call requires name and arguments"
+                )
+            try:
+                payload = self._registry.call(tool_name, arguments)
+                return HTTPStatus.OK, {
+                    "jsonrpc": "2.0",
+                    "id": request_id,
+                    "result": {
+                        "content": [{"type": "text", "text": json.dumps(payload)}],
+                        "isError": False,
+                    },
+                }
+            except (KeyError, LovelaceMCPError) as err:
+                return HTTPStatus.OK, {
+                    "jsonrpc": "2.0",
+                    "id": request_id,
+                    "result": {
+                        "content": [{"type": "text", "text": str(err)}],
+                        "isError": True,
+                    },
+                }
+            except Exception:
+                return HTTPStatus.INTERNAL_SERVER_ERROR, self._jsonrpc_error(
+                    request_id, -32603, "Internal server error"
+                )
+
+        return HTTPStatus.NOT_FOUND, self._jsonrpc_error(
+            request_id, -32601, f"Unknown method: {method}"
+        )
+
+    def _jsonrpc_error(
+        self, request_id: Any, code: int, message: str
+    ) -> dict[str, Any]:
+        return {
+            "jsonrpc": "2.0",
+            "id": request_id,
+            "error": {"code": code, "message": message},
+        }
