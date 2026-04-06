@@ -1,0 +1,1734 @@
+{
+  "api_version": "1.0.0",
+  "transport": {
+    "mode": "streamable_http_stateless",
+    "sse_compatible": false
+  },
+  "dashboard_mode": "yaml",
+  "notes": [
+    "All mutations target canonical dashboard documents, not raw YAML text.",
+    "The server derives dashboard file paths internally and never accepts file paths from clients.",
+    "Whole-dashboard patch operations use RFC 6902 JSON Patch constrained to /metadata and /views.",
+    "Cards are manipulated through typed card helpers rather than raw Lovelace card dictionaries."
+  ],
+  "$defs": {
+    "dashboard_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_][a-z0-9_-]{0,63}$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "view_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_][a-z0-9_-]{0,63}$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "card_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_:-]{1,64}$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "url_path": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "icon": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9:_-]{1,64}$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "entity_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+\u002e[a-z0-9_]+$",
+      "minLength": 3,
+      "maxLength": 128
+    },
+    "dashboard_version": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "safe_url": {
+      "type": "string",
+      "pattern": "^(https?://[^\\s]+|/[^\\s]*)$",
+      "minLength": 1,
+      "maxLength": 2048
+    },
+    "expected_version": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "json_pointer": {
+      "type": "string",
+      "pattern": "^/(metadata|views)(/[A-Za-z0-9_~.-]+)*$",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "tap_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "more-info",
+            "toggle",
+            "navigate",
+            "url",
+            "none"
+          ]
+        },
+        "navigation_path": {
+          "type": "string",
+          "pattern": "^/[^\\s]*$",
+          "maxLength": 256
+        },
+        "url": {
+          "$ref": "#/$defs/safe_url"
+        }
+      }
+    },
+    "entities_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entity_id"
+      ],
+      "properties": {
+        "entity_id": {
+          "$ref": "#/$defs/entity_id"
+        },
+        "name": {
+          "$ref": "#/$defs/title"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        }
+      }
+    },
+    "glance_entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entity_id"
+      ],
+      "properties": {
+        "entity_id": {
+          "$ref": "#/$defs/entity_id"
+        },
+        "name": {
+          "$ref": "#/$defs/title"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        }
+      }
+    },
+    "heading_card_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "title"
+      ],
+      "properties": {
+        "kind": {
+          "const": "heading"
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        }
+      }
+    },
+    "markdown_card_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "content"
+      ],
+      "properties": {
+        "kind": {
+          "const": "markdown"
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "content": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20000
+        },
+        "text_only": {
+          "type": "boolean"
+        }
+      }
+    },
+    "gauge_card_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "entity_id"
+      ],
+      "properties": {
+        "kind": {
+          "const": "gauge"
+        },
+        "entity_id": {
+          "$ref": "#/$defs/entity_id"
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        }
+      }
+    },
+    "tile_card_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "entity_id"
+      ],
+      "properties": {
+        "kind": {
+          "const": "tile"
+        },
+        "entity_id": {
+          "$ref": "#/$defs/entity_id"
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        },
+        "tap_action": {
+          "$ref": "#/$defs/tap_action"
+        }
+      }
+    },
+    "entities_card_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "entities"
+      ],
+      "properties": {
+        "kind": {
+          "const": "entities"
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "show_header_toggle": {
+          "type": "boolean"
+        },
+        "entities": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "$ref": "#/$defs/entities_row"
+          }
+        }
+      }
+    },
+    "glance_card_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "entities"
+      ],
+      "properties": {
+        "kind": {
+          "const": "glance"
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "show_name": {
+          "type": "boolean"
+        },
+        "show_icon": {
+          "type": "boolean"
+        },
+        "show_state": {
+          "type": "boolean"
+        },
+        "entities": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "items": {
+            "$ref": "#/$defs/glance_entity"
+          }
+        }
+      }
+    },
+    "grid_card_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "columns",
+        "cards"
+      ],
+      "properties": {
+        "kind": {
+          "const": "grid"
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "columns": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6
+        },
+        "square": {
+          "type": "boolean"
+        },
+        "cards": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "items": {
+            "$ref": "#/$defs/card_helper_input"
+          }
+        }
+      }
+    },
+    "horizontal_stack_card_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "cards"
+      ],
+      "properties": {
+        "kind": {
+          "const": "horizontal_stack"
+        },
+        "cards": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": {
+            "$ref": "#/$defs/card_helper_input"
+          }
+        }
+      }
+    },
+    "vertical_stack_card_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "cards"
+      ],
+      "properties": {
+        "kind": {
+          "const": "vertical_stack"
+        },
+        "cards": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": {
+            "$ref": "#/$defs/card_helper_input"
+          }
+        }
+      }
+    },
+    "card_helper_input": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/heading_card_input"
+        },
+        {
+          "$ref": "#/$defs/markdown_card_input"
+        },
+        {
+          "$ref": "#/$defs/gauge_card_input"
+        },
+        {
+          "$ref": "#/$defs/tile_card_input"
+        },
+        {
+          "$ref": "#/$defs/entities_card_input"
+        },
+        {
+          "$ref": "#/$defs/glance_card_input"
+        },
+        {
+          "$ref": "#/$defs/grid_card_input"
+        },
+        {
+          "$ref": "#/$defs/horizontal_stack_card_input"
+        },
+        {
+          "$ref": "#/$defs/vertical_stack_card_input"
+        }
+      ]
+    },
+    "heading_card": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/heading_card_input"
+        },
+        {
+          "type": "object",
+          "required": [
+            "card_id"
+          ],
+          "properties": {
+            "card_id": {
+              "$ref": "#/$defs/card_id"
+            }
+          }
+        }
+      ]
+    },
+    "markdown_card": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/markdown_card_input"
+        },
+        {
+          "type": "object",
+          "required": [
+            "card_id"
+          ],
+          "properties": {
+            "card_id": {
+              "$ref": "#/$defs/card_id"
+            }
+          }
+        }
+      ]
+    },
+    "gauge_card": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/gauge_card_input"
+        },
+        {
+          "type": "object",
+          "required": [
+            "card_id"
+          ],
+          "properties": {
+            "card_id": {
+              "$ref": "#/$defs/card_id"
+            }
+          }
+        }
+      ]
+    },
+    "tile_card": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/tile_card_input"
+        },
+        {
+          "type": "object",
+          "required": [
+            "card_id"
+          ],
+          "properties": {
+            "card_id": {
+              "$ref": "#/$defs/card_id"
+            }
+          }
+        }
+      ]
+    },
+    "entities_card": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/entities_card_input"
+        },
+        {
+          "type": "object",
+          "required": [
+            "card_id"
+          ],
+          "properties": {
+            "card_id": {
+              "$ref": "#/$defs/card_id"
+            }
+          }
+        }
+      ]
+    },
+    "glance_card": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/glance_card_input"
+        },
+        {
+          "type": "object",
+          "required": [
+            "card_id"
+          ],
+          "properties": {
+            "card_id": {
+              "$ref": "#/$defs/card_id"
+            }
+          }
+        }
+      ]
+    },
+    "grid_card": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "card_id",
+        "columns",
+        "cards"
+      ],
+      "properties": {
+        "kind": {
+          "const": "grid"
+        },
+        "card_id": {
+          "$ref": "#/$defs/card_id"
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "columns": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6
+        },
+        "square": {
+          "type": "boolean"
+        },
+        "cards": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "items": {
+            "$ref": "#/$defs/card_helper"
+          }
+        }
+      }
+    },
+    "horizontal_stack_card": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "card_id",
+        "cards"
+      ],
+      "properties": {
+        "kind": {
+          "const": "horizontal_stack"
+        },
+        "card_id": {
+          "$ref": "#/$defs/card_id"
+        },
+        "cards": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": {
+            "$ref": "#/$defs/card_helper"
+          }
+        }
+      }
+    },
+    "vertical_stack_card": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "card_id",
+        "cards"
+      ],
+      "properties": {
+        "kind": {
+          "const": "vertical_stack"
+        },
+        "card_id": {
+          "$ref": "#/$defs/card_id"
+        },
+        "cards": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": {
+            "$ref": "#/$defs/card_helper"
+          }
+        }
+      }
+    },
+    "card_helper": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/heading_card"
+        },
+        {
+          "$ref": "#/$defs/markdown_card"
+        },
+        {
+          "$ref": "#/$defs/gauge_card"
+        },
+        {
+          "$ref": "#/$defs/tile_card"
+        },
+        {
+          "$ref": "#/$defs/entities_card"
+        },
+        {
+          "$ref": "#/$defs/glance_card"
+        },
+        {
+          "$ref": "#/$defs/grid_card"
+        },
+        {
+          "$ref": "#/$defs/horizontal_stack_card"
+        },
+        {
+          "$ref": "#/$defs/vertical_stack_card"
+        }
+      ]
+    },
+    "view_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "view_id",
+        "title",
+        "path",
+        "cards"
+      ],
+      "properties": {
+        "view_id": {
+          "$ref": "#/$defs/view_id"
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "path": {
+          "$ref": "#/$defs/url_path"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        },
+        "cards": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/card_helper_input"
+          }
+        }
+      }
+    },
+    "view_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "view_id",
+        "title",
+        "path",
+        "card_count"
+      ],
+      "properties": {
+        "view_id": {
+          "$ref": "#/$defs/view_id"
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "path": {
+          "$ref": "#/$defs/url_path"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        },
+        "card_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "view_document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "view_id",
+        "title",
+        "path",
+        "cards"
+      ],
+      "properties": {
+        "view_id": {
+          "$ref": "#/$defs/view_id"
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "path": {
+          "$ref": "#/$defs/url_path"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        },
+        "cards": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/card_helper"
+          }
+        }
+      }
+    },
+    "dashboard_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dashboard_id",
+        "title",
+        "url_path",
+        "mode",
+        "show_in_sidebar",
+        "require_admin"
+      ],
+      "properties": {
+        "dashboard_id": {
+          "$ref": "#/$defs/dashboard_id"
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "url_path": {
+          "$ref": "#/$defs/url_path"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        },
+        "mode": {
+          "const": "yaml"
+        },
+        "show_in_sidebar": {
+          "type": "boolean"
+        },
+        "require_admin": {
+          "type": "boolean"
+        }
+      }
+    },
+    "dashboard_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dashboard_id",
+        "title",
+        "url_path",
+        "mode",
+        "show_in_sidebar",
+        "require_admin"
+      ],
+      "properties": {
+        "dashboard_id": {
+          "$ref": "#/$defs/dashboard_id"
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "url_path": {
+          "$ref": "#/$defs/url_path"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        },
+        "mode": {
+          "const": "yaml"
+        },
+        "show_in_sidebar": {
+          "type": "boolean"
+        },
+        "require_admin": {
+          "type": "boolean"
+        }
+      }
+    },
+    "dashboard_metadata_patch": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        },
+        "show_in_sidebar": {
+          "type": "boolean"
+        },
+        "require_admin": {
+          "type": "boolean"
+        }
+      }
+    },
+    "dashboard_document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metadata",
+        "views",
+        "dashboard_version"
+      ],
+      "properties": {
+        "metadata": {
+          "$ref": "#/$defs/dashboard_metadata"
+        },
+        "views": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 25,
+          "items": {
+            "$ref": "#/$defs/view_document"
+          }
+        },
+        "dashboard_version": {
+          "$ref": "#/$defs/dashboard_version"
+        }
+      }
+    },
+    "json_patch_operation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "path",
+            "value"
+          ],
+          "properties": {
+            "op": {
+              "const": "add"
+            },
+            "path": {
+              "$ref": "#/$defs/json_pointer"
+            },
+            "value": true
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "path",
+            "value"
+          ],
+          "properties": {
+            "op": {
+              "const": "replace"
+            },
+            "path": {
+              "$ref": "#/$defs/json_pointer"
+            },
+            "value": true
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "path"
+          ],
+          "properties": {
+            "op": {
+              "const": "remove"
+            },
+            "path": {
+              "$ref": "#/$defs/json_pointer"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "path",
+            "from"
+          ],
+          "properties": {
+            "op": {
+              "const": "move"
+            },
+            "path": {
+              "$ref": "#/$defs/json_pointer"
+            },
+            "from": {
+              "$ref": "#/$defs/json_pointer"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "path",
+            "from"
+          ],
+          "properties": {
+            "op": {
+              "const": "copy"
+            },
+            "path": {
+              "$ref": "#/$defs/json_pointer"
+            },
+            "from": {
+              "$ref": "#/$defs/json_pointer"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "path",
+            "value"
+          ],
+          "properties": {
+            "op": {
+              "const": "test"
+            },
+            "path": {
+              "$ref": "#/$defs/json_pointer"
+            },
+            "value": true
+          }
+        }
+      ]
+    },
+    "validation_message": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "message",
+        "severity"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warning"
+          ]
+        }
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "lovelace.list_dashboards",
+      "mutation": false,
+      "description": "List all YAML dashboards managed by the integration.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboards"
+        ],
+        "properties": {
+          "dashboards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/dashboard_summary"
+            },
+            "maxItems": 100
+          }
+        }
+      }
+    },
+    {
+      "name": "lovelace.get_dashboard",
+      "mutation": false,
+      "description": "Get a canonical YAML dashboard document.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          }
+        }
+      },
+      "output_schema": {
+        "$ref": "#/$defs/dashboard_document"
+      }
+    },
+    {
+      "name": "lovelace.create_dashboard",
+      "mutation": true,
+      "description": "Create a new YAML dashboard using canonical metadata and optional initial views.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "title",
+          "url_path"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "title": {
+            "$ref": "#/$defs/title"
+          },
+          "url_path": {
+            "$ref": "#/$defs/url_path"
+          },
+          "icon": {
+            "$ref": "#/$defs/icon"
+          },
+          "show_in_sidebar": {
+            "type": "boolean",
+            "default": true
+          },
+          "require_admin": {
+            "type": "boolean",
+            "default": false
+          },
+          "views": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 25,
+            "items": {
+              "$ref": "#/$defs/view_input"
+            }
+          }
+        }
+      },
+      "output_schema": {
+        "$ref": "#/$defs/dashboard_document"
+      }
+    },
+    {
+      "name": "lovelace.update_dashboard_metadata",
+      "mutation": true,
+      "description": "Update YAML dashboard metadata without changing view contents.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "metadata"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "expected_version": {
+            "$ref": "#/$defs/expected_version"
+          },
+          "metadata": {
+            "$ref": "#/$defs/dashboard_metadata_patch"
+          }
+        }
+      },
+      "output_schema": {
+        "$ref": "#/$defs/dashboard_document"
+      }
+    },
+    {
+      "name": "lovelace.delete_dashboard",
+      "mutation": true,
+      "description": "Delete a YAML dashboard registration and managed document.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "expected_version": {
+            "$ref": "#/$defs/expected_version"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "deleted"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "deleted": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "name": "lovelace.list_views",
+      "mutation": false,
+      "description": "List views for a YAML dashboard.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "views"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "views": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 25,
+            "items": {
+              "$ref": "#/$defs/view_summary"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "lovelace.get_view",
+      "mutation": false,
+      "description": "Get a single dashboard view.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view_id"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "view_id": {
+            "$ref": "#/$defs/view_id"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "view": {
+            "$ref": "#/$defs/view_document"
+          }
+        }
+      }
+    },
+    {
+      "name": "lovelace.create_view",
+      "mutation": true,
+      "description": "Append or insert a typed Lovelace view into a YAML dashboard.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "expected_version": {
+            "$ref": "#/$defs/expected_version"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 24
+          },
+          "view": {
+            "$ref": "#/$defs/view_input"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view",
+          "dashboard_version"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "view": {
+            "$ref": "#/$defs/view_document"
+          },
+          "dashboard_version": {
+            "$ref": "#/$defs/dashboard_version"
+          }
+        }
+      }
+    },
+    {
+      "name": "lovelace.update_view",
+      "mutation": true,
+      "description": "Update a view's metadata and optionally reorder it.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view_id",
+          "view"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "view_id": {
+            "$ref": "#/$defs/view_id"
+          },
+          "expected_version": {
+            "$ref": "#/$defs/expected_version"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 24
+          },
+          "view": {
+            "$ref": "#/$defs/view_input"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view",
+          "dashboard_version"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "view": {
+            "$ref": "#/$defs/view_document"
+          },
+          "dashboard_version": {
+            "$ref": "#/$defs/dashboard_version"
+          }
+        }
+      }
+    },
+    {
+      "name": "lovelace.delete_view",
+      "mutation": true,
+      "description": "Delete a view from a YAML dashboard.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view_id"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "view_id": {
+            "$ref": "#/$defs/view_id"
+          },
+          "expected_version": {
+            "$ref": "#/$defs/expected_version"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view_id",
+          "deleted",
+          "dashboard_version"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "view_id": {
+            "$ref": "#/$defs/view_id"
+          },
+          "deleted": {
+            "const": true
+          },
+          "dashboard_version": {
+            "$ref": "#/$defs/dashboard_version"
+          }
+        }
+      }
+    },
+    {
+      "name": "lovelace.list_cards",
+      "mutation": false,
+      "description": "List typed cards for a dashboard view.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view_id"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "view_id": {
+            "$ref": "#/$defs/view_id"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view_id",
+          "cards"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "view_id": {
+            "$ref": "#/$defs/view_id"
+          },
+          "cards": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/$defs/card_helper"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "lovelace.get_card",
+      "mutation": false,
+      "description": "Get a single typed card from a view.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view_id",
+          "card_id"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "view_id": {
+            "$ref": "#/$defs/view_id"
+          },
+          "card_id": {
+            "$ref": "#/$defs/card_id"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view_id",
+          "card"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "view_id": {
+            "$ref": "#/$defs/view_id"
+          },
+          "card": {
+            "$ref": "#/$defs/card_helper"
+          }
+        }
+      }
+    },
+    {
+      "name": "lovelace.create_card",
+      "mutation": true,
+      "description": "Append or insert a typed card into a view.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view_id",
+          "card"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "view_id": {
+            "$ref": "#/$defs/view_id"
+          },
+          "expected_version": {
+            "$ref": "#/$defs/expected_version"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 99
+          },
+          "card": {
+            "$ref": "#/$defs/card_helper_input"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view_id",
+          "card",
+          "dashboard_version"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "view_id": {
+            "$ref": "#/$defs/view_id"
+          },
+          "card": {
+            "$ref": "#/$defs/card_helper"
+          },
+          "dashboard_version": {
+            "$ref": "#/$defs/dashboard_version"
+          }
+        }
+      }
+    },
+    {
+      "name": "lovelace.update_card",
+      "mutation": true,
+      "description": "Replace an existing card with a typed helper card definition.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view_id",
+          "card_id",
+          "card"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "view_id": {
+            "$ref": "#/$defs/view_id"
+          },
+          "card_id": {
+            "$ref": "#/$defs/card_id"
+          },
+          "expected_version": {
+            "$ref": "#/$defs/expected_version"
+          },
+          "card": {
+            "$ref": "#/$defs/card_helper_input"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view_id",
+          "card",
+          "dashboard_version"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "view_id": {
+            "$ref": "#/$defs/view_id"
+          },
+          "card": {
+            "$ref": "#/$defs/card_helper"
+          },
+          "dashboard_version": {
+            "$ref": "#/$defs/dashboard_version"
+          }
+        }
+      }
+    },
+    {
+      "name": "lovelace.delete_card",
+      "mutation": true,
+      "description": "Delete a card from a view.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view_id",
+          "card_id"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "view_id": {
+            "$ref": "#/$defs/view_id"
+          },
+          "card_id": {
+            "$ref": "#/$defs/card_id"
+          },
+          "expected_version": {
+            "$ref": "#/$defs/expected_version"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "view_id",
+          "card_id",
+          "deleted",
+          "dashboard_version"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "view_id": {
+            "$ref": "#/$defs/view_id"
+          },
+          "card_id": {
+            "$ref": "#/$defs/card_id"
+          },
+          "deleted": {
+            "const": true
+          },
+          "dashboard_version": {
+            "$ref": "#/$defs/dashboard_version"
+          }
+        }
+      }
+    },
+    {
+      "name": "lovelace.patch_dashboard",
+      "mutation": true,
+      "description": "Apply RFC 6902 JSON Patch operations against the canonical dashboard document.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard_id",
+          "operations"
+        ],
+        "properties": {
+          "dashboard_id": {
+            "$ref": "#/$defs/dashboard_id"
+          },
+          "expected_version": {
+            "$ref": "#/$defs/expected_version"
+          },
+          "operations": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/$defs/json_patch_operation"
+            }
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard",
+          "applied_operations"
+        ],
+        "properties": {
+          "dashboard": {
+            "$ref": "#/$defs/dashboard_document"
+          },
+          "applied_operations": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 200
+          }
+        }
+      }
+    },
+    {
+      "name": "lovelace.validate_dashboard",
+      "mutation": false,
+      "description": "Validate either a candidate dashboard document or a JSON Patch request before mutation.",
+      "input_schema": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "dashboard"
+            ],
+            "properties": {
+              "dashboard": {
+                "$ref": "#/$defs/dashboard_document"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "dashboard_id",
+              "operations"
+            ],
+            "properties": {
+              "dashboard_id": {
+                "$ref": "#/$defs/dashboard_id"
+              },
+              "operations": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 200,
+                "items": {
+                  "$ref": "#/$defs/json_patch_operation"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "valid",
+          "errors",
+          "warnings"
+        ],
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          },
+          "normalized_dashboard": {
+            "$ref": "#/$defs/dashboard_document"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/validation_message"
+            },
+            "maxItems": 200
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/validation_message"
+            },
+            "maxItems": 200
+          }
+        }
+      }
+    }
+  ]
+}

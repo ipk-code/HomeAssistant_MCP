@@ -1,0 +1,12 @@
+{
+  "config": {
+    "abort": {
+      "single_instance_allowed": "Only a single Home Assistant MCP instance is supported."
+    },
+    "step": {
+      "user": {
+        "description": "Creates a default Home Assistant MCP integration entry for YAML dashboard authoring."
+      }
+    }
+  }
+}
