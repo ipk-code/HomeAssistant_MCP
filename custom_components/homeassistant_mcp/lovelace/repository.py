@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from copy import deepcopy
 import json
+import os
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Any
 
 from .card_helpers import clone_card, normalize_card_helper, render_card_config
@@ -335,14 +337,35 @@ class YamlDashboardRepository:
 
     def _write_document(self, document: dict[str, Any]) -> None:
         dashboard_id = document["metadata"]["dashboard_id"]
-        self._document_path(dashboard_id).write_text(
+        self._write_text_atomically(
+            self._document_path(dashboard_id),
             json.dumps(document, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
         )
-        self._render_path(dashboard_id).write_text(
+        self._write_text_atomically(
+            self._render_path(dashboard_id),
             json.dumps(self._render_dashboard(document), indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
         )
+
+    def _write_text_atomically(self, path: Path, content: str) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temp_path: Path | None = None
+        try:
+            with NamedTemporaryFile(
+                "w",
+                encoding="utf-8",
+                dir=path.parent,
+                delete=False,
+                prefix=f".{path.name}.",
+                suffix=".tmp",
+            ) as handle:
+                handle.write(content)
+                handle.flush()
+                os.fsync(handle.fileno())
+                temp_path = Path(handle.name)
+            temp_path.replace(path)
+        finally:
+            if temp_path is not None and temp_path.exists():
+                temp_path.unlink(missing_ok=True)
 
     def _render_dashboard(self, document: dict[str, Any]) -> dict[str, Any]:
         return {

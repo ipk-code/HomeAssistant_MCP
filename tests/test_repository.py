@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 from custom_components.homeassistant_mcp.lovelace.errors import (
     DashboardConflictError,
@@ -173,3 +174,14 @@ class RepositoryTests(unittest.TestCase):
                     "views": [],
                 }
             )
+
+    def test_atomic_write_cleans_up_temp_file_on_failure(self) -> None:
+        temp_dir = Path(self.tempdir.name)
+        target = temp_dir / "managed" / "main.json"
+
+        with patch.object(Path, "replace", side_effect=OSError("disk error")):
+            with self.assertRaises(OSError):
+                self.repository._write_text_atomically(target, "payload")
+
+        leftovers = list((temp_dir / "managed").glob(".*.tmp"))
+        self.assertEqual(leftovers, [])
