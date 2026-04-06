@@ -6,7 +6,7 @@ from http import HTTPStatus
 import json
 from typing import Any
 
-from ..const import API_VERSION, TITLE
+from ..const import API_VERSION, MAX_REQUEST_BYTES, TITLE
 from ..lovelace.errors import LovelaceMCPError
 from .server import ToolRegistry, load_api_contract
 
@@ -30,6 +30,10 @@ class StatelessMCPTransport:
         if content_type != CONTENT_TYPE_JSON:
             return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
                 None, -32600, f"Content-Type must be {CONTENT_TYPE_JSON}"
+            )
+        if len(body.encode("utf-8")) > MAX_REQUEST_BYTES:
+            return HTTPStatus.REQUEST_ENTITY_TOO_LARGE, self._jsonrpc_error(
+                None, -32013, "Request body exceeds maximum size"
             )
         try:
             message = json.loads(body)

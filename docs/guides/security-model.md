@@ -14,6 +14,7 @@
 
 - Identifier formats are constrained by regex validation.
 - Unsafe URLs such as `javascript:` are rejected.
+- HTTP request bodies are size-limited.
 - JSON Patch is limited to `/metadata` and `/views`.
 - JSON Patch cannot mutate immutable identity fields.
 - Mutation calls support `expected_version` for optimistic concurrency.

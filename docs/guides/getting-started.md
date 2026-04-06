@@ -15,8 +15,8 @@ python3 -m unittest discover -s tests -p "test_*.py"
 
 ## Current Development Focus
 
-1. Finish Home Assistant HTTP wiring for stateless transport.
-2. Add integration-level tests around Home Assistant views.
+1. Add Home Assistant-native request and auth handling on top of the current HTTP adapter.
+2. Expand integration-level tests around Home Assistant views.
 3. Keep YAML dashboard mutations secure and deterministic.
 
 ## Notes

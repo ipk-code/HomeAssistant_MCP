@@ -5,3 +5,6 @@ TITLE = "Home Assistant MCP"
 API_VERSION = "1.0.0"
 DEFAULT_TRANSPORT = "streamable_http_stateless"
 DEFAULT_DASHBOARD_MODE = "yaml"
+STREAMABLE_HTTP_API = "/api/homeassistant_mcp"
+STORAGE_DIRECTORY = ".storage/homeassistant_mcp"
+MAX_REQUEST_BYTES = 1048576

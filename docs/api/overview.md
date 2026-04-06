@@ -10,6 +10,7 @@
 - Transport: stateless Streamable HTTP
 - Mutation model: typed tools plus restricted JSON Patch
 - Card model: typed helper inputs only
+- HTTP endpoint: `/api/homeassistant_mcp`
 
 ## Design Boundaries
 

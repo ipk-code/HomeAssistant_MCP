@@ -116,6 +116,17 @@ class TransportTests(unittest.TestCase):
         assert response is not None
         self.assertEqual(response["error"]["code"], -32700)
 
+    def test_http_validation_rejects_oversized_body(self) -> None:
+        status, response = self.transport.handle_http_request(
+            accept=CONTENT_TYPE_JSON,
+            content_type=CONTENT_TYPE_JSON,
+            body="x" * (1048576 + 1),
+        )
+        self.assertEqual(status, 413)
+        self.assertIsNotNone(response)
+        assert response is not None
+        self.assertEqual(response["error"]["code"], -32013)
+
     def test_unknown_tool_returns_tool_error_result(self) -> None:
         status, response = self.transport.handle_jsonrpc_message(
             {
