@@ -5,8 +5,13 @@ from __future__ import annotations
 from tempfile import TemporaryDirectory
 import unittest
 
-from custom_components.homeassistant_mcp.lovelace.repository import YamlDashboardRepository
-from custom_components.homeassistant_mcp.mcp.server import ToolRegistry, load_api_contract
+from custom_components.homeassistant_mcp.lovelace.repository import (
+    YamlDashboardRepository,
+)
+from custom_components.homeassistant_mcp.mcp.server import (
+    ToolRegistry,
+    load_api_contract,
+)
 
 
 class ToolRegistryTests(unittest.TestCase):
@@ -22,6 +27,12 @@ class ToolRegistryTests(unittest.TestCase):
         self.assertEqual(len(tools), 17)
         self.assertEqual(tools[0].name, "lovelace.list_dashboards")
 
+    def test_registry_lists_serialized_tools(self) -> None:
+        tools = self.registry.list_tools()
+        self.assertEqual(len(tools), 17)
+        self.assertEqual(tools[0]["name"], "lovelace.list_dashboards")
+        self.assertIn("inputSchema", tools[0])
+
     def test_registry_dispatches_dashboard_and_card_calls(self) -> None:
         dashboard = self.registry.call(
             "lovelace.create_dashboard",
@@ -29,7 +40,14 @@ class ToolRegistryTests(unittest.TestCase):
                 "dashboard_id": "main",
                 "title": "Main",
                 "url_path": "main",
-                "views": [{"view_id": "overview", "title": "Overview", "path": "overview", "cards": []}],
+                "views": [
+                    {
+                        "view_id": "overview",
+                        "title": "Overview",
+                        "path": "overview",
+                        "cards": [],
+                    }
+                ],
             },
         )
         self.assertEqual(dashboard["metadata"]["dashboard_id"], "main")
@@ -66,4 +84,6 @@ class ToolRegistryTests(unittest.TestCase):
             },
         )
         self.assertTrue(normalized["valid"])
-        self.assertEqual(normalized["normalized_dashboard"]["metadata"]["dashboard_id"], "main")
+        self.assertEqual(
+            normalized["normalized_dashboard"]["metadata"]["dashboard_id"], "main"
+        )

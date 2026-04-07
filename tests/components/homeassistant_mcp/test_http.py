@@ -164,6 +164,62 @@ async def test_streamable_http_validates_view_response_shape(hass, hass_client) 
     assert view_result["view"]["view_id"] == "overview"
 
 
+async def test_streamable_http_supports_phase2_capability_methods(
+    hass, hass_client
+) -> None:
+    """Test authenticated resources, prompts, and completions dispatch over HA HTTP."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "transport": DEFAULT_TRANSPORT,
+            "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+        },
+        title="Home Assistant MCP",
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    client = await hass_client()
+
+    resources_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={"jsonrpc": "2.0", "id": "1", "method": "resources/list", "params": {}},
+        headers={"Accept": "application/json"},
+    )
+    assert resources_response.status == 200
+    resources_payload = await resources_response.json()
+    assert resources_payload["result"] == {"resources": [], "resourceTemplates": []}
+
+    prompts_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={"jsonrpc": "2.0", "id": "2", "method": "prompts/list", "params": {}},
+        headers={"Accept": "application/json"},
+    )
+    assert prompts_response.status == 200
+    prompts_payload = await prompts_response.json()
+    assert prompts_payload["result"] == {"prompts": []}
+
+    completion_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "3",
+            "method": "completion/complete",
+            "params": {
+                "ref": {"name": "dashboard.review"},
+                "argument": {"name": "dashboard_id"},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert completion_response.status == 200
+    completion_payload = await completion_response.json()
+    assert completion_payload["result"] == {
+        "completion": {"values": [], "hasMore": False}
+    }
+
+
 async def test_streamable_http_returns_jsonrpc_error_for_invalid_payload(
     hass, hass_client
 ) -> None:

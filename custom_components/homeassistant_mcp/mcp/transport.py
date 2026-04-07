@@ -9,8 +9,11 @@ from typing import Any
 
 from ..const import API_VERSION, MAX_REQUEST_BYTES, TITLE
 from ..lovelace.errors import LovelaceMCPError
+from .completions import CompletionRegistry
+from .prompts import PromptRegistry
+from .resources import ResourceRegistry
 from .schema import ToolSchemaValidationError
-from .server import ToolRegistry, load_api_contract
+from .server import ToolRegistry
 
 CONTENT_TYPE_JSON = "application/json"
 _LOGGER = logging.getLogger(__name__)
@@ -19,8 +22,18 @@ _LOGGER = logging.getLogger(__name__)
 class StatelessMCPTransport:
     """Minimal stateless MCP transport facade over the tool registry."""
 
-    def __init__(self, registry: ToolRegistry) -> None:
+    def __init__(
+        self,
+        registry: ToolRegistry,
+        *,
+        resources: ResourceRegistry | None = None,
+        prompts: PromptRegistry | None = None,
+        completions: CompletionRegistry | None = None,
+    ) -> None:
         self._registry = registry
+        self._resources = resources or ResourceRegistry()
+        self._prompts = prompts or PromptRegistry()
+        self._completions = completions or CompletionRegistry()
 
     def handle_http_request(
         self, *, accept: str, content_type: str, body: str
@@ -37,7 +50,9 @@ class StatelessMCPTransport:
                 None, -32600, f"Content-Type must be {CONTENT_TYPE_JSON}"
             )
         if len(body.encode("utf-8")) > MAX_REQUEST_BYTES:
-            _LOGGER.warning("Rejected MCP request because body exceeded %s bytes", MAX_REQUEST_BYTES)
+            _LOGGER.warning(
+                "Rejected MCP request because body exceeded %s bytes", MAX_REQUEST_BYTES
+            )
             return HTTPStatus.REQUEST_ENTITY_TOO_LARGE, self._jsonrpc_error(
                 None, -32013, "Request body exceeds maximum size"
             )
@@ -55,7 +70,9 @@ class StatelessMCPTransport:
     ) -> tuple[int, dict[str, Any] | None]:
         """Handle a single JSON-RPC request in stateless mode."""
         if not isinstance(message, dict):
-            _LOGGER.warning("Rejected MCP request because JSON-RPC payload was not an object")
+            _LOGGER.warning(
+                "Rejected MCP request because JSON-RPC payload was not an object"
+            )
             return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
                 None, -32600, "JSON-RPC request must be an object"
             )
@@ -66,7 +83,9 @@ class StatelessMCPTransport:
             )
 
         method = message.get("method")
-        params = message.get("params") or {}
+        params = message.get("params")
+        if params is None:
+            params = {}
 
         if not isinstance(method, str):
             _LOGGER.warning("Rejected MCP request because method was invalid")
@@ -92,7 +111,11 @@ class StatelessMCPTransport:
                 "result": {
                     "protocolVersion": params.get("protocolVersion", "1.0"),
                     "serverInfo": {"name": TITLE, "version": API_VERSION},
-                    "capabilities": {"tools": {"listChanged": False}},
+                    "capabilities": {
+                        "tools": {"listChanged": False},
+                        "resources": {"listChanged": False},
+                        "prompts": {"listChanged": False},
+                    },
                 },
             }
 
@@ -106,32 +129,128 @@ class StatelessMCPTransport:
 
         if method == "tools/list":
             _LOGGER.debug("Handled MCP tools/list request %s", request_id)
-            _, contracts = load_api_contract()
             return HTTPStatus.OK, {
                 "jsonrpc": "2.0",
                 "id": request_id,
-                "result": {
-                    "tools": [
-                        {
-                            "name": contract.name,
-                            "description": contract.description,
-                            "inputSchema": contract.input_schema,
-                        }
-                        for contract in contracts
-                    ]
-                },
+                "result": {"tools": self._registry.list_tools()},
+            }
+
+        if method == "resources/list":
+            _LOGGER.debug("Handled MCP resources/list request %s", request_id)
+            return HTTPStatus.OK, {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": self._resources.list_payload(),
+            }
+
+        if method == "resources/read":
+            uri = params.get("uri")
+            if not isinstance(uri, str):
+                _LOGGER.warning(
+                    "Rejected MCP resources/read request %s because uri was invalid",
+                    request_id,
+                )
+                return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                    request_id, -32602, "resources/read requires a string uri"
+                )
+            try:
+                _LOGGER.debug("Reading MCP resource %s for request %s", uri, request_id)
+                return HTTPStatus.OK, {
+                    "jsonrpc": "2.0",
+                    "id": request_id,
+                    "result": {"contents": self._resources.read(uri)},
+                }
+            except KeyError as err:
+                _LOGGER.warning(
+                    "Rejected MCP resources/read request %s because resource %s was unknown",
+                    request_id,
+                    uri,
+                )
+                return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                    request_id, -32602, str(err)
+                )
+
+        if method == "prompts/list":
+            _LOGGER.debug("Handled MCP prompts/list request %s", request_id)
+            return HTTPStatus.OK, {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": {"prompts": self._prompts.list_prompts()},
+            }
+
+        if method == "prompts/get":
+            prompt_name = params.get("name")
+            arguments = params.get("arguments")
+            if arguments is None:
+                arguments = {}
+            if not isinstance(prompt_name, str) or not isinstance(arguments, dict):
+                _LOGGER.warning(
+                    "Rejected MCP prompts/get request %s because name or arguments were invalid",
+                    request_id,
+                )
+                return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                    request_id, -32602, "prompts/get requires name and arguments"
+                )
+            try:
+                _LOGGER.debug(
+                    "Handled MCP prompts/get request %s for %s", request_id, prompt_name
+                )
+                return HTTPStatus.OK, {
+                    "jsonrpc": "2.0",
+                    "id": request_id,
+                    "result": self._prompts.get(prompt_name, arguments),
+                }
+            except KeyError as err:
+                _LOGGER.warning(
+                    "Rejected MCP prompts/get request %s because prompt %s was unknown",
+                    request_id,
+                    prompt_name,
+                )
+                return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                    request_id, -32602, str(err)
+                )
+
+        if method == "completion/complete":
+            ref = params.get("ref")
+            if ref is None:
+                ref = {}
+            argument = params.get("argument")
+            if argument is None:
+                argument = {}
+            if not isinstance(ref, dict) or not isinstance(argument, dict):
+                _LOGGER.warning(
+                    "Rejected MCP completion/complete request %s because ref or argument were invalid",
+                    request_id,
+                )
+                return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                    request_id,
+                    -32602,
+                    "completion/complete requires ref and argument objects",
+                )
+            _LOGGER.debug("Handled MCP completion/complete request %s", request_id)
+            return HTTPStatus.OK, {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": {"completion": self._completions.complete(ref, argument)},
             }
 
         if method == "tools/call":
             tool_name = params.get("name")
-            arguments = params.get("arguments") or {}
+            arguments = params.get("arguments")
+            if arguments is None:
+                arguments = {}
             if not isinstance(tool_name, str) or not isinstance(arguments, dict):
-                _LOGGER.warning("Rejected MCP tools/call request %s because name or arguments were invalid", request_id)
+                _LOGGER.warning(
+                    "Rejected MCP tools/call request %s because name or arguments were invalid",
+                    request_id,
+                )
                 return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
                     request_id, -32602, "tools/call requires name and arguments"
                 )
             try:
-                _LOGGER.debug("Executing MCP tool %s for request %s", tool_name, request_id)
+                _LOGGER.debug(
+                    "Executing MCP tool %s for request %s", tool_name, request_id
+                )
                 payload = self._registry.call(tool_name, arguments)
                 return HTTPStatus.OK, {
                     "jsonrpc": "2.0",
@@ -142,7 +261,12 @@ class StatelessMCPTransport:
                     },
                 }
             except (KeyError, LovelaceMCPError, ToolSchemaValidationError) as err:
-                _LOGGER.warning("MCP tool %s failed validation or execution for request %s: %s", tool_name, request_id, err)
+                _LOGGER.warning(
+                    "MCP tool %s failed validation or execution for request %s: %s",
+                    tool_name,
+                    request_id,
+                    err,
+                )
                 return HTTPStatus.OK, {
                     "jsonrpc": "2.0",
                     "id": request_id,
@@ -152,12 +276,18 @@ class StatelessMCPTransport:
                     },
                 }
             except Exception:
-                _LOGGER.exception("Unexpected MCP transport failure for tool %s request %s", tool_name, request_id)
+                _LOGGER.exception(
+                    "Unexpected MCP transport failure for tool %s request %s",
+                    tool_name,
+                    request_id,
+                )
                 return HTTPStatus.INTERNAL_SERVER_ERROR, self._jsonrpc_error(
                     request_id, -32603, "Internal server error"
                 )
 
-        _LOGGER.warning("Rejected MCP request %s because method %s is unknown", request_id, method)
+        _LOGGER.warning(
+            "Rejected MCP request %s because method %s is unknown", request_id, method
+        )
         return HTTPStatus.NOT_FOUND, self._jsonrpc_error(
             request_id, -32601, f"Unknown method: {method}"
         )

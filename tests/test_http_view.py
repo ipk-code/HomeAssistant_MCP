@@ -112,6 +112,17 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(runtime.root_path, expected_root)
         self.assertEqual(len(self.hass.executor_jobs), 1)
         self.assertIs(get_runtime(self.hass), runtime)
+        self.assertEqual(
+            runtime.resources.list_payload(), {"resources": [], "resourceTemplates": []}
+        )
+        self.assertEqual(runtime.prompts.list_prompts(), [])
+        self.assertEqual(
+            runtime.completions.complete(
+                {"name": "dashboard.review"},
+                {"name": "dashboard_id"},
+            ),
+            {"values": [], "hasMore": False},
+        )
         self.assertTrue(
             any(
                 f"Loaded Home Assistant MCP version {INTEGRATION_VERSION} entry" in line

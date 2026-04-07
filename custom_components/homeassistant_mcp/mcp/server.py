@@ -66,8 +66,20 @@ class ToolRegistry:
 
     def __init__(self, repository: YamlDashboardRepository) -> None:
         self._repository = repository
-        spec, _ = load_api_contract()
+        spec, contracts = load_api_contract()
+        self._contracts = contracts
         self._validator = ToolSchemaValidator(spec)
+
+    def list_tools(self) -> list[dict[str, Any]]:
+        """Return serialized MCP tool definitions."""
+        return [
+            {
+                "name": contract.name,
+                "description": contract.description,
+                "inputSchema": contract.input_schema,
+            }
+            for contract in self._contracts
+        ]
 
     def call(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         self._validator.validate_tool_arguments(name, arguments)

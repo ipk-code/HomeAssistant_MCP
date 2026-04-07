@@ -80,6 +80,8 @@ Expected runtime behavior:
 - an unauthenticated direct HTTP request returns `401 Unauthorized`
 - an authenticated MCP `initialize` request returns `Home Assistant MCP`
 - `tools/list` returns the stable `lovelace.*` tool catalog
+- `resources/list` and `prompts/list` currently return empty lists until later phases add built-in definitions
+- `completion/complete` is available but currently returns empty suggestions unless a future phase registers providers
 
 ## Example Prompts
 

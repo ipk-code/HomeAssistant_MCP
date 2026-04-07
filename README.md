@@ -73,11 +73,11 @@ OpenCode can connect as a remote MCP client with a Home Assistant long-lived acc
 
 | Capability | Status | Notes |
 |---|---|---|
-| `initialize`, `tools/list`, `tools/call` | Stable in v1 | Current MCP method surface |
+| `initialize`, `ping`, `tools/list`, `tools/call` | Stable in v1 | Current dashboard authoring MCP method surface |
 | Dashboard tools | Stable in v1 | Includes `lovelace.list_dashboards`, `lovelace.get_dashboard`, `lovelace.create_dashboard`, `lovelace.update_dashboard_metadata`, `lovelace.delete_dashboard`, `lovelace.patch_dashboard`, `lovelace.validate_dashboard` |
 | View tools | Stable in v1 | Includes `lovelace.list_views`, `lovelace.get_view`, `lovelace.create_view`, `lovelace.update_view`, `lovelace.delete_view` |
 | Card tools | Stable in v1 | Includes `lovelace.list_cards`, `lovelace.get_card`, `lovelace.create_card`, `lovelace.update_card`, `lovelace.delete_card` |
-| Resources, prompts, completions | Not shipped yet | Planned after the v1 dashboard authoring baseline |
+| `resources/*`, `prompts/*`, `completion/complete` | Foundation shipped | Transport methods are available, but the built-in registries are empty until later phases |
 | OAuth browser-client flow | Not shipped yet | Current deployment uses Home Assistant token auth |
 
 ## Stable And Planned Scope
@@ -92,9 +92,9 @@ Stable in v1:
 Not available yet:
 
 - read-only `hass.*` discovery tools
-- MCP resources
-- MCP prompts
-- MCP completions
+- built-in MCP resources
+- built-in MCP prompts
+- built-in MCP completions
 - SSE or other stateful transports
 
 ## FAQ

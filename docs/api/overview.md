@@ -18,11 +18,11 @@
 |---|---|---|
 | Transport | Stable in v1 | `streamable_http_stateless` only |
 | Auth | Stable in v1 | Standard Home Assistant authentication |
-| MCP methods | Stable in v1 | `initialize`, `tools/list`, `tools/call` |
+| MCP methods | Stable in v1 | `initialize`, `ping`, `tools/list`, `tools/call` |
 | Lovelace dashboard tools | Stable in v1 | Dashboard, view, and card CRUD plus validation and patching |
-| Resources | Not shipped yet | Planned future expansion |
-| Prompts | Not shipped yet | Planned future expansion |
-| Completions | Not shipped yet | Planned future expansion |
+| Resources | Foundation shipped | `resources/list` and `resources/read` are available, but no built-in resources are registered yet |
+| Prompts | Foundation shipped | `prompts/list` and `prompts/get` are available, but no built-in prompts are registered yet |
+| Completions | Foundation shipped | `completion/complete` is available, but no built-in completion providers are registered yet |
 | OAuth client flow | Not shipped yet | Current remote setup uses bearer tokens |
 
 ## Design Boundaries
@@ -38,6 +38,7 @@
 - Home Assistant registers an authenticated HTTP view at `/api/homeassistant_mcp`.
 - A bundled MCP contract defines the stable v1 tool surface.
 - Requests are handled as stateless JSON-RPC messages over HTTP `POST`.
+- Resources, prompts, and completions are provided by dedicated registries so new capabilities can be added without rewriting the transport.
 
 ## Main Layers
 

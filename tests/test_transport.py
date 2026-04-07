@@ -6,7 +6,20 @@ import json
 from tempfile import TemporaryDirectory
 import unittest
 
-from custom_components.homeassistant_mcp.lovelace.repository import YamlDashboardRepository
+from custom_components.homeassistant_mcp.lovelace.repository import (
+    YamlDashboardRepository,
+)
+from custom_components.homeassistant_mcp.mcp.completions import CompletionRegistry
+from custom_components.homeassistant_mcp.mcp.prompts import (
+    PromptArgument,
+    PromptDefinition,
+    PromptRegistry,
+)
+from custom_components.homeassistant_mcp.mcp.resources import (
+    ResourceDefinition,
+    ResourceRegistry,
+    ResourceTemplateDefinition,
+)
 from custom_components.homeassistant_mcp.mcp.server import ToolRegistry
 from custom_components.homeassistant_mcp.mcp.transport import (
     CONTENT_TYPE_JSON,
@@ -19,7 +32,67 @@ class TransportTests(unittest.TestCase):
         self.tempdir = TemporaryDirectory()
         self.addCleanup(self.tempdir.cleanup)
         registry = ToolRegistry(YamlDashboardRepository(self.tempdir.name))
-        self.transport = StatelessMCPTransport(registry)
+        resources = ResourceRegistry()
+        prompts = PromptRegistry()
+        completions = CompletionRegistry()
+        resources.register(
+            ResourceDefinition(
+                uri="hass://test",
+                name="Test Resource",
+                description="Fixture resource",
+                mime_type="application/json",
+            ),
+            lambda: [
+                {"uri": "hass://test", "mimeType": "application/json", "text": "{}"}
+            ],
+        )
+        resources.register_template(
+            ResourceTemplateDefinition(
+                uri_template="hass://dashboard/{dashboard_id}",
+                name="Dashboard",
+                description="Dashboard template",
+                mime_type="application/json",
+            )
+        )
+        prompts.register(
+            PromptDefinition(
+                name="dashboard.review",
+                description="Review one dashboard",
+                arguments=(
+                    PromptArgument(
+                        name="dashboard_id",
+                        description="Dashboard identifier",
+                        required=True,
+                    ),
+                ),
+            ),
+            lambda arguments: {
+                "description": "Dashboard review",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": {
+                            "type": "text",
+                            "text": f"Review {arguments['dashboard_id']}",
+                        },
+                    }
+                ],
+            },
+        )
+        completions.register(
+            argument_name="dashboard_id",
+            provider=lambda ref, argument: {
+                "values": ["main"] if argument.get("value", "") in {"", "m"} else [],
+                "hasMore": False,
+            },
+            ref_name="dashboard.review",
+        )
+        self.transport = StatelessMCPTransport(
+            registry,
+            resources=resources,
+            prompts=prompts,
+            completions=completions,
+        )
 
     def test_initialize_request(self) -> None:
         status, response = self.transport.handle_jsonrpc_message(
@@ -35,6 +108,8 @@ class TransportTests(unittest.TestCase):
         assert response is not None
         self.assertEqual(response["result"]["serverInfo"]["name"], "Home Assistant MCP")
         self.assertIn("tools", response["result"]["capabilities"])
+        self.assertIn("resources", response["result"]["capabilities"])
+        self.assertIn("prompts", response["result"]["capabilities"])
 
     def test_tools_list_returns_contracts(self) -> None:
         status, response = self.transport.handle_jsonrpc_message(
@@ -44,7 +119,111 @@ class TransportTests(unittest.TestCase):
         self.assertIsNotNone(response)
         assert response is not None
         self.assertEqual(len(response["result"]["tools"]), 17)
-        self.assertEqual(response["result"]["tools"][0]["name"], "lovelace.list_dashboards")
+        self.assertEqual(
+            response["result"]["tools"][0]["name"], "lovelace.list_dashboards"
+        )
+
+    def test_resources_list_and_read_use_registry(self) -> None:
+        status, response = self.transport.handle_jsonrpc_message(
+            {"jsonrpc": "2.0", "id": "1", "method": "resources/list", "params": {}}
+        )
+        self.assertEqual(status, 200)
+        assert response is not None
+        self.assertEqual(response["result"]["resources"][0]["uri"], "hass://test")
+        self.assertEqual(
+            response["result"]["resourceTemplates"][0]["uriTemplate"],
+            "hass://dashboard/{dashboard_id}",
+        )
+
+        status, response = self.transport.handle_jsonrpc_message(
+            {
+                "jsonrpc": "2.0",
+                "id": "2",
+                "method": "resources/read",
+                "params": {"uri": "hass://test"},
+            }
+        )
+        self.assertEqual(status, 200)
+        assert response is not None
+        self.assertEqual(response["result"]["contents"][0]["uri"], "hass://test")
+
+    def test_resources_read_unknown_uri_is_rejected(self) -> None:
+        status, response = self.transport.handle_jsonrpc_message(
+            {
+                "jsonrpc": "2.0",
+                "id": "1",
+                "method": "resources/read",
+                "params": {"uri": "hass://missing"},
+            }
+        )
+        self.assertEqual(status, 400)
+        assert response is not None
+        self.assertEqual(response["error"]["code"], -32602)
+
+    def test_prompts_list_and_get_use_registry(self) -> None:
+        status, response = self.transport.handle_jsonrpc_message(
+            {"jsonrpc": "2.0", "id": "1", "method": "prompts/list", "params": {}}
+        )
+        self.assertEqual(status, 200)
+        assert response is not None
+        self.assertEqual(response["result"]["prompts"][0]["name"], "dashboard.review")
+
+        status, response = self.transport.handle_jsonrpc_message(
+            {
+                "jsonrpc": "2.0",
+                "id": "2",
+                "method": "prompts/get",
+                "params": {
+                    "name": "dashboard.review",
+                    "arguments": {"dashboard_id": "main"},
+                },
+            }
+        )
+        self.assertEqual(status, 200)
+        assert response is not None
+        self.assertEqual(
+            response["result"]["messages"][0]["content"]["text"], "Review main"
+        )
+
+    def test_prompt_lookup_and_completion_validation(self) -> None:
+        status, response = self.transport.handle_jsonrpc_message(
+            {
+                "jsonrpc": "2.0",
+                "id": "1",
+                "method": "prompts/get",
+                "params": {"name": "dashboard.missing", "arguments": {}},
+            }
+        )
+        self.assertEqual(status, 400)
+        assert response is not None
+        self.assertEqual(response["error"]["code"], -32602)
+
+        status, response = self.transport.handle_jsonrpc_message(
+            {
+                "jsonrpc": "2.0",
+                "id": "2",
+                "method": "completion/complete",
+                "params": {
+                    "ref": {"name": "dashboard.review"},
+                    "argument": {"name": "dashboard_id", "value": "m"},
+                },
+            }
+        )
+        self.assertEqual(status, 200)
+        assert response is not None
+        self.assertEqual(response["result"]["completion"]["values"], ["main"])
+
+        status, response = self.transport.handle_jsonrpc_message(
+            {
+                "jsonrpc": "2.0",
+                "id": "3",
+                "method": "completion/complete",
+                "params": {"ref": [], "argument": {}},
+            }
+        )
+        self.assertEqual(status, 400)
+        assert response is not None
+        self.assertEqual(response["error"]["code"], -32602)
 
     def test_tools_call_round_trip(self) -> None:
         create_status, create_response = self.transport.handle_jsonrpc_message(
@@ -98,6 +277,15 @@ class TransportTests(unittest.TestCase):
         self.assertIsNotNone(response)
         assert response is not None
         self.assertEqual(response["error"]["code"], -32600)
+
+    def test_non_object_params_are_rejected_before_method_dispatch(self) -> None:
+        status, response = self.transport.handle_jsonrpc_message(
+            {"jsonrpc": "2.0", "id": "1", "method": "tools/list", "params": []}
+        )
+        self.assertEqual(status, 400)
+        self.assertIsNotNone(response)
+        assert response is not None
+        self.assertEqual(response["error"]["code"], -32602)
 
     def test_http_validation_rejects_bad_headers_and_bad_json(self) -> None:
         with self.assertLogs(

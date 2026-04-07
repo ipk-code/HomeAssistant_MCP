@@ -41,5 +41,5 @@ There are no user-editable options in v1.
 - No SSE transport yet
 - No user-facing options flow yet
 - Storage directory and request-size limit are internal constants, not UI-configurable
-- No MCP resources, prompts, or completions yet
+- No built-in resources, prompts, or completions registered yet
 - No OAuth flow yet for browser-style MCP clients
