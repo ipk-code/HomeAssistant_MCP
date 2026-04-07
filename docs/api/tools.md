@@ -49,7 +49,7 @@ The stable v1 tool surface currently spans the read-only `hass.*` namespace and 
 - All tools listed here are part of the stable v1 dashboard authoring and read-only discovery surface.
 - Built-in completions are available for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon`.
 - Built-in resources are available for config, entities, areas, devices, services, and managed dashboards.
-- Prompts are not shipped yet.
+- Built-in prompts are available for dashboard building, review, layout consistency, entity-card mapping, and cleanup audits.
 
 ## Source Of Truth
 

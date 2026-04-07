@@ -92,6 +92,24 @@ class PromptRegistryTests(unittest.TestCase):
             "main",
         )
 
+    def test_prompt_registry_preserves_prompt_arguments(self) -> None:
+        registry = PromptRegistry()
+        registry.register(
+            PromptDefinition(
+                name="dashboard.builder",
+                description="Build",
+                arguments=(
+                    PromptArgument("dashboard_id", "Dashboard"),
+                    PromptArgument("goal", "Goal"),
+                ),
+            ),
+            lambda arguments: {"description": "build"},
+        )
+
+        prompts = registry.list_prompts()
+        self.assertEqual(prompts[0]["arguments"][0]["name"], "dashboard_id")
+        self.assertEqual(prompts[0]["arguments"][1]["name"], "goal")
+
     def test_prompt_registry_rejects_unknown_prompt(self) -> None:
         registry = PromptRegistry()
         with self.assertRaisesRegex(KeyError, "unknown prompt"):

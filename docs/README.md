@@ -42,5 +42,6 @@ This directory contains the user and contributor documentation for `HomeAssistan
 - read-only `hass.*` discovery tools with bounded result sets
 - built-in completions for common Home Assistant and Lovelace identifiers
 - built-in read-only MCP resources for Home Assistant context and managed dashboards
+- built-in dashboard-focused MCP prompts
 - typed card helpers only
 - RFC 6902 JSON Patch for dashboard patch operations

@@ -82,7 +82,8 @@ Expected runtime behavior:
 - `tools/list` returns the stable `lovelace.*` and `hass.*` tool catalog
 - `resources/list` returns built-in resources for config, entities, areas, devices, services, and managed dashboards
 - `resources/read` returns JSON payloads for those built-in resources
-- `prompts/list` currently returns an empty list until a later phase adds built-in definitions
+- `prompts/list` returns built-in dashboard workflow prompts
+- `prompts/get` returns contextual prompt text for dashboard building, review, layout consistency, entity-card mapping, and cleanup audits
 - `completion/complete` returns built-in suggestions for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon`
 
 ## Completion Context
@@ -130,6 +131,12 @@ Example 5:
 
 ```text
 Use homeassistant_mcp resources to read `hass://entities` and `hass://dashboard/main` before proposing a dashboard cleanup patch.
+```
+
+Example 6:
+
+```text
+Use the `dashboard.review` prompt from homeassistant_mcp, then apply the smallest typed dashboard edits it recommends.
 ```
 
 ## Example AGENTS.md Rule

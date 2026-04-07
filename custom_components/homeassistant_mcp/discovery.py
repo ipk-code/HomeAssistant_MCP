@@ -55,6 +55,28 @@ class HomeAssistantDiscoveryProvider:
         """Return all known entity IDs sorted for completion providers."""
         return sorted(state.entity_id for state in self._hass.states.async_all())
 
+    def get_entity_summary(self, entity_id: str) -> dict[str, Any]:
+        """Return one serialized entity summary by entity ID."""
+        from homeassistant.helpers import device_registry as dr
+        from homeassistant.helpers import entity_registry as er
+
+        state = self._hass.states.get(entity_id)
+        if state is None:
+            raise KeyError(f"unknown entity: {entity_id}")
+
+        device_registry = dr.async_get(self._hass)
+        entity_registry = er.async_get(self._hass)
+        area_id, device_id = self._resolve_entity_links(
+            entity_id,
+            entity_registry=entity_registry,
+            device_registry=device_registry,
+        )
+        return self._serialize_entity(
+            state,
+            area_id=area_id,
+            device_id=device_id,
+        )
+
     def search_entities(self, arguments: dict[str, Any]) -> dict[str, Any]:
         """Search entities by query with optional filters."""
         query = arguments["query"].casefold()

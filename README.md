@@ -81,7 +81,7 @@ OpenCode can connect as a remote MCP client with a Home Assistant long-lived acc
 | Card tools | Stable in v1 | Includes `lovelace.list_cards`, `lovelace.get_card`, `lovelace.create_card`, `lovelace.update_card`, `lovelace.delete_card` |
 | `completion/complete` | Stable in v1 | Built-in completions are available for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon` |
 | `resources/list`, `resources/read` | Stable in v1 | Built-in resources are available for config, entities, areas, devices, services, and managed dashboards |
-| `prompts/*` | Foundation shipped | Transport methods are available, but the built-in prompt registry is still empty |
+| `prompts/list`, `prompts/get` | Stable in v1 | Built-in prompts include `dashboard.builder`, `dashboard.review`, `dashboard.layout_consistency_review`, `dashboard.entity_card_mapping`, and `dashboard.cleanup_audit` |
 | OAuth browser-client flow | Not shipped yet | Current deployment uses Home Assistant token auth |
 
 ## Stable And Planned Scope
@@ -91,15 +91,14 @@ Stable in v1:
 - typed Lovelace dashboard, view, and card operations
 - read-only `hass.*` discovery tools with bounded result sizes
 - built-in completions for common Home Assistant and Lovelace identifiers
-- built-in read-only MCP resources for Home Assistant context and managed dashboards
-Supported resource URIs include `hass://config`, `hass://entities`, `hass://areas`, `hass://devices`, `hass://services`, and `hass://dashboard/{dashboard_id}`.
+- built-in read-only MCP resources for Home Assistant context and managed dashboards, including `hass://config`, `hass://entities`, `hass://areas`, `hass://devices`, `hass://services`, and `hass://dashboard/{dashboard_id}`
+- built-in dashboard-focused prompts including `dashboard.builder`, `dashboard.review`, `dashboard.layout_consistency_review`, `dashboard.entity_card_mapping`, and `dashboard.cleanup_audit`
 - bundled contract-driven tool schemas
 - stateless Streamable HTTP transport
 - Home Assistant-authenticated remote access
 
 Not available yet:
 
-- built-in MCP prompts
 - SSE or other stateful transports
 
 ## FAQ

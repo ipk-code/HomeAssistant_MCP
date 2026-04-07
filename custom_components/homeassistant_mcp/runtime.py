@@ -10,7 +10,7 @@ from typing import Any
 from .discovery import HomeAssistantDiscoveryProvider
 from .lovelace.repository import YamlDashboardRepository
 from .mcp.completions import CompletionRegistry, register_builtin_completions
-from .mcp.prompts import PromptRegistry
+from .mcp.prompts import PromptRegistry, register_builtin_prompts
 from .mcp.resources import ResourceRegistry, register_builtin_resources
 from .mcp.server import ToolRegistry
 from .mcp.transport import StatelessMCPTransport
@@ -45,6 +45,11 @@ def create_runtime(hass: Any, root_path: Path) -> IntegrationRuntime:
         discovery=discovery,
     )
     prompts = PromptRegistry()
+    register_builtin_prompts(
+        prompts,
+        repository=repository,
+        discovery=discovery,
+    )
     completions = CompletionRegistry()
     register_builtin_completions(
         completions,

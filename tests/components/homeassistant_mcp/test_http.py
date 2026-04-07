@@ -215,7 +215,13 @@ async def test_streamable_http_supports_phase2_capability_methods(
     )
     assert prompts_response.status == 200
     prompts_payload = await prompts_response.json()
-    assert prompts_payload["result"] == {"prompts": []}
+    assert [item["name"] for item in prompts_payload["result"]["prompts"]] == [
+        "dashboard.builder",
+        "dashboard.review",
+        "dashboard.layout_consistency_review",
+        "dashboard.entity_card_mapping",
+        "dashboard.cleanup_audit",
+    ]
 
     completion_response = await client.post(
         STREAMABLE_HTTP_API,
@@ -235,6 +241,115 @@ async def test_streamable_http_supports_phase2_capability_methods(
     assert completion_payload["result"] == {
         "completion": {"values": [], "hasMore": False}
     }
+
+
+async def test_streamable_http_builtin_prompts_return_contextual_results(
+    hass, hass_client
+) -> None:
+    """Test built-in prompts over the real HA HTTP stack."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "transport": DEFAULT_TRANSPORT,
+            "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+        },
+        title="Home Assistant MCP",
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    hass.states.async_set(
+        "sensor.kitchen_temperature",
+        "21",
+        {
+            "friendly_name": "Kitchen Temperature",
+            "device_class": "temperature",
+        },
+    )
+
+    client = await hass_client()
+    create_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "1",
+            "method": "tools/call",
+            "params": {
+                "name": "lovelace.create_dashboard",
+                "arguments": {
+                    "dashboard_id": "main",
+                    "title": "Main",
+                    "url_path": "main",
+                    "views": [
+                        {
+                            "view_id": "overview",
+                            "title": "Overview",
+                            "path": "overview",
+                            "cards": [{"kind": "heading", "title": "Welcome"}],
+                        }
+                    ],
+                },
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert create_response.status == 200
+
+    review_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "2",
+            "method": "prompts/get",
+            "params": {
+                "name": "dashboard.review",
+                "arguments": {"dashboard_id": "main"},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert review_response.status == 200
+    review_payload = await review_response.json()
+    review_text = review_payload["result"]["messages"][0]["content"]["text"]
+    assert "hass://dashboard/main" in review_text
+    assert '"view_id": "overview"' in review_text
+
+    mapping_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "3",
+            "method": "prompts/get",
+            "params": {
+                "name": "dashboard.entity_card_mapping",
+                "arguments": {"entity_id": "sensor.kitchen_temperature"},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert mapping_response.status == 200
+    mapping_payload = await mapping_response.json()
+    mapping_text = mapping_payload["result"]["messages"][0]["content"]["text"]
+    assert "gauge" in mapping_text
+    assert "tile" in mapping_text
+
+    missing_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "4",
+            "method": "prompts/get",
+            "params": {
+                "name": "dashboard.review",
+                "arguments": {"dashboard_id": "missing"},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert missing_response.status == 400
+    missing_payload = await missing_response.json()
+    assert missing_payload["error"]["code"] == -32602
 
 
 async def test_streamable_http_builtin_resources_return_json_payloads(

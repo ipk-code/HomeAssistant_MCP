@@ -134,7 +134,16 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
                 }
             ],
         )
-        self.assertEqual(runtime.prompts.list_prompts(), [])
+        self.assertEqual(
+            [item["name"] for item in runtime.prompts.list_prompts()],
+            [
+                "dashboard.builder",
+                "dashboard.review",
+                "dashboard.layout_consistency_review",
+                "dashboard.entity_card_mapping",
+                "dashboard.cleanup_audit",
+            ],
+        )
         self.assertEqual(
             runtime.completions.complete(
                 {"name": "dashboard.review"},
