@@ -68,6 +68,9 @@ class MetadataTests(unittest.TestCase):
         self.assertIn("oauth: false", opencode)
         self.assertIn("Home Assistant long-lived access token", readme)
         self.assertIn("Home Assistant long-lived access token", opencode)
+        self.assertIn("completion/complete", readme)
+        self.assertIn("completion/complete", overview)
+        self.assertIn("completion/complete", opencode)
 
     def test_docs_publish_stable_v1_capability_summary(self) -> None:
         readme = README_PATH.read_text(encoding="utf-8")
@@ -90,3 +93,7 @@ class MetadataTests(unittest.TestCase):
         for tool_name in expected_tools:
             self.assertIn(tool_name, readme)
             self.assertIn(tool_name, tools_doc)
+
+        self.assertIn(
+            "entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon`", readme
+        )

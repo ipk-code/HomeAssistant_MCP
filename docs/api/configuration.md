@@ -25,6 +25,7 @@ There are no user-editable options in v1.
 - `max_request_bytes`: `1048576` (1 MiB)
 - `discovery_default_limit`: `100`
 - `discovery_max_limit`: `200`
+- `completion_max_values`: `25`
 - `single_config_entry`: `true`
 - `requires_home_assistant_auth`: `true`
 - `open_code_oauth_mode`: `false` recommended for the current token-based setup
@@ -35,6 +36,7 @@ There are no user-editable options in v1.
 - Keep the default YAML dashboard mode.
 - Run only a single config entry.
 - Use discovery tool `limit` arguments when clients do not need the full result set.
+- Pass current tool arguments in the MCP completion `ref.arguments` payload when completing dependent identifiers like `view_id` or `card_id`.
 - Use HTTPS for remote access.
 - Pass the Home Assistant token through the MCP client configuration instead of hardcoding it.
 
@@ -44,5 +46,5 @@ There are no user-editable options in v1.
 - No SSE transport yet
 - No user-facing options flow yet
 - Storage directory and request-size limit are internal constants, not UI-configurable
-- No built-in resources, prompts, or completions registered yet
+- No built-in resources or prompts registered yet
 - No OAuth flow yet for browser-style MCP clients

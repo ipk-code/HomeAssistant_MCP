@@ -223,6 +223,152 @@ async def test_streamable_http_supports_phase2_capability_methods(
     }
 
 
+async def test_streamable_http_builtin_completions_return_contextual_results(
+    hass, hass_client
+) -> None:
+    """Test authenticated built-in completion providers over the real HA stack."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "transport": DEFAULT_TRANSPORT,
+            "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+        },
+        title="Home Assistant MCP",
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    hass.states.async_set(
+        "sensor.kitchen_temperature",
+        "21",
+        {"friendly_name": "Kitchen Temperature"},
+    )
+
+    client = await hass_client()
+    create_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "1",
+            "method": "tools/call",
+            "params": {
+                "name": "lovelace.create_dashboard",
+                "arguments": {
+                    "dashboard_id": "main",
+                    "title": "Main",
+                    "url_path": "main",
+                    "views": [
+                        {
+                            "view_id": "overview",
+                            "title": "Overview",
+                            "path": "overview",
+                            "cards": [{"kind": "heading", "title": "Welcome"}],
+                        }
+                    ],
+                },
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert create_response.status == 200
+    create_payload = await create_response.json()
+    card_id = _decode_tool_result(create_payload)["views"][0]["cards"][0]["card_id"]
+
+    entity_completion = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "2",
+            "method": "completion/complete",
+            "params": {
+                "ref": {"name": "lovelace.create_card"},
+                "argument": {"name": "entity_id", "value": "sensor.k"},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert entity_completion.status == 200
+    entity_payload = await entity_completion.json()
+    assert entity_payload["result"]["completion"]["values"] == [
+        "sensor.kitchen_temperature"
+    ]
+
+    dashboard_completion = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "3",
+            "method": "completion/complete",
+            "params": {
+                "ref": {"name": "lovelace.get_dashboard"},
+                "argument": {"name": "dashboard_id", "value": "ma"},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert dashboard_completion.status == 200
+    dashboard_payload = await dashboard_completion.json()
+    assert dashboard_payload["result"]["completion"]["values"] == ["main"]
+
+    view_completion = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "4",
+            "method": "completion/complete",
+            "params": {
+                "ref": {
+                    "name": "lovelace.get_view",
+                    "arguments": {"dashboard_id": "main"},
+                },
+                "argument": {"name": "view_id", "value": "ov"},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert view_completion.status == 200
+    view_payload = await view_completion.json()
+    assert view_payload["result"]["completion"]["values"] == ["overview"]
+
+    card_completion = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "5",
+            "method": "completion/complete",
+            "params": {
+                "ref": {
+                    "name": "lovelace.get_card",
+                    "arguments": {"dashboard_id": "main", "view_id": "overview"},
+                },
+                "argument": {"name": "card_id", "value": card_id[:8]},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert card_completion.status == 200
+    card_payload = await card_completion.json()
+    assert card_payload["result"]["completion"]["values"] == [card_id]
+
+    icon_completion = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "6",
+            "method": "completion/complete",
+            "params": {
+                "ref": {"name": "lovelace.create_dashboard"},
+                "argument": {"name": "icon", "value": "mdi:th"},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert icon_completion.status == 200
+    icon_payload = await icon_completion.json()
+    assert icon_payload["result"]["completion"]["values"] == ["mdi:thermometer"]
+
+
 async def test_streamable_http_hass_discovery_tools_return_valid_results(
     hass, hass_client
 ) -> None:

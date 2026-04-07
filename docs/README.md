@@ -40,5 +40,6 @@ This directory contains the user and contributor documentation for `HomeAssistan
 - stateless Streamable HTTP transport first
 - standard Home Assistant auth with bearer tokens for remote access
 - read-only `hass.*` discovery tools with bounded result sets
+- built-in completions for common Home Assistant and Lovelace identifiers
 - typed card helpers only
 - RFC 6902 JSON Patch for dashboard patch operations

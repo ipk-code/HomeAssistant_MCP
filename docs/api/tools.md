@@ -47,7 +47,8 @@ The stable v1 tool surface currently spans the read-only `hass.*` namespace and 
 ## Stability
 
 - All tools listed here are part of the stable v1 dashboard authoring and read-only discovery surface.
-- Resources, prompts, and completions are not shipped yet.
+- Built-in completions are available for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon`.
+- Resources and prompts are not shipped yet.
 
 ## Source Of Truth
 

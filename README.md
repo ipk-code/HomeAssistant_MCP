@@ -79,7 +79,8 @@ OpenCode can connect as a remote MCP client with a Home Assistant long-lived acc
 | Dashboard tools | Stable in v1 | Includes `lovelace.list_dashboards`, `lovelace.get_dashboard`, `lovelace.create_dashboard`, `lovelace.update_dashboard_metadata`, `lovelace.delete_dashboard`, `lovelace.patch_dashboard`, `lovelace.validate_dashboard` |
 | View tools | Stable in v1 | Includes `lovelace.list_views`, `lovelace.get_view`, `lovelace.create_view`, `lovelace.update_view`, `lovelace.delete_view` |
 | Card tools | Stable in v1 | Includes `lovelace.list_cards`, `lovelace.get_card`, `lovelace.create_card`, `lovelace.update_card`, `lovelace.delete_card` |
-| `resources/*`, `prompts/*`, `completion/complete` | Foundation shipped | Transport methods are available, but the built-in registries are empty until later phases |
+| `completion/complete` | Stable in v1 | Built-in completions are available for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon` |
+| `resources/*`, `prompts/*` | Foundation shipped | Transport methods are available, but the built-in registries are still empty |
 | OAuth browser-client flow | Not shipped yet | Current deployment uses Home Assistant token auth |
 
 ## Stable And Planned Scope
@@ -88,6 +89,7 @@ Stable in v1:
 
 - typed Lovelace dashboard, view, and card operations
 - read-only `hass.*` discovery tools with bounded result sizes
+- built-in completions for common Home Assistant and Lovelace identifiers
 - bundled contract-driven tool schemas
 - stateless Streamable HTTP transport
 - Home Assistant-authenticated remote access
@@ -96,7 +98,6 @@ Not available yet:
 
 - built-in MCP resources
 - built-in MCP prompts
-- built-in MCP completions
 - SSE or other stateful transports
 
 ## FAQ

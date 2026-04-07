@@ -225,6 +225,35 @@ class TransportTests(unittest.TestCase):
         assert response is not None
         self.assertEqual(response["error"]["code"], -32602)
 
+    def test_completion_transport_limits_provider_output(self) -> None:
+        completions = CompletionRegistry()
+        completions.register(
+            argument_name="entity_id",
+            provider=lambda ref, argument: {
+                "values": [f"sensor.item_{index}" for index in range(40)],
+                "hasMore": False,
+            },
+        )
+        transport = StatelessMCPTransport(
+            self.transport._registry, completions=completions
+        )
+
+        status, response = transport.handle_jsonrpc_message(
+            {
+                "jsonrpc": "2.0",
+                "id": "4",
+                "method": "completion/complete",
+                "params": {
+                    "ref": {"name": "dashboard.review"},
+                    "argument": {"name": "entity_id", "value": "sensor."},
+                },
+            }
+        )
+        self.assertEqual(status, 200)
+        assert response is not None
+        self.assertEqual(len(response["result"]["completion"]["values"]), 25)
+        self.assertTrue(response["result"]["completion"]["hasMore"])
+
     def test_tools_call_round_trip(self) -> None:
         create_status, create_response = self.transport.handle_jsonrpc_message(
             {

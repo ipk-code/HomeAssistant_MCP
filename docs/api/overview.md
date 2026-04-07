@@ -24,7 +24,7 @@
 | Lovelace dashboard tools | Stable in v1 | Dashboard, view, and card CRUD plus validation and patching |
 | Resources | Foundation shipped | `resources/list` and `resources/read` are available, but no built-in resources are registered yet |
 | Prompts | Foundation shipped | `prompts/list` and `prompts/get` are available, but no built-in prompts are registered yet |
-| Completions | Foundation shipped | `completion/complete` is available, but no built-in completion providers are registered yet |
+| Completions | Stable in v1 | `completion/complete` provides built-in suggestions for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon` |
 | OAuth client flow | Not shipped yet | Current remote setup uses bearer tokens |
 
 ## Design Boundaries

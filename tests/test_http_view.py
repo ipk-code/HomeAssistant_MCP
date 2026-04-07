@@ -124,6 +124,13 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
             ),
             {"values": [], "hasMore": False},
         )
+        self.assertEqual(
+            runtime.completions.complete(
+                {"name": "dashboard.review"},
+                {"name": "icon", "value": "mdi:th"},
+            )["values"],
+            ["mdi:thermometer"],
+        )
         self.assertTrue(
             any(
                 f"Loaded Home Assistant MCP version {INTEGRATION_VERSION} entry" in line

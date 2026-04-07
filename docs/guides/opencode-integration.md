@@ -81,7 +81,14 @@ Expected runtime behavior:
 - an authenticated MCP `initialize` request returns `Home Assistant MCP`
 - `tools/list` returns the stable `lovelace.*` and `hass.*` tool catalog
 - `resources/list` and `prompts/list` currently return empty lists until later phases add built-in definitions
-- `completion/complete` is available but currently returns empty suggestions unless a future phase registers providers
+- `completion/complete` returns built-in suggestions for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon`
+
+## Completion Context
+
+The completion endpoint can use the current tool arguments as context. For dependent identifiers:
+
+- pass `ref.arguments.dashboard_id` when completing `view_id`
+- pass `ref.arguments.dashboard_id` and `ref.arguments.view_id` when completing `card_id`
 
 ## Example Prompts
 
@@ -109,6 +116,12 @@ Example 3:
 
 ```text
 Use homeassistant_mcp to patch the dashboard main and rename the first view to Living Room.
+```
+
+Example 4:
+
+```text
+Use homeassistant_mcp completion support to suggest the right `entity_id` and `icon` values while creating a new tile card.
 ```
 
 ## Example AGENTS.md Rule

@@ -51,6 +51,10 @@ class HomeAssistantDiscoveryProvider:
         items, truncated = self._apply_limit(entities, limit)
         return {"entities": items, "truncated": truncated}
 
+    def list_entity_ids(self) -> list[str]:
+        """Return all known entity IDs sorted for completion providers."""
+        return sorted(state.entity_id for state in self._hass.states.async_all())
+
     def search_entities(self, arguments: dict[str, Any]) -> dict[str, Any]:
         """Search entities by query with optional filters."""
         query = arguments["query"].casefold()

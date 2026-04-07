@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import unittest
 
-from custom_components.homeassistant_mcp.mcp.completions import CompletionRegistry
+from custom_components.homeassistant_mcp.mcp.completions import (
+    CompletionRegistry,
+    MAX_COMPLETION_VALUES,
+)
 from custom_components.homeassistant_mcp.mcp.prompts import (
     PromptArgument,
     PromptDefinition,
@@ -123,3 +126,24 @@ class CompletionRegistryTests(unittest.TestCase):
             registry.complete({"name": "dashboard.review"}, {"name": "dashboard_id"}),
             {"values": [], "hasMore": False},
         )
+
+    def test_completion_registry_normalizes_duplicates_and_caps_values(self) -> None:
+        registry = CompletionRegistry()
+        registry.register(
+            argument_name="entity_id",
+            provider=lambda ref, argument: {
+                "values": ["sensor.duplicate", "sensor.duplicate"]
+                + [
+                    f"sensor.item_{index}" for index in range(MAX_COMPLETION_VALUES + 2)
+                ],
+                "hasMore": False,
+            },
+        )
+
+        result = registry.complete(
+            {"name": "dashboard.review"},
+            {"name": "entity_id", "value": "sensor."},
+        )
+        self.assertEqual(len(result["values"]), MAX_COMPLETION_VALUES)
+        self.assertEqual(result["values"][0], "sensor.duplicate")
+        self.assertTrue(result["hasMore"])

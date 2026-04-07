@@ -69,6 +69,12 @@ class ToolRegistryTests(unittest.TestCase):
         devices = self.registry.call("hass.list_devices", {})
         self.assertEqual(devices["devices"][0]["device_id"], "device-1")
 
+    def test_registry_without_discovery_rejects_hass_calls(self) -> None:
+        repository = YamlDashboardRepository(self.tempdir.name)
+        registry = ToolRegistry(repository)
+        with self.assertRaisesRegex(KeyError, "discovery provider is unavailable"):
+            registry.call("hass.list_entities", {})
+
     def test_registry_dispatches_dashboard_and_card_calls(self) -> None:
         dashboard = self.registry.call(
             "lovelace.create_dashboard",
