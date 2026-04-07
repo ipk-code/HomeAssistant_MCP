@@ -25,6 +25,9 @@ addopts = "-ra"
 include = ["custom_components*"]
 exclude = ["docs*", "specs*", "tests*", "lru*"]
 
+[tool.setuptools.package-data]
+"custom_components.homeassistant_mcp" = ["*.json", "translations/*.json"]
+
 [tool.unittest]
 start-directory = "tests"
 pattern = "test_*.py"

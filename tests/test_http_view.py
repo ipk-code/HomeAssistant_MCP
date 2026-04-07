@@ -9,8 +9,16 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from custom_components.homeassistant_mcp import async_setup, async_setup_entry, async_unload_entry
-from custom_components.homeassistant_mcp.const import DOMAIN, STORAGE_DIRECTORY, STREAMABLE_HTTP_API
+from custom_components.homeassistant_mcp import (
+    async_setup,
+    async_setup_entry,
+    async_unload_entry,
+)
+from custom_components.homeassistant_mcp.const import (
+    DOMAIN,
+    STORAGE_DIRECTORY,
+    STREAMABLE_HTTP_API,
+)
 from custom_components.homeassistant_mcp.http import (
     KEY_HASS,
     HomeAssistantMCPStreamableView,
@@ -40,6 +48,11 @@ class _FakeHass:
         self.data = {}
         self.http = _FakeHTTP()
         self.config = _FakeConfig(root)
+        self.executor_jobs = []
+
+    async def async_add_executor_job(self, target, *args):
+        self.executor_jobs.append((target, args))
+        return target(*args)
 
 
 class _FakeEntry:
@@ -48,7 +61,9 @@ class _FakeEntry:
 
 
 class _FakeRequest:
-    def __init__(self, hass, *, body: dict | str, accept: str = "application/json") -> None:
+    def __init__(
+        self, hass, *, body: dict | str, accept: str = "application/json"
+    ) -> None:
         self.app = {KEY_HASS: hass}
         self.headers = {"accept": accept}
         self.content_type = "application/json"
@@ -84,19 +99,33 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_setup_entry_creates_runtime_in_storage_directory(self) -> None:
         await async_setup(self.hass, {})
-        with self.assertLogs("custom_components.homeassistant_mcp", level="INFO") as captured:
+        with self.assertLogs(
+            "custom_components.homeassistant_mcp", level="INFO"
+        ) as captured:
             await async_setup_entry(self.hass, self.entry)
 
         runtime = self.hass.data[DOMAIN][self.entry.entry_id]
-        expected_root = Path(self.tempdir.name) / STORAGE_DIRECTORY / self.entry.entry_id
+        expected_root = (
+            Path(self.tempdir.name) / STORAGE_DIRECTORY / self.entry.entry_id
+        )
         self.assertEqual(runtime.root_path, expected_root)
+        self.assertEqual(len(self.hass.executor_jobs), 1)
         self.assertIs(get_runtime(self.hass), runtime)
-        self.assertTrue(any("Loaded Home Assistant MCP entry" in line for line in captured.output))
+        self.assertTrue(
+            any("Loaded Home Assistant MCP entry" in line for line in captured.output)
+        )
 
-        with self.assertLogs("custom_components.homeassistant_mcp", level="INFO") as unload_logs:
+        with self.assertLogs(
+            "custom_components.homeassistant_mcp", level="INFO"
+        ) as unload_logs:
             await async_unload_entry(self.hass, self.entry)
         self.assertEqual(self.hass.data[DOMAIN], {})
-        self.assertTrue(any("Unloaded Home Assistant MCP entry" in line for line in unload_logs.output))
+        self.assertTrue(
+            any(
+                "Unloaded Home Assistant MCP entry" in line
+                for line in unload_logs.output
+            )
+        )
 
     async def test_post_round_trip_to_transport(self) -> None:
         await async_setup(self.hass, {})
@@ -143,7 +172,12 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
         response = await view.post(
             _FakeRequest(
                 self.hass,
-                body={"jsonrpc": "2.0", "id": "1", "method": "tools/list", "params": {}},
+                body={
+                    "jsonrpc": "2.0",
+                    "id": "1",
+                    "method": "tools/list",
+                    "params": {},
+                },
             )
         )
         self.assertEqual(response.status, 404)

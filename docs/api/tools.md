@@ -28,4 +28,4 @@
 
 ## Source Of Truth
 
-The exact v1 schemas live in `specs/lovelace_mcp_api_v1.json`.
+The exact v1 schemas live in `custom_components/homeassistant_mcp/lovelace_mcp_api_v1.json`.

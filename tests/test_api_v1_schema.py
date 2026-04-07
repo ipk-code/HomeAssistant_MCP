@@ -8,7 +8,9 @@ import unittest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SPEC_PATH = REPO_ROOT / "specs" / "lovelace_mcp_api_v1.json"
+SPEC_PATH = (
+    REPO_ROOT / "custom_components" / "homeassistant_mcp" / "lovelace_mcp_api_v1.json"
+)
 
 
 class ToolContractSchemaTests(unittest.TestCase):

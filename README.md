@@ -13,7 +13,7 @@ Home Assistant custom integration for MCP-driven Lovelace dashboard authoring.
 ## Repository Layout
 
 - `custom_components/homeassistant_mcp/`: integration source code
-- `specs/lovelace_mcp_api_v1.json`: source of truth for the v1 tool contract
+- `custom_components/homeassistant_mcp/lovelace_mcp_api_v1.json`: source of truth for the v1 tool contract bundled with the integration
 - `tests/`: unit tests for validation, patching, repository behavior, and transport handling
 - `docs/`: project documentation and contributor guidance
 

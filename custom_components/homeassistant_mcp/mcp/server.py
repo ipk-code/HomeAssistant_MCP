@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
+from importlib import resources
 import json
 from pathlib import Path
 from typing import Any
 
 from ..lovelace.repository import YamlDashboardRepository
 from .schema import ToolSchemaValidator
+
+_API_CONTRACT_FILE = "lovelace_mcp_api_v1.json"
 
 
 @dataclass(frozen=True)
@@ -22,12 +26,39 @@ class ToolContract:
     output_schema: dict[str, Any]
 
 
-def load_api_contract(spec_path: str | Path | None = None) -> tuple[dict[str, Any], list[ToolContract]]:
-    """Load the static v1 API contract from the repository spec."""
-    path = Path(spec_path) if spec_path else Path(__file__).resolve().parents[3] / "specs" / "lovelace_mcp_api_v1.json"
-    payload = json.loads(path.read_text(encoding="utf-8"))
+def _parse_api_contract(
+    payload: dict[str, Any],
+) -> tuple[dict[str, Any], list[ToolContract]]:
+    """Build the tool-contract objects from a parsed API document."""
     tools = [ToolContract(**tool) for tool in payload["tools"]]
     return payload, tools
+
+
+@lru_cache(maxsize=1)
+def _load_bundled_api_contract() -> tuple[dict[str, Any], list[ToolContract]]:
+    """Load the bundled v1 API contract once for the process lifetime."""
+    payload = json.loads(
+        resources.files("custom_components.homeassistant_mcp")
+        .joinpath(_API_CONTRACT_FILE)
+        .read_text(encoding="utf-8")
+    )
+    return _parse_api_contract(payload)
+
+
+def load_api_contract(
+    spec_path: str | Path | None = None,
+) -> tuple[dict[str, Any], list[ToolContract]]:
+    """Load the static v1 API contract.
+
+    By default, the contract is loaded from the bundled integration package.
+    ``spec_path`` remains available for tests and targeted overrides.
+    """
+    if spec_path is None:
+        return _load_bundled_api_contract()
+
+    path = Path(spec_path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return _parse_api_contract(payload)
 
 
 class ToolRegistry:
@@ -65,7 +96,9 @@ class ToolRegistry:
         if name == "lovelace.get_view":
             return {
                 "dashboard_id": arguments["dashboard_id"],
-                "view": self._repository.get_view(arguments["dashboard_id"], arguments["view_id"]),
+                "view": self._repository.get_view(
+                    arguments["dashboard_id"], arguments["view_id"]
+                ),
             }
         if name == "lovelace.create_view":
             view, version = self._repository.create_view(
@@ -102,14 +135,18 @@ class ToolRegistry:
             return {
                 "dashboard_id": arguments["dashboard_id"],
                 "view_id": arguments["view_id"],
-                "cards": self._repository.list_cards(arguments["dashboard_id"], arguments["view_id"]),
+                "cards": self._repository.list_cards(
+                    arguments["dashboard_id"], arguments["view_id"]
+                ),
             }
         if name == "lovelace.get_card":
             return {
                 "dashboard_id": arguments["dashboard_id"],
                 "view_id": arguments["view_id"],
                 "card": self._repository.get_card(
-                    arguments["dashboard_id"], arguments["view_id"], arguments["card_id"]
+                    arguments["dashboard_id"],
+                    arguments["view_id"],
+                    arguments["card_id"],
                 ),
             }
         if name == "lovelace.create_card":

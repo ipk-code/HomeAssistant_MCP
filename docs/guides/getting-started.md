@@ -3,7 +3,7 @@
 ## Repository Layout
 
 - `custom_components/homeassistant_mcp/`: integration source
-- `specs/`: static v1 MCP tool contract
+- `custom_components/homeassistant_mcp/lovelace_mcp_api_v1.json`: bundled v1 MCP tool contract
 - `tests/`: unit tests
 - `docs/`: repository documentation
 
