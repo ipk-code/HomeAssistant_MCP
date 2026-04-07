@@ -25,11 +25,15 @@ except ModuleNotFoundError:  # pragma: no cover - exercised in unit tests only
 
     class _FallbackWeb:
         @staticmethod
-        def json_response(*, data: Any, status: int = HTTPStatus.OK) -> _FallbackResponse:
+        def json_response(
+            *, data: Any, status: int = HTTPStatus.OK
+        ) -> _FallbackResponse:
             return _FallbackResponse(status=status, data=data)
 
         @staticmethod
-        def Response(*, status: int = HTTPStatus.OK, text: str = "") -> _FallbackResponse:
+        def Response(
+            *, status: int = HTTPStatus.OK, text: str = ""
+        ) -> _FallbackResponse:
             return _FallbackResponse(status=status, data=text)
 
     web = _FallbackWeb()  # type: ignore[assignment]
@@ -39,7 +43,8 @@ except ModuleNotFoundError:  # pragma: no cover - exercised in unit tests only
         url = ""
         requires_auth = True
 
-from .const import DOMAIN, STREAMABLE_HTTP_API
+
+from .const import DOMAIN, INTEGRATION_VERSION, STREAMABLE_HTTP_API
 from .runtime import IntegrationRuntime
 
 _LOGGER = logging.getLogger(__name__)
@@ -52,7 +57,11 @@ def async_register(hass: Any) -> None:
         return
     hass.http.register_view(HomeAssistantMCPStreamableView())
     hass.data[f"{DOMAIN}_http_registered"] = True
-    _LOGGER.debug("Registered Home Assistant MCP HTTP view at %s", STREAMABLE_HTTP_API)
+    _LOGGER.info(
+        "Registered Home Assistant MCP HTTP view version %s at %s",
+        INTEGRATION_VERSION,
+        STREAMABLE_HTTP_API,
+    )
 
 
 def get_runtime(hass: Any) -> IntegrationRuntime:

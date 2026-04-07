@@ -25,6 +25,7 @@ OVERVIEW_PATH = REPO_ROOT / "docs" / "api" / "overview.md"
 CONFIG_PATH = REPO_ROOT / "docs" / "api" / "configuration.md"
 TOOLS_PATH = REPO_ROOT / "docs" / "api" / "tools.md"
 OPENCODE_PATH = REPO_ROOT / "docs" / "guides" / "opencode-integration.md"
+CHANGELOG_PATH = REPO_ROOT / "CHANGELOG.md"
 
 
 class MetadataTests(unittest.TestCase):
@@ -48,6 +49,8 @@ class MetadataTests(unittest.TestCase):
             f"Current integration version in this repository: `{INTEGRATION_VERSION}`",
             install_guide,
         )
+        changelog = CHANGELOG_PATH.read_text(encoding="utf-8")
+        self.assertIn(f"## {INTEGRATION_VERSION}", changelog)
 
     def test_docs_publish_current_endpoint_and_auth_model(self) -> None:
         readme = README_PATH.read_text(encoding="utf-8")
@@ -105,3 +108,27 @@ class MetadataTests(unittest.TestCase):
         )
         self.assertIn("hass://dashboard/{dashboard_id}", readme)
         self.assertIn("dashboard.review", readme)
+
+    def test_release_notes_and_status_docs_reflect_current_release(self) -> None:
+        readme = README_PATH.read_text(encoding="utf-8")
+        docs_index = DOCS_INDEX_PATH.read_text(encoding="utf-8")
+        overview = OVERVIEW_PATH.read_text(encoding="utf-8")
+        config = CONFIG_PATH.read_text(encoding="utf-8")
+        install_guide = INSTALL_GUIDE_PATH.read_text(encoding="utf-8")
+        changelog = CHANGELOG_PATH.read_text(encoding="utf-8")
+
+        self.assertIn(f"Latest release: `{INTEGRATION_VERSION}`", readme)
+        self.assertIn("Highlights in `0.2.0` compared with `0.1.1`", readme)
+        self.assertIn("experimental in `0.2.0`: none", docs_index)
+        self.assertIn(
+            "planned next: SSE transport and optional OAuth evaluation", docs_index
+        )
+        self.assertIn("Capability Status", overview)
+        self.assertIn("Capability Status", config)
+        self.assertIn(
+            f"Home Assistant MCP server version {INTEGRATION_VERSION} started successfully",
+            install_guide,
+        )
+        self.assertIn("read-only `hass.*` discovery tools", changelog)
+        self.assertIn("built-in MCP resources", changelog)
+        self.assertIn("built-in dashboard-focused prompts", changelog)

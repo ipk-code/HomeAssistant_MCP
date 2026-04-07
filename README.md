@@ -2,7 +2,7 @@
 
 Home Assistant custom integration for MCP-driven Lovelace dashboard authoring.
 
-Current integration version: `0.1.1`
+Current integration version: `0.2.0`
 
 ## What It Does
 
@@ -46,7 +46,21 @@ HACS flow:
 3. Search for `Home Assistant MCP`.
 4. Complete the config flow.
 
-After setup, the integration logs `Loaded Home Assistant MCP version 0.1.1 entry ...` when the config entry is active.
+After setup, the integration logs `Loaded Home Assistant MCP version 0.2.0 entry ...` and `Home Assistant MCP server version 0.2.0 started successfully ...` when the config entry is active.
+
+## Release Notes
+
+Latest release: `0.2.0`
+
+Highlights in `0.2.0` compared with `0.1.1`:
+
+- added read-only `hass.*` discovery tools for entities, services, areas, and devices
+- added built-in completions for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon`
+- added built-in MCP resources for Home Assistant context and managed dashboards
+- added built-in dashboard-focused prompts
+- improved startup logging so Home Assistant shows the loaded version and a clear MCP server started message
+
+Full release notes: `CHANGELOG.md`
 
 ## Use With OpenCode
 
@@ -84,9 +98,9 @@ OpenCode can connect as a remote MCP client with a Home Assistant long-lived acc
 | `prompts/list`, `prompts/get` | Stable in v1 | Built-in prompts include `dashboard.builder`, `dashboard.review`, `dashboard.layout_consistency_review`, `dashboard.entity_card_mapping`, and `dashboard.cleanup_audit` |
 | OAuth browser-client flow | Not shipped yet | Current deployment uses Home Assistant token auth |
 
-## Stable And Planned Scope
+## Capability Status
 
-Stable in v1:
+Stable in `0.2.0`:
 
 - typed Lovelace dashboard, view, and card operations
 - read-only `hass.*` discovery tools with bounded result sizes
@@ -97,9 +111,14 @@ Stable in v1:
 - stateless Streamable HTTP transport
 - Home Assistant-authenticated remote access
 
-Not available yet:
+Experimental in `0.2.0`:
+
+- none
+
+Planned next:
 
 - SSE or other stateful transports
+- optional OAuth evaluation for browser-style MCP clients
 
 ## FAQ
 
@@ -124,7 +143,7 @@ No. The recommended OpenCode setup keeps `oauth: false` and sends a Home Assista
 ## Troubleshooting
 
 - Enable `custom_components.homeassistant_mcp: debug` in the Home Assistant logger when diagnosing setup or request issues.
-- Verify the active build in Home Assistant logs with `Loaded Home Assistant MCP version 0.1.1 entry ...`.
+- Verify the active build in Home Assistant logs with `Loaded Home Assistant MCP version 0.2.0 entry ...` and `Home Assistant MCP server version 0.2.0 started successfully ...`.
 - Confirm clients use `POST` requests to `/api/homeassistant_mcp`.
 - Confirm remote clients send a valid Home Assistant bearer token.
 

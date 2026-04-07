@@ -66,6 +66,10 @@ class CompletionRegistry:
             return {"values": [], "hasMore": False}
         return _normalize_completion_result(provider(ref, argument))
 
+    def provider_count(self) -> int:
+        """Return the number of registered completion providers."""
+        return len(self._providers)
+
 
 def register_builtin_completions(
     registry: CompletionRegistry,

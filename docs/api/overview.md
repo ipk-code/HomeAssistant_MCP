@@ -45,6 +45,12 @@
 - Requests are handled as stateless JSON-RPC messages over HTTP `POST`.
 - Resources, prompts, and completions are provided by dedicated registries so new capabilities can be added without rewriting the transport.
 
+## Capability Status
+
+- stable in `0.2.0`: discovery tools, typed Lovelace tools, completions, resources, prompts, and stateless HTTP transport
+- experimental in `0.2.0`: none
+- planned next: SSE transport and optional OAuth evaluation
+
 ## Main Layers
 
 - `lovelace/validation.py`: input and domain validation

@@ -49,3 +49,9 @@ There are no user-editable options in v1.
 - No user-facing options flow yet
 - Storage directory and request-size limit are internal constants, not UI-configurable
 - No OAuth flow yet for browser-style MCP clients
+
+## Capability Status
+
+- stable in `0.2.0`: discovery tools, typed Lovelace tools, completions, resources, prompts, and stateless HTTP transport
+- experimental in `0.2.0`: none
+- planned next: SSE transport and optional OAuth evaluation

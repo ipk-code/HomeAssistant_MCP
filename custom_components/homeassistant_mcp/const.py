@@ -2,7 +2,7 @@
 
 DOMAIN = "homeassistant_mcp"
 TITLE = "Home Assistant MCP"
-INTEGRATION_VERSION = "0.1.1"
+INTEGRATION_VERSION = "0.2.0"
 API_VERSION = "1.0.0"
 DEFAULT_TRANSPORT = "streamable_http_stateless"
 DEFAULT_DASHBOARD_MODE = "yaml"

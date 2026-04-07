@@ -9,6 +9,7 @@
 - Minimize privilege and surface area for mutations.
 - Return controlled error messages to clients.
 - Write files atomically to prevent partial state corruption.
+- Keep prompts, resources, and completions advisory or read-only.
 
 ## Current Controls
 
@@ -19,11 +20,15 @@
 - JSON Patch cannot mutate immutable identity fields.
 - Mutation calls support `expected_version` for optimistic concurrency.
 - Unexpected transport exceptions return a generic internal error.
+- Discovery results, completion suggestions, and prompt summaries are bounded.
+- Built-in resources expose only Home Assistant context and managed dashboards.
+- Built-in prompts guide clients toward existing typed tools and resources instead of hidden operations.
 
 ## Review Checklist
 
 - Is user input validated for type, length, and allowed keys?
 - Can any mutation escape the intended dashboard document scope?
+- Can any read-only capability expose more entities, dashboards, or prompt context than intended?
 - Can a failed write leave corrupted state behind?
 - Does an error leak implementation details or internal paths?
 - Do tests cover both valid and malicious inputs?

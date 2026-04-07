@@ -25,6 +25,7 @@ This directory contains the user and contributor documentation for `HomeAssistan
 
 - `CONTRIBUTING.md`: contribution and development workflow
 - `CODE_OF_CONDUCT.md`: contributor behavior expectations
+- `../CHANGELOG.md`: release notes and version-to-version feature changes
 
 ## Audience
 
@@ -45,3 +46,9 @@ This directory contains the user and contributor documentation for `HomeAssistan
 - built-in dashboard-focused MCP prompts
 - typed card helpers only
 - RFC 6902 JSON Patch for dashboard patch operations
+
+## Capability Status
+
+- stable in `0.2.0`: discovery tools, typed Lovelace tools, completions, resources, prompts, and stateless HTTP transport
+- experimental in `0.2.0`: none
+- planned next: SSE transport and optional OAuth evaluation

@@ -10,7 +10,7 @@
 ## Local Test Command
 
 ```bash
-python3 -m unittest discover -s tests -p "test_*.py"
+python3 -m pytest tests -vv
 ```
 
 ## Real Home Assistant Test Setup
@@ -41,9 +41,9 @@ python3 -m pytest tests/components/homeassistant_mcp -vv
 
 ## Current Development Focus
 
-1. Expand Home Assistant integration behavior beyond the current stateless endpoint.
-2. Add more integration-level tests around Home Assistant views and runtime wiring.
-3. Keep YAML dashboard mutations secure and deterministic.
+1. Keep the stable dashboard-first MCP surface documented and test-covered.
+2. Preserve the read-only guarantees for discovery, resources, completions, and prompts.
+3. Evaluate future SSE and optional OAuth work without weakening the current Home Assistant auth model.
 
 ## Notes
 
