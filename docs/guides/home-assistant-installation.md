@@ -26,7 +26,21 @@ Current integration version in this repository: `0.1.1`
 
 The current config flow creates one default entry with the recommended defaults.
 
-## After Installation
+## Verify The Integration Is Loaded
+
+Expected Home Assistant behavior after setup:
+
+- the endpoint `/api/homeassistant_mcp` exists
+- `POST` requests require Home Assistant authentication
+- the logs show `Loaded Home Assistant MCP version 0.1.1 entry ...`
+
+Quick checks:
+
+- `401 Unauthorized` on `POST /api/homeassistant_mcp` means the view is loaded and auth is active
+- `405 Method Not Allowed` on `GET /api/homeassistant_mcp` means the view is loaded but `GET` is not supported
+- `404 Not Found` means the integration is not loaded or the URL is wrong
+
+## Runtime Details
 
 - The MCP stateless HTTP endpoint is exposed at `/api/homeassistant_mcp`.
 - Standard Home Assistant HTTP authentication still applies.
@@ -56,6 +70,7 @@ This integration uses Home Assistant-style logging levels:
 - If setup fails, confirm Home Assistant is running the latest integration files from this repository and then restart Home Assistant.
 - `404 Not Found` on `/api/homeassistant_mcp` means the integration has not finished loading.
 - `401 Unauthorized` on `/api/homeassistant_mcp` means the HTTP view is registered and Home Assistant auth is working as expected.
+- `405 Method Not Allowed` on `/api/homeassistant_mcp` means the endpoint is loaded and received `GET` instead of `POST`.
 - Check the Home Assistant log for `Loaded Home Assistant MCP version ...` to confirm which integration build is actually running after an update.
 
 ## Repository Readiness For HACS

@@ -7,6 +7,13 @@
 - A reachable Home Assistant base URL, for example `https://ha.example.com`
 - A Home Assistant long-lived access token
 
+## Current Connection Model
+
+- MCP endpoint: `/api/homeassistant_mcp`
+- Transport: `streamable_http_stateless`
+- Authentication: standard Home Assistant bearer token
+- OpenCode setting: `oauth: false`
+
 ## Create A Home Assistant Token
 
 1. Open Home Assistant.
@@ -67,6 +74,13 @@ Then start OpenCode in your project:
 opencode
 ```
 
+Expected runtime behavior:
+
+- the MCP server should appear in `opencode mcp list`
+- an unauthenticated direct HTTP request returns `401 Unauthorized`
+- an authenticated MCP `initialize` request returns `Home Assistant MCP`
+- `tools/list` returns the stable `lovelace.*` tool catalog
+
 ## Example Prompts
 
 Use the MCP server explicitly in prompts when helpful.
@@ -102,5 +116,6 @@ Prefer typed dashboard, view, and card operations over ad-hoc edits.
 
 - `401 Unauthorized`: the token is missing, invalid, or expired
 - `404 Not Found`: the integration is not loaded, or the base URL or endpoint is wrong
+- `405 Method Not Allowed`: the endpoint is loaded, but the request used `GET` instead of `POST`
 - timeout: increase the MCP timeout in `opencode.json`
 - no tools available: verify the server is enabled and reachable with `opencode mcp list`

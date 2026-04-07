@@ -1,31 +1,43 @@
 # Documentation
 
-This directory contains the working documentation for `HomeAssistant_MCP`.
+This directory contains the user and contributor documentation for `HomeAssistant_MCP`.
 
-## Contents
+## Start Here
+
+- `../README.md`: HACS-facing overview, install flow, capability summary, and FAQ
+- `guides/home-assistant-installation.md`: Home Assistant and HACS setup
+- `guides/opencode-integration.md`: OpenCode remote MCP setup and verification
+
+## API Docs
+
+- `api/overview.md`: MCP scope, design boundaries, and architecture layers
+- `api/configuration.md`: endpoint, auth model, defaults, and current limitations
+- `api/tools.md`: stable v1 Lovelace tool catalog
+
+## Guides
+
+- `guides/getting-started.md`: local setup and test workflow
+- `guides/home-assistant-installation.md`: HACS install, config entry setup, and troubleshooting
+- `guides/opencode-integration.md`: remote MCP client configuration and examples
+- `guides/security-model.md`: security assumptions and review checklist
+
+## Repository Docs
 
 - `CONTRIBUTING.md`: contribution and development workflow
 - `CODE_OF_CONDUCT.md`: contributor behavior expectations
-- `api/configuration.md`: current defaults, limits, and configuration behavior
-- `api/overview.md`: MCP API shape and transport scope
-- `api/tools.md`: v1 Lovelace tool catalog
-- `guides/getting-started.md`: local setup and test workflow
-- `guides/home-assistant-installation.md`: HACS and Home Assistant installation steps
-- `guides/opencode-integration.md`: OpenCode remote MCP setup and examples
-- `guides/security-model.md`: security assumptions and review checklist
 
 ## Audience
 
-- Home Assistant integrators who want to run the MCP server
-- Contributors implementing new tools or storage backends
+- Home Assistant users installing the MCP server from HACS
+- OpenCode users connecting to Home Assistant as a remote MCP client
+- Contributors implementing new tools, transports, or storage backends
 - Reviewers checking API compatibility, testing, and security constraints
 
-## Versioning
-
-The current implementation target is v1:
+## Current v1 Scope
 
 - Home Assistant custom integration
 - YAML dashboards only
 - stateless Streamable HTTP transport first
+- standard Home Assistant auth with bearer tokens for remote access
 - typed card helpers only
 - RFC 6902 JSON Patch for dashboard patch operations

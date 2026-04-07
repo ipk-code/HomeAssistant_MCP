@@ -6,6 +6,16 @@ The integration currently creates a single default config entry.
 
 There are no user-editable options in v1.
 
+## Endpoint And Auth Model
+
+| Setting | Value |
+|---|---|
+| HTTP endpoint | `/api/homeassistant_mcp` |
+| Transport | `streamable_http_stateless` |
+| Home Assistant auth | required |
+| OpenCode OAuth mode | `false` |
+| Remote token type | Home Assistant long-lived access token |
+
 ## Current Defaults
 
 - `transport`: `streamable_http_stateless`
@@ -22,6 +32,8 @@ There are no user-editable options in v1.
 - Keep the default stateless transport.
 - Keep the default YAML dashboard mode.
 - Run only a single config entry.
+- Use HTTPS for remote access.
+- Pass the Home Assistant token through the MCP client configuration instead of hardcoding it.
 
 ## Current Limitations
 
@@ -29,3 +41,5 @@ There are no user-editable options in v1.
 - No SSE transport yet
 - No user-facing options flow yet
 - Storage directory and request-size limit are internal constants, not UI-configurable
+- No MCP resources, prompts, or completions yet
+- No OAuth flow yet for browser-style MCP clients
