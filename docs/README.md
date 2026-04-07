@@ -26,6 +26,7 @@ This directory contains the user and contributor documentation for `HomeAssistan
 - `CONTRIBUTING.md`: contribution and development workflow
 - `CODE_OF_CONDUCT.md`: contributor behavior expectations
 - `../CHANGELOG.md`: release notes and version-to-version feature changes
+- `../icon.png` and `../icon.svg`: HACS repository icon assets
 
 ## Audience
 
@@ -49,6 +50,6 @@ This directory contains the user and contributor documentation for `HomeAssistan
 
 ## Capability Status
 
-- stable in `0.2.0`: discovery tools, typed Lovelace tools, completions, resources, prompts, and stateless HTTP transport
-- experimental in `0.2.0`: none
+- stable in `0.2.1`: discovery tools, typed Lovelace tools, completions, resources, prompts, stateless HTTP transport, and repository packaging assets
+- experimental in `0.2.1`: none
 - planned next: SSE transport and optional OAuth evaluation

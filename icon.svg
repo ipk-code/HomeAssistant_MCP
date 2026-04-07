@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Home Assistant MCP icon</title>
+  <desc id="desc">A playful Home Assistant house combined with MCP connection nodes and a smiling robot face.</desc>
+  <defs>
+    <linearGradient id="bg" x1="64" y1="64" x2="448" y2="448" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1fa0ff"/>
+      <stop offset="0.58" stop-color="#4361ee"/>
+      <stop offset="1" stop-color="#7b2cbf"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="128" y1="96" x2="384" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#10214a" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect x="32" y="32" width="448" height="448" rx="112" fill="url(#bg)"/>
+  <path d="M104 136c64-56 240-64 304 16 16 20 24 44 24 72v40c0 8-6 14-14 14H94c-8 0-14-6-14-14v-14c0-44 8-82 24-114z" fill="url(#gloss)"/>
+  <g filter="url(#shadow)">
+    <path d="M164 176 256 102l92 74v168c0 14-10 24-24 24H188c-14 0-24-10-24-24Z" fill="#ffffff"/>
+    <path d="M206 128h100c14 0 26 12 26 26v26l-76-62-76 62v-26c0-14 12-26 26-26z" fill="#dce9ff"/>
+    <path d="M256 88v-26" stroke="#d8f3ff" stroke-width="16" stroke-linecap="round"/>
+    <circle cx="256" cy="54" r="18" fill="#ffd166" stroke="#ffffff" stroke-width="8"/>
+    <line x1="210" y1="214" x2="256" y2="244" stroke="#223a6b" stroke-width="12" stroke-linecap="round"/>
+    <line x1="302" y1="214" x2="256" y2="244" stroke="#223a6b" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="210" cy="214" r="26" fill="#4cc9f0" stroke="#223a6b" stroke-width="10"/>
+    <circle cx="302" cy="214" r="26" fill="#ff7ab6" stroke="#223a6b" stroke-width="10"/>
+    <circle cx="256" cy="244" r="16" fill="#ffd166" stroke="#223a6b" stroke-width="8"/>
+    <path d="M208 286c18 30 78 30 96 0" fill="none" stroke="#223a6b" stroke-width="14" stroke-linecap="round"/>
+    <path d="M238 304c10 16 26 24 36 24 10 0 18-6 22-12" fill="none" stroke="#ff4d6d" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="186" cy="266" r="8" fill="#9bf6ff"/>
+    <circle cx="326" cy="266" r="8" fill="#ffd6ff"/>
+  </g>
+</svg>

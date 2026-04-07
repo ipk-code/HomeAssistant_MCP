@@ -26,6 +26,8 @@ CONFIG_PATH = REPO_ROOT / "docs" / "api" / "configuration.md"
 TOOLS_PATH = REPO_ROOT / "docs" / "api" / "tools.md"
 OPENCODE_PATH = REPO_ROOT / "docs" / "guides" / "opencode-integration.md"
 CHANGELOG_PATH = REPO_ROOT / "CHANGELOG.md"
+ICON_PNG_PATH = REPO_ROOT / "icon.png"
+ICON_SVG_PATH = REPO_ROOT / "icon.svg"
 
 
 class MetadataTests(unittest.TestCase):
@@ -51,6 +53,10 @@ class MetadataTests(unittest.TestCase):
         )
         changelog = CHANGELOG_PATH.read_text(encoding="utf-8")
         self.assertIn(f"## {INTEGRATION_VERSION}", changelog)
+
+    def test_repository_icon_assets_exist(self) -> None:
+        self.assertTrue(ICON_PNG_PATH.exists())
+        self.assertTrue(ICON_SVG_PATH.exists())
 
     def test_docs_publish_current_endpoint_and_auth_model(self) -> None:
         readme = README_PATH.read_text(encoding="utf-8")
@@ -118,8 +124,8 @@ class MetadataTests(unittest.TestCase):
         changelog = CHANGELOG_PATH.read_text(encoding="utf-8")
 
         self.assertIn(f"Latest release: `{INTEGRATION_VERSION}`", readme)
-        self.assertIn("Highlights in `0.2.0` compared with `0.1.1`", readme)
-        self.assertIn("experimental in `0.2.0`: none", docs_index)
+        self.assertIn("Highlights in `0.2.1` compared with `0.2.0`", readme)
+        self.assertIn("experimental in `0.2.1`: none", docs_index)
         self.assertIn(
             "planned next: SSE transport and optional OAuth evaluation", docs_index
         )
@@ -129,6 +135,6 @@ class MetadataTests(unittest.TestCase):
             f"Home Assistant MCP server version {INTEGRATION_VERSION} started successfully",
             install_guide,
         )
-        self.assertIn("read-only `hass.*` discovery tools", changelog)
-        self.assertIn("built-in MCP resources", changelog)
-        self.assertIn("built-in dashboard-focused prompts", changelog)
+        self.assertIn("repository icon for HACS", changelog)
+        self.assertIn("`icon.svg`", changelog)
+        self.assertIn("`icon.png`", changelog)

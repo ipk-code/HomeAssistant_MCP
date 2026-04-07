@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.2.1
+
+Release focus:
+
+- improve the HACS presentation of the integration without changing the MCP runtime surface
+- keep the release metadata, startup logs, and documentation aligned with the shipped repository assets
+
+Added:
+
+- a repository icon for HACS built as a playful Home Assistant and MCP mashup
+- editable source artwork in `icon.svg`
+- HACS-ready raster artwork in `icon.png`
+
+Changed:
+
+- bumped the integration package version to `0.2.1`
+- updated release notes and HACS-facing docs to mention the repository icon and current release
+
+Notes:
+
+- the MCP API version remains `1.0.0`
+- the integration package version is now `0.2.1`
+- the functional MCP feature surface from `0.2.0` is unchanged in this release
+
 ## 0.2.0
 
 Release focus:
