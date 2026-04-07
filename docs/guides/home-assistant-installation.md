@@ -7,6 +7,8 @@
 
 ## Install With HACS
 
+Current integration version in this repository: `0.1.1`
+
 1. Open HACS in Home Assistant.
 2. Go to **Integrations**.
 3. Open the overflow menu and choose **Custom repositories**.

@@ -2,6 +2,8 @@
 
 Home Assistant custom integration for MCP-driven Lovelace dashboard authoring.
 
+Current integration version: `0.1.1`
+
 ## Current Scope
 
 - Runs as a Home Assistant integration.
@@ -60,6 +62,10 @@ The project currently contains:
 Install from HACS using the public custom repository:
 
 - `https://github.com/ipk-code/HomeAssistant_MCP`
+
+Version shown by the integration in this repository:
+
+- `0.1.1`
 
 After installation, add the integration in **Settings > Devices & services**.
 
