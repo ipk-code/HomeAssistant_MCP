@@ -16,6 +16,7 @@ from custom_components.homeassistant_mcp import (
 )
 from custom_components.homeassistant_mcp.const import (
     DOMAIN,
+    INTEGRATION_VERSION,
     STORAGE_DIRECTORY,
     STREAMABLE_HTTP_API,
 )
@@ -112,7 +113,10 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(self.hass.executor_jobs), 1)
         self.assertIs(get_runtime(self.hass), runtime)
         self.assertTrue(
-            any("Loaded Home Assistant MCP entry" in line for line in captured.output)
+            any(
+                f"Loaded Home Assistant MCP version {INTEGRATION_VERSION} entry" in line
+                for line in captured.output
+            )
         )
 
         with self.assertLogs(
@@ -122,7 +126,8 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.hass.data[DOMAIN], {})
         self.assertTrue(
             any(
-                "Unloaded Home Assistant MCP entry" in line
+                f"Unloaded Home Assistant MCP version {INTEGRATION_VERSION} entry"
+                in line
                 for line in unload_logs.output
             )
         )

@@ -12,6 +12,7 @@ from custom_components.homeassistant_mcp.const import (
     DEFAULT_DASHBOARD_MODE,
     DEFAULT_TRANSPORT,
     DOMAIN,
+    INTEGRATION_VERSION,
 )
 
 
@@ -31,14 +32,22 @@ async def test_entry_setup_and_unload_emit_lifecycle_logs(hass, caplog) -> None:
 
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    assert f"Loaded Home Assistant MCP entry {entry.entry_id}" in caplog.text
+    assert (
+        f"Loaded Home Assistant MCP version {INTEGRATION_VERSION} entry {entry.entry_id}"
+        in caplog.text
+    )
 
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
-    assert f"Unloaded Home Assistant MCP entry {entry.entry_id}" in caplog.text
+    assert (
+        f"Unloaded Home Assistant MCP version {INTEGRATION_VERSION} entry {entry.entry_id}"
+        in caplog.text
+    )
 
 
-async def test_invalid_http_payload_emits_warning_log(hass, hass_client, caplog) -> None:
+async def test_invalid_http_payload_emits_warning_log(
+    hass, hass_client, caplog
+) -> None:
     """Test malformed MCP requests are logged at warning level."""
     entry = MockConfigEntry(
         domain=DOMAIN,

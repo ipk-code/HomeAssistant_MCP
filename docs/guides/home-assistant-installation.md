@@ -54,6 +54,7 @@ This integration uses Home Assistant-style logging levels:
 - If setup fails, confirm Home Assistant is running the latest integration files from this repository and then restart Home Assistant.
 - `404 Not Found` on `/api/homeassistant_mcp` means the integration has not finished loading.
 - `401 Unauthorized` on `/api/homeassistant_mcp` means the HTTP view is registered and Home Assistant auth is working as expected.
+- Check the Home Assistant log for `Loaded Home Assistant MCP version ...` to confirm which integration build is actually running after an update.
 
 ## Repository Readiness For HACS
 
