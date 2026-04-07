@@ -2,13 +2,14 @@
 
 Home Assistant custom integration for MCP-driven Lovelace dashboard authoring.
 
-Current integration version: `0.2.1`
+Current integration version: `0.3.0`
 
 ## What It Does
 
 - Runs an MCP server inside Home Assistant.
 - Exposes typed Lovelace dashboard, view, and card tools.
 - Exposes read-only `hass.*` discovery tools for entities, services, areas, and devices.
+- Exposes experimental read-only access to native Home Assistant Lovelace dashboards alongside MCP-managed dashboards.
 - Uses stateless Streamable HTTP at `/api/homeassistant_mcp`.
 - Uses standard Home Assistant authentication with a long-lived access token for remote clients.
 - Keeps dashboard mutations inside a constrained YAML dashboard model with restricted JSON Patch support.
@@ -46,7 +47,7 @@ HACS flow:
 3. Search for `Home Assistant MCP`.
 4. Complete the config flow.
 
-After setup, the integration logs `Loaded Home Assistant MCP version 0.2.1 entry ...` and `Home Assistant MCP server version 0.2.1 started successfully ...` when the config entry is active.
+After setup, the integration logs `Loaded Home Assistant MCP version 0.3.0 entry ...` and `Home Assistant MCP server version 0.3.0 started successfully ...` when the config entry is active.
 
 Repository icon assets:
 
@@ -55,13 +56,13 @@ Repository icon assets:
 
 ## Release Notes
 
-Latest release: `0.2.1`
+Latest release: `0.3.0`
 
-Highlights in `0.2.1` compared with `0.2.0`:
+Highlights in `0.3.0` compared with `0.2.1`:
 
-- added a new HACS repository icon that combines Home Assistant and MCP with a playful robot-house twist
-- added editable SVG source artwork alongside the shipped PNG asset
-- refreshed the release notes and HACS-facing docs to surface the icon and current release metadata
+- fixed MCP request-path failures for invalid managed dashboard resource URIs
+- moved managed dashboard file access out of the Home Assistant event loop for the affected MCP request paths
+- added experimental read-only access to native Home Assistant Lovelace dashboards via dedicated tools and resources
 
 Full release notes: `CHANGELOG.md`
 
@@ -94,16 +95,18 @@ OpenCode can connect as a remote MCP client with a Home Assistant long-lived acc
 | `initialize`, `ping`, `tools/list`, `tools/call` | Stable in v1 | Current dashboard authoring MCP method surface |
 | Read-only `hass.*` discovery tools | Stable in v1 | Includes `hass.list_entities`, `hass.search_entities`, `hass.list_services`, `hass.list_areas`, `hass.list_devices` |
 | Dashboard tools | Stable in v1 | Includes `lovelace.list_dashboards`, `lovelace.get_dashboard`, `lovelace.create_dashboard`, `lovelace.update_dashboard_metadata`, `lovelace.delete_dashboard`, `lovelace.patch_dashboard`, `lovelace.validate_dashboard` |
+| Native Lovelace dashboard tools | Experimental in `0.3.0` | Includes `hass.list_lovelace_dashboards` and `hass.get_lovelace_dashboard` for read-only access to standard Home Assistant dashboards |
 | View tools | Stable in v1 | Includes `lovelace.list_views`, `lovelace.get_view`, `lovelace.create_view`, `lovelace.update_view`, `lovelace.delete_view` |
 | Card tools | Stable in v1 | Includes `lovelace.list_cards`, `lovelace.get_card`, `lovelace.create_card`, `lovelace.update_card`, `lovelace.delete_card` |
 | `completion/complete` | Stable in v1 | Built-in completions are available for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon` |
 | `resources/list`, `resources/read` | Stable in v1 | Built-in resources are available for config, entities, areas, devices, services, and managed dashboards |
+| Native Lovelace dashboard resources | Experimental in `0.3.0` | Includes `hass://lovelace/dashboards` and `hass://lovelace/dashboard/{url_path}` for read-only standard-dashboard access |
 | `prompts/list`, `prompts/get` | Stable in v1 | Built-in prompts include `dashboard.builder`, `dashboard.review`, `dashboard.layout_consistency_review`, `dashboard.entity_card_mapping`, and `dashboard.cleanup_audit` |
 | OAuth browser-client flow | Not shipped yet | Current deployment uses Home Assistant token auth |
 
 ## Capability Status
 
-Stable in `0.2.1`:
+Stable in `0.3.0`:
 
 - typed Lovelace dashboard, view, and card operations
 - read-only `hass.*` discovery tools with bounded result sizes
@@ -114,20 +117,25 @@ Stable in `0.2.1`:
 - stateless Streamable HTTP transport
 - Home Assistant-authenticated remote access
 
-Experimental in `0.2.1`:
+Experimental in `0.3.0`:
 
-- none
+- read-only native Home Assistant Lovelace dashboard access via `hass.list_lovelace_dashboards`, `hass.get_lovelace_dashboard`, `hass://lovelace/dashboards`, and `hass://lovelace/dashboard/{url_path}`
 
 Planned next:
 
 - SSE or other stateful transports
 - optional OAuth evaluation for browser-style MCP clients
+- native Home Assistant dashboard search and any future write support remain separate follow-up work
 
 ## FAQ
 
 **What is this server for?**
 
 It is focused on Lovelace dashboard authoring inside Home Assistant, with read-only discovery tools that help clients inspect entities, services, areas, and devices. It is not a general-purpose Home Assistant admin server.
+
+**What is the difference between MCP-managed and standard dashboards?**
+
+`lovelace.*` tools and `hass://dashboard/{dashboard_id}` operate on MCP-managed dashboards stored under the integration's own repository. Native Home Assistant Lovelace dashboards are exposed separately through `hass.list_lovelace_dashboards`, `hass.get_lovelace_dashboard`, and `hass://lovelace/...` resources so the two models are not mixed accidentally.
 
 **How does authentication work?**
 
@@ -146,7 +154,7 @@ No. The recommended OpenCode setup keeps `oauth: false` and sends a Home Assista
 ## Troubleshooting
 
 - Enable `custom_components.homeassistant_mcp: debug` in the Home Assistant logger when diagnosing setup or request issues.
-- Verify the active build in Home Assistant logs with `Loaded Home Assistant MCP version 0.2.1 entry ...` and `Home Assistant MCP server version 0.2.1 started successfully ...`.
+- Verify the active build in Home Assistant logs with `Loaded Home Assistant MCP version 0.3.0 entry ...` and `Home Assistant MCP server version 0.3.0 started successfully ...`.
 - Confirm clients use `POST` requests to `/api/homeassistant_mcp`.
 - Confirm remote clients send a valid Home Assistant bearer token.
 

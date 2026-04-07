@@ -8,12 +8,14 @@ from pathlib import Path
 from typing import Any
 
 from .discovery import HomeAssistantDiscoveryProvider
+from .managed import ManagedDashboardExecutor
 from .lovelace.repository import YamlDashboardRepository
 from .mcp.completions import CompletionRegistry, register_builtin_completions
 from .mcp.prompts import PromptRegistry, register_builtin_prompts
 from .mcp.resources import ResourceRegistry, register_builtin_resources
 from .mcp.server import ToolRegistry
 from .mcp.transport import StatelessMCPTransport
+from .native_lovelace import NativeLovelaceProvider
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,6 +26,8 @@ class IntegrationRuntime:
 
     root_path: Path
     repository: YamlDashboardRepository
+    managed: ManagedDashboardExecutor
+    native_lovelace: NativeLovelaceProvider
     discovery: HomeAssistantDiscoveryProvider
     registry: ToolRegistry
     resources: ResourceRegistry
@@ -36,6 +40,8 @@ def create_runtime(hass: Any, root_path: Path) -> IntegrationRuntime:
     """Build repository and transport objects for one config entry."""
     _LOGGER.debug("Creating Home Assistant MCP runtime at %s", root_path)
     repository = YamlDashboardRepository(root_path)
+    managed = ManagedDashboardExecutor(hass, repository)
+    native_lovelace = NativeLovelaceProvider(hass)
     discovery = HomeAssistantDiscoveryProvider(hass)
     registry = ToolRegistry(repository, discovery=discovery)
     resources = ResourceRegistry()
@@ -43,28 +49,36 @@ def create_runtime(hass: Any, root_path: Path) -> IntegrationRuntime:
         resources,
         repository=repository,
         discovery=discovery,
+        managed=managed,
+        native=native_lovelace,
     )
     prompts = PromptRegistry()
     register_builtin_prompts(
         prompts,
         repository=repository,
         discovery=discovery,
+        managed=managed,
     )
     completions = CompletionRegistry()
     register_builtin_completions(
         completions,
         repository=repository,
         discovery=discovery,
+        managed=managed,
     )
     transport = StatelessMCPTransport(
         registry,
         resources=resources,
         prompts=prompts,
         completions=completions,
+        managed=managed,
+        native_lovelace=native_lovelace,
     )
     return IntegrationRuntime(
         root_path=root_path,
         repository=repository,
+        managed=managed,
+        native_lovelace=native_lovelace,
         discovery=discovery,
         registry=registry,
         resources=resources,

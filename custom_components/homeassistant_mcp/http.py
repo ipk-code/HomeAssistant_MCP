@@ -109,7 +109,7 @@ class HomeAssistantMCPStreamableView(HomeAssistantView):
                 },
             )
 
-        status, payload = runtime.transport.handle_http_request(
+        status, payload = await runtime.transport.handle_http_request_async(
             accept=request.headers.get("accept", ""),
             content_type=request.content_type,
             body=await request.text(),

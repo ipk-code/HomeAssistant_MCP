@@ -87,8 +87,12 @@ class ToolRegistry:
             for contract in self._contracts
         ]
 
-    def call(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    def validate_arguments(self, name: str, arguments: dict[str, Any]) -> None:
+        """Validate tool arguments against the bundled API contract."""
         self._validator.validate_tool_arguments(name, arguments)
+
+    def call(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        self.validate_arguments(name, arguments)
         if name == "hass.list_entities":
             return self._require_discovery().list_entities(arguments)
         if name == "hass.search_entities":

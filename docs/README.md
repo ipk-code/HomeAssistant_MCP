@@ -50,6 +50,6 @@ This directory contains the user and contributor documentation for `HomeAssistan
 
 ## Capability Status
 
-- stable in `0.2.1`: discovery tools, typed Lovelace tools, completions, resources, prompts, stateless HTTP transport, and repository packaging assets
-- experimental in `0.2.1`: none
+- stable in `0.3.0`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, and repository packaging assets
+- experimental in `0.3.0`: read-only native Home Assistant Lovelace dashboard access
 - planned next: SSE transport and optional OAuth evaluation

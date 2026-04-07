@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import inspect
 import json
 import re
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 from ..const import (
     DEFAULT_DASHBOARD_MODE,
@@ -20,12 +21,19 @@ from ..discovery import (
     HomeAssistantDiscoveryProvider,
     MAX_DISCOVERY_LIMIT,
 )
+from ..managed import ManagedDashboardExecutor
+from ..native_lovelace import NativeLovelaceProvider
 from ..lovelace.errors import DashboardNotFoundError
 from ..lovelace.repository import YamlDashboardRepository
 from .completions import MAX_COMPLETION_VALUES
 
 ResourceReader = Callable[[], list[dict[str, Any]]]
-ResourceTemplateReader = Callable[[dict[str, str], str], list[dict[str, Any]]]
+AsyncResourceReader = Callable[
+    [], list[dict[str, Any]] | Awaitable[list[dict[str, Any]]]
+]
+ResourceTemplateReader = Callable[
+    [dict[str, str], str], list[dict[str, Any]] | Awaitable[list[dict[str, Any]]]
+]
 
 
 _RESOURCE_MIME_TYPE = "application/json"
@@ -84,7 +92,9 @@ class ResourceRegistry:
         self._resources: dict[str, tuple[ResourceDefinition, ResourceReader]] = {}
         self._templates: dict[str, _ResourceTemplateBinding] = {}
 
-    def register(self, definition: ResourceDefinition, reader: ResourceReader) -> None:
+    def register(
+        self, definition: ResourceDefinition, reader: AsyncResourceReader
+    ) -> None:
         """Register a concrete resource and its reader."""
         self._resources[definition.uri] = (definition, reader)
 
@@ -128,12 +138,35 @@ class ResourceRegistry:
 
         raise KeyError(f"unknown resource: {uri}")
 
+    async def async_read(self, uri: str) -> list[dict[str, Any]]:
+        """Read one resource by URI, awaiting async readers when needed."""
+        resource = self._resources.get(uri)
+        if resource is not None:
+            _definition, reader = resource
+            result = reader()
+            if inspect.isawaitable(result):
+                result = await result
+            return result
+
+        for binding in self._templates.values():
+            match = binding.pattern.fullmatch(uri)
+            if match is None or binding.reader is None:
+                continue
+            result = binding.reader(match.groupdict(), uri)
+            if inspect.isawaitable(result):
+                result = await result
+            return result
+
+        raise KeyError(f"unknown resource: {uri}")
+
 
 def register_builtin_resources(
     registry: ResourceRegistry,
     *,
     repository: YamlDashboardRepository,
     discovery: HomeAssistantDiscoveryProvider,
+    managed: ManagedDashboardExecutor | None = None,
+    native: NativeLovelaceProvider | None = None,
 ) -> None:
     """Register the built-in Home Assistant MCP resources."""
     registry.register(
@@ -220,8 +253,31 @@ def register_builtin_resources(
             description="A managed Lovelace dashboard document by dashboard identifier.",
             mime_type=_RESOURCE_MIME_TYPE,
         ),
-        lambda params, uri: _dashboard_resource(repository, params, uri),
+        (
+            (lambda params, uri: _dashboard_resource_async(managed, params, uri))
+            if managed is not None
+            else lambda params, uri: _dashboard_resource(repository, params, uri)
+        ),
     )
+    if native is not None:
+        registry.register(
+            ResourceDefinition(
+                uri="hass://lovelace/dashboards",
+                name="Native Lovelace Dashboards",
+                description="Read-only Home Assistant Lovelace dashboards outside the MCP-managed repository.",
+                mime_type=_RESOURCE_MIME_TYPE,
+            ),
+            lambda: _native_dashboard_list_resource(native),
+        )
+        registry.register_template(
+            ResourceTemplateDefinition(
+                uri_template="hass://lovelace/dashboard/{url_path}",
+                name="Native Lovelace Dashboard",
+                description="A native Home Assistant Lovelace dashboard document by url_path.",
+                mime_type=_RESOURCE_MIME_TYPE,
+            ),
+            lambda params, uri: _native_dashboard_resource(native, params, uri),
+        )
 
 
 def _dashboard_resource(
@@ -235,6 +291,45 @@ def _dashboard_resource(
     try:
         payload = repository.get_dashboard(dashboard_id)
     except DashboardNotFoundError as err:
+        raise KeyError(f"unknown resource: {uri}") from err
+    return _json_resource(uri, payload)
+
+
+async def _dashboard_resource_async(
+    managed: ManagedDashboardExecutor,
+    params: dict[str, str],
+    uri: str,
+) -> list[dict[str, Any]]:
+    dashboard_id = params.get("dashboard_id")
+    if not dashboard_id:
+        raise KeyError(f"unknown resource: {uri}")
+    try:
+        payload = await managed.get_dashboard(dashboard_id)
+    except (DashboardNotFoundError, Exception) as err:
+        raise KeyError(f"unknown resource: {uri}") from err
+    return _json_resource(uri, payload)
+
+
+async def _native_dashboard_list_resource(
+    native: NativeLovelaceProvider,
+) -> list[dict[str, Any]]:
+    return _json_resource(
+        "hass://lovelace/dashboards",
+        await native.list_dashboards(limit=MAX_DISCOVERY_LIMIT),
+    )
+
+
+async def _native_dashboard_resource(
+    native: NativeLovelaceProvider,
+    params: dict[str, str],
+    uri: str,
+) -> list[dict[str, Any]]:
+    url_path = params.get("url_path")
+    if not url_path:
+        raise KeyError(f"unknown resource: {uri}")
+    try:
+        payload = await native.get_dashboard(url_path)
+    except KeyError as err:
         raise KeyError(f"unknown resource: {uri}") from err
     return _json_resource(uri, payload)
 

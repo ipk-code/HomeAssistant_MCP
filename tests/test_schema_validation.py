@@ -87,6 +87,14 @@ class SchemaValidationTests(unittest.TestCase):
             "hass.search_entities",
             {"query": "kitchen", "device_class": "temperature", "limit": 10},
         )
+        self.validator.validate_tool_arguments(
+            "hass.list_lovelace_dashboards",
+            {"limit": 10},
+        )
+        self.validator.validate_tool_arguments(
+            "hass.get_lovelace_dashboard",
+            {"url_path": "pv-energy"},
+        )
 
     def test_rejects_invalid_hass_discovery_payloads(self) -> None:
         with self.assertRaises(ToolSchemaValidationError):
@@ -94,3 +102,8 @@ class SchemaValidationTests(unittest.TestCase):
 
         with self.assertRaises(ToolSchemaValidationError):
             self.validator.validate_tool_arguments("hass.list_devices", {"limit": 201})
+
+        with self.assertRaises(ToolSchemaValidationError):
+            self.validator.validate_tool_arguments(
+                "hass.get_lovelace_dashboard", {"url_path": "Energie"}
+            )

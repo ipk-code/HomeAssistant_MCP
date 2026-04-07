@@ -51,6 +51,8 @@ class ToolContractSchemaTests(unittest.TestCase):
             "hass.list_services",
             "hass.list_areas",
             "hass.list_devices",
+            "hass.list_lovelace_dashboards",
+            "hass.get_lovelace_dashboard",
         }
         self.assertEqual(set(self.tools), expected)
 
@@ -129,8 +131,19 @@ class ToolContractSchemaTests(unittest.TestCase):
             "hass.list_services",
             "hass.list_areas",
             "hass.list_devices",
+            "hass.list_lovelace_dashboards",
+            "hass.get_lovelace_dashboard",
         ):
             self.assertFalse(self.tools[name]["mutation"], name)
+
+        for name in (
+            "hass.list_entities",
+            "hass.search_entities",
+            "hass.list_services",
+            "hass.list_areas",
+            "hass.list_devices",
+            "hass.list_lovelace_dashboards",
+        ):
             properties = self.tools[name]["output_schema"]["properties"]
             self.assertIn("truncated", properties)
 
@@ -148,6 +161,10 @@ class ToolContractSchemaTests(unittest.TestCase):
         )
         self.assertIn(
             "query", self.tools["hass.search_entities"]["input_schema"]["required"]
+        )
+        self.assertIn(
+            "url_path",
+            self.tools["hass.get_lovelace_dashboard"]["input_schema"]["required"],
         )
 
 

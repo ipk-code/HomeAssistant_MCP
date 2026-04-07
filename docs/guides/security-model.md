@@ -23,6 +23,7 @@
 - Discovery results, completion suggestions, and prompt summaries are bounded.
 - Built-in resources expose only Home Assistant context and managed dashboards.
 - Built-in prompts guide clients toward existing typed tools and resources instead of hidden operations.
+- Native Home Assistant Lovelace dashboard access stays read-only and separate from MCP-managed dashboard mutations.
 
 ## Review Checklist
 

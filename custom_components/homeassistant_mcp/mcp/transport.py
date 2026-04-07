@@ -8,7 +8,9 @@ import logging
 from typing import Any
 
 from ..const import API_VERSION, MAX_REQUEST_BYTES, TITLE
+from ..managed import ManagedDashboardExecutor
 from ..lovelace.errors import LovelaceMCPError
+from ..native_lovelace import NativeLovelaceProvider
 from .completions import CompletionRegistry
 from .prompts import PromptRegistry
 from .resources import ResourceRegistry
@@ -29,11 +31,15 @@ class StatelessMCPTransport:
         resources: ResourceRegistry | None = None,
         prompts: PromptRegistry | None = None,
         completions: CompletionRegistry | None = None,
+        managed: ManagedDashboardExecutor | None = None,
+        native_lovelace: NativeLovelaceProvider | None = None,
     ) -> None:
         self._registry = registry
         self._resources = resources or ResourceRegistry()
         self._prompts = prompts or PromptRegistry()
         self._completions = completions or CompletionRegistry()
+        self._managed = managed
+        self._native_lovelace = native_lovelace
 
     def handle_http_request(
         self, *, accept: str, content_type: str, body: str
@@ -64,6 +70,36 @@ class StatelessMCPTransport:
                 None, -32700, "Request body must be valid JSON"
             )
         return self.handle_jsonrpc_message(message)
+
+    async def handle_http_request_async(
+        self, *, accept: str, content_type: str, body: str
+    ) -> tuple[int, dict[str, Any] | None]:
+        """Async HTTP request handling for request paths that may use executors."""
+        if CONTENT_TYPE_JSON not in accept:
+            _LOGGER.warning("Rejected MCP request because Accept header is invalid")
+            return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                None, -32600, f"Client must accept {CONTENT_TYPE_JSON}"
+            )
+        if content_type != CONTENT_TYPE_JSON:
+            _LOGGER.warning("Rejected MCP request because Content-Type is invalid")
+            return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                None, -32600, f"Content-Type must be {CONTENT_TYPE_JSON}"
+            )
+        if len(body.encode("utf-8")) > MAX_REQUEST_BYTES:
+            _LOGGER.warning(
+                "Rejected MCP request because body exceeded %s bytes", MAX_REQUEST_BYTES
+            )
+            return HTTPStatus.REQUEST_ENTITY_TOO_LARGE, self._jsonrpc_error(
+                None, -32013, "Request body exceeds maximum size"
+            )
+        try:
+            message = json.loads(body)
+        except json.JSONDecodeError:
+            _LOGGER.warning("Rejected MCP request because body was not valid JSON")
+            return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                None, -32700, "Request body must be valid JSON"
+            )
+        return await self.handle_jsonrpc_message_async(message)
 
     def handle_jsonrpc_message(
         self, message: dict[str, Any]
@@ -291,6 +327,219 @@ class StatelessMCPTransport:
         return HTTPStatus.NOT_FOUND, self._jsonrpc_error(
             request_id, -32601, f"Unknown method: {method}"
         )
+
+    async def handle_jsonrpc_message_async(
+        self, message: dict[str, Any]
+    ) -> tuple[int, dict[str, Any] | None]:
+        """Handle a single JSON-RPC request with async support for blocking paths."""
+        if not isinstance(message, dict):
+            _LOGGER.warning(
+                "Rejected MCP request because JSON-RPC payload was not an object"
+            )
+            return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                None, -32600, "JSON-RPC request must be an object"
+            )
+        if message.get("jsonrpc") != "2.0":
+            _LOGGER.warning("Rejected MCP request because jsonrpc version was invalid")
+            return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                message.get("id"), -32600, "jsonrpc must be '2.0'"
+            )
+
+        method = message.get("method")
+        params = message.get("params")
+        if params is None:
+            params = {}
+
+        if not isinstance(method, str):
+            _LOGGER.warning("Rejected MCP request because method was invalid")
+            return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                message.get("id"), -32600, "method must be a string"
+            )
+        if not isinstance(params, dict):
+            _LOGGER.warning("Rejected MCP request because params was invalid")
+            return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                message.get("id"), -32602, "params must be an object"
+            )
+
+        if method in {
+            "initialize",
+            "ping",
+            "tools/list",
+            "resources/list",
+            "prompts/list",
+        }:
+            return self.handle_jsonrpc_message(message)
+
+        request_id = message.get("id")
+        if request_id is None:
+            _LOGGER.debug("Accepted MCP notification for method %s", method)
+            return HTTPStatus.ACCEPTED, None
+
+        if method == "resources/read":
+            uri = params.get("uri")
+            if not isinstance(uri, str):
+                _LOGGER.warning(
+                    "Rejected MCP resources/read request %s because uri was invalid",
+                    request_id,
+                )
+                return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                    request_id, -32602, "resources/read requires a string uri"
+                )
+            try:
+                _LOGGER.debug("Reading MCP resource %s for request %s", uri, request_id)
+                return HTTPStatus.OK, {
+                    "jsonrpc": "2.0",
+                    "id": request_id,
+                    "result": {"contents": await self._resources.async_read(uri)},
+                }
+            except (KeyError, LovelaceMCPError) as err:
+                _LOGGER.warning(
+                    "Rejected MCP resources/read request %s because resource %s was invalid or unknown",
+                    request_id,
+                    uri,
+                )
+                return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                    request_id, -32602, str(err)
+                )
+
+        if method == "prompts/get":
+            prompt_name = params.get("name")
+            arguments = params.get("arguments")
+            if arguments is None:
+                arguments = {}
+            if not isinstance(prompt_name, str) or not isinstance(arguments, dict):
+                _LOGGER.warning(
+                    "Rejected MCP prompts/get request %s because name or arguments were invalid",
+                    request_id,
+                )
+                return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                    request_id, -32602, "prompts/get requires name and arguments"
+                )
+            try:
+                _LOGGER.debug(
+                    "Handled MCP prompts/get request %s for %s", request_id, prompt_name
+                )
+                return HTTPStatus.OK, {
+                    "jsonrpc": "2.0",
+                    "id": request_id,
+                    "result": await self._prompts.async_get(prompt_name, arguments),
+                }
+            except (KeyError, LovelaceMCPError) as err:
+                _LOGGER.warning(
+                    "Rejected MCP prompts/get request %s because prompt %s failed: %s",
+                    request_id,
+                    prompt_name,
+                    err,
+                )
+                return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                    request_id, -32602, str(err)
+                )
+
+        if method == "completion/complete":
+            ref = params.get("ref")
+            if ref is None:
+                ref = {}
+            argument = params.get("argument")
+            if argument is None:
+                argument = {}
+            if not isinstance(ref, dict) or not isinstance(argument, dict):
+                _LOGGER.warning(
+                    "Rejected MCP completion/complete request %s because ref or argument were invalid",
+                    request_id,
+                )
+                return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                    request_id,
+                    -32602,
+                    "completion/complete requires ref and argument objects",
+                )
+            _LOGGER.debug("Handled MCP completion/complete request %s", request_id)
+            return HTTPStatus.OK, {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": {
+                    "completion": await self._completions.async_complete(ref, argument)
+                },
+            }
+
+        if method == "tools/call":
+            tool_name = params.get("name")
+            arguments = params.get("arguments")
+            if arguments is None:
+                arguments = {}
+            if not isinstance(tool_name, str) or not isinstance(arguments, dict):
+                _LOGGER.warning(
+                    "Rejected MCP tools/call request %s because name or arguments were invalid",
+                    request_id,
+                )
+                return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
+                    request_id, -32602, "tools/call requires name and arguments"
+                )
+            try:
+                _LOGGER.debug(
+                    "Executing MCP tool %s for request %s", tool_name, request_id
+                )
+                payload = await self._async_call_tool(tool_name, arguments)
+                return HTTPStatus.OK, {
+                    "jsonrpc": "2.0",
+                    "id": request_id,
+                    "result": {
+                        "content": [{"type": "text", "text": json.dumps(payload)}],
+                        "isError": False,
+                    },
+                }
+            except (KeyError, LovelaceMCPError, ToolSchemaValidationError) as err:
+                _LOGGER.warning(
+                    "MCP tool %s failed validation or execution for request %s: %s",
+                    tool_name,
+                    request_id,
+                    err,
+                )
+                return HTTPStatus.OK, {
+                    "jsonrpc": "2.0",
+                    "id": request_id,
+                    "result": {
+                        "content": [{"type": "text", "text": str(err)}],
+                        "isError": True,
+                    },
+                }
+            except Exception:
+                _LOGGER.exception(
+                    "Unexpected MCP transport failure for tool %s request %s",
+                    tool_name,
+                    request_id,
+                )
+                return HTTPStatus.INTERNAL_SERVER_ERROR, self._jsonrpc_error(
+                    request_id, -32603, "Internal server error"
+                )
+
+        _LOGGER.warning(
+            "Rejected MCP request %s because method %s is unknown", request_id, method
+        )
+        return HTTPStatus.NOT_FOUND, self._jsonrpc_error(
+            request_id, -32601, f"Unknown method: {method}"
+        )
+
+    async def _async_call_tool(
+        self, tool_name: str, arguments: dict[str, Any]
+    ) -> dict[str, Any]:
+        if tool_name == "hass.list_lovelace_dashboards":
+            self._registry.validate_arguments(tool_name, arguments)
+            if self._native_lovelace is None:
+                raise KeyError("native lovelace provider is unavailable")
+            limit = arguments.get("limit", 100)
+            return await self._native_lovelace.list_dashboards(limit=limit)
+        if tool_name == "hass.get_lovelace_dashboard":
+            self._registry.validate_arguments(tool_name, arguments)
+            if self._native_lovelace is None:
+                raise KeyError("native lovelace provider is unavailable")
+            return {
+                "dashboard": await self._native_lovelace.get_dashboard(
+                    arguments["url_path"]
+                )
+            }
+        if tool_name.startswith("lovelace.") and self._managed is not None:
+            return await self._managed.call(self._registry.call, tool_name, arguments)
+        return self._registry.call(tool_name, arguments)
 
     def _jsonrpc_error(
         self, request_id: Any, code: int, message: str

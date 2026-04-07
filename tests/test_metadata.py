@@ -99,6 +99,7 @@ class MetadataTests(unittest.TestCase):
 
         expected_tools = {
             "hass.list_entities",
+            "hass.list_lovelace_dashboards",
             "lovelace.list_dashboards",
             "lovelace.create_dashboard",
             "lovelace.patch_dashboard",
@@ -113,7 +114,9 @@ class MetadataTests(unittest.TestCase):
             "entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon`", readme
         )
         self.assertIn("hass://dashboard/{dashboard_id}", readme)
+        self.assertIn("hass://lovelace/dashboard/{url_path}", readme)
         self.assertIn("dashboard.review", readme)
+        self.assertIn("hass.get_lovelace_dashboard", readme)
 
     def test_release_notes_and_status_docs_reflect_current_release(self) -> None:
         readme = README_PATH.read_text(encoding="utf-8")
@@ -124,8 +127,11 @@ class MetadataTests(unittest.TestCase):
         changelog = CHANGELOG_PATH.read_text(encoding="utf-8")
 
         self.assertIn(f"Latest release: `{INTEGRATION_VERSION}`", readme)
-        self.assertIn("Highlights in `0.2.1` compared with `0.2.0`", readme)
-        self.assertIn("experimental in `0.2.1`: none", docs_index)
+        self.assertIn("Highlights in `0.3.0` compared with `0.2.1`", readme)
+        self.assertIn(
+            "experimental in `0.3.0`: read-only native Home Assistant Lovelace dashboard access",
+            docs_index,
+        )
         self.assertIn(
             "planned next: SSE transport and optional OAuth evaluation", docs_index
         )
@@ -135,6 +141,6 @@ class MetadataTests(unittest.TestCase):
             f"Home Assistant MCP server version {INTEGRATION_VERSION} started successfully",
             install_guide,
         )
-        self.assertIn("repository icon for HACS", changelog)
-        self.assertIn("`icon.svg`", changelog)
-        self.assertIn("`icon.png`", changelog)
+        self.assertIn("read-only native Lovelace dashboard tools", changelog)
+        self.assertIn("hass://lovelace/dashboards", changelog)
+        self.assertIn("invalid managed dashboard URIs", changelog)

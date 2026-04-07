@@ -12,6 +12,13 @@ The stable v1 tool surface currently spans the read-only `hass.*` namespace and 
 | `hass.list_areas` | no | List configured Home Assistant areas |
 | `hass.list_devices` | no | List devices with an optional area filter |
 
+## Native Home Assistant Dashboard Tools
+
+| Tool | Mutation | Purpose |
+|---|---|---|
+| `hass.list_lovelace_dashboards` | no | List standard Home Assistant Lovelace dashboards outside the MCP-managed repository |
+| `hass.get_lovelace_dashboard` | no | Return one native Home Assistant Lovelace dashboard by `url_path` |
+
 ## Dashboard Tools
 
 | Tool | Mutation | Purpose |
@@ -46,10 +53,11 @@ The stable v1 tool surface currently spans the read-only `hass.*` namespace and 
 
 ## Stability
 
-- All tools listed here are part of the stable v1 dashboard authoring and read-only discovery surface.
+- The `lovelace.*` tool family and the read-only `hass.*` discovery tools are stable in the current dashboard-first MCP surface.
 - Built-in completions are available for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon`.
 - Built-in resources are available for config, entities, areas, devices, services, and managed dashboards.
 - Built-in prompts are available for dashboard building, review, layout consistency, entity-card mapping, and cleanup audits.
+- Native Home Assistant Lovelace dashboard tools are experimental in `0.3.0` and remain read-only.
 
 ## Source Of Truth
 

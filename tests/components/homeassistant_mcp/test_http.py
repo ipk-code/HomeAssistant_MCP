@@ -198,6 +198,7 @@ async def test_streamable_http_supports_phase2_capability_methods(
         "hass://areas",
         "hass://devices",
         "hass://services",
+        "hass://lovelace/dashboards",
     ]
     assert resources_payload["result"]["resourceTemplates"] == [
         {
@@ -205,7 +206,13 @@ async def test_streamable_http_supports_phase2_capability_methods(
             "name": "Managed Dashboard",
             "description": "A managed Lovelace dashboard document by dashboard identifier.",
             "mimeType": "application/json",
-        }
+        },
+        {
+            "uriTemplate": "hass://lovelace/dashboard/{url_path}",
+            "name": "Native Lovelace Dashboard",
+            "description": "A native Home Assistant Lovelace dashboard document by url_path.",
+            "mimeType": "application/json",
+        },
     ]
 
     prompts_response = await client.post(
@@ -453,6 +460,137 @@ async def test_streamable_http_builtin_resources_return_json_payloads(
     assert missing_response.status == 400
     missing_payload = await missing_response.json()
     assert missing_payload["error"]["code"] == -32602
+
+    invalid_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "6",
+            "method": "resources/read",
+            "params": {"uri": "hass://dashboard/Energie"},
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert invalid_response.status == 400
+    invalid_payload = await invalid_response.json()
+    assert invalid_payload["error"]["code"] == -32602
+
+
+async def test_streamable_http_native_lovelace_dashboards_are_available_read_only(
+    hass, hass_client
+) -> None:
+    """Test read-only access to native Home Assistant Lovelace dashboards."""
+    assert await async_setup_component(
+        hass, "lovelace", {"lovelace": {"mode": "storage"}}
+    )
+    await hass.async_block_till_done()
+
+    from homeassistant.components.lovelace.const import LOVELACE_DATA
+
+    class _NativeDashboardFixture:
+        url_path = "pv-energy"
+        config = {
+            "id": "pv_energy",
+            "title": "Photovoltaik",
+            "show_in_sidebar": True,
+            "icon": "mdi:solar-power",
+        }
+
+        async def async_get_info(self):
+            return {"mode": "storage", "views": 1}
+
+        async def async_load(self, force):
+            return {"views": [{"title": "Solar Dashboard"}]}
+
+    hass.data[LOVELACE_DATA].dashboards["pv-energy"] = _NativeDashboardFixture()
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "transport": DEFAULT_TRANSPORT,
+            "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+        },
+        title="Home Assistant MCP",
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    client = await hass_client()
+
+    list_tool_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "1",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.list_lovelace_dashboards",
+                "arguments": {},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert list_tool_response.status == 200
+    list_tool_payload = await list_tool_response.json()
+    list_tool_result = _decode_tool_result(list_tool_payload)
+    _VALIDATOR.validate_tool_result("hass.list_lovelace_dashboards", list_tool_result)
+    assert any(
+        item["url_path"] == "pv-energy" for item in list_tool_result["dashboards"]
+    )
+
+    get_tool_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "2",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.get_lovelace_dashboard",
+                "arguments": {"url_path": "pv-energy"},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert get_tool_response.status == 200
+    get_tool_payload = await get_tool_response.json()
+    get_tool_result = _decode_tool_result(get_tool_payload)
+    _VALIDATOR.validate_tool_result("hass.get_lovelace_dashboard", get_tool_result)
+    assert get_tool_result["dashboard"]["metadata"]["url_path"] == "pv-energy"
+
+    resource_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "3",
+            "method": "resources/read",
+            "params": {"uri": "hass://lovelace/dashboards"},
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert resource_response.status == 200
+    resource_payload = await resource_response.json()
+    resource_result = json.loads(resource_payload["result"]["contents"][0]["text"])
+    assert any(
+        item["url_path"] == "pv-energy" for item in resource_result["dashboards"]
+    )
+
+    dashboard_resource_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "4",
+            "method": "resources/read",
+            "params": {"uri": "hass://lovelace/dashboard/pv-energy"},
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert dashboard_resource_response.status == 200
+    dashboard_resource_payload = await dashboard_resource_response.json()
+    dashboard_resource_result = json.loads(
+        dashboard_resource_payload["result"]["contents"][0]["text"]
+    )
+    assert dashboard_resource_result["metadata"]["url_path"] == "pv-energy"
 
 
 async def test_streamable_http_builtin_completions_return_contextual_results(

@@ -121,6 +121,7 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
                 "hass://areas",
                 "hass://devices",
                 "hass://services",
+                "hass://lovelace/dashboards",
             ],
         )
         self.assertEqual(
@@ -131,7 +132,13 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
                     "name": "Managed Dashboard",
                     "description": "A managed Lovelace dashboard document by dashboard identifier.",
                     "mimeType": "application/json",
-                }
+                },
+                {
+                    "uriTemplate": "hass://lovelace/dashboard/{url_path}",
+                    "name": "Native Lovelace Dashboard",
+                    "description": "A native Home Assistant Lovelace dashboard document by url_path.",
+                    "mimeType": "application/json",
+                },
             ],
         )
         self.assertEqual(
@@ -145,7 +152,7 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
             ],
         )
         self.assertEqual(
-            runtime.completions.complete(
+            await runtime.completions.async_complete(
                 {"name": "dashboard.review"},
                 {"name": "dashboard_id"},
             ),

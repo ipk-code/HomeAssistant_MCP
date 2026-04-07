@@ -38,6 +38,7 @@ There are no user-editable options in v1.
 - Use discovery tool `limit` arguments when clients do not need the full result set.
 - Pass current tool arguments in the MCP completion `ref.arguments` payload when completing dependent identifiers like `view_id` or `card_id`.
 - Use `resources/read` for large, read-only context like entity inventories or a managed dashboard document.
+- Use `hass.get_lovelace_dashboard` or `hass://lovelace/dashboard/{url_path}` when you need read-only access to a standard Home Assistant dashboard that is not MCP-managed.
 - Use `prompts/get` when you want an MCP-native workflow scaffold before calling `lovelace.*` tools.
 - Use HTTPS for remote access.
 - Pass the Home Assistant token through the MCP client configuration instead of hardcoding it.
@@ -45,6 +46,7 @@ There are no user-editable options in v1.
 ## Current Limitations
 
 - YAML dashboards only
+- MCP-managed dashboard mutations only; native Home Assistant Lovelace dashboard access is read-only
 - No SSE transport yet
 - No user-facing options flow yet
 - Storage directory and request-size limit are internal constants, not UI-configurable
@@ -52,6 +54,6 @@ There are no user-editable options in v1.
 
 ## Capability Status
 
-- stable in `0.2.1`: discovery tools, typed Lovelace tools, completions, resources, prompts, stateless HTTP transport, and release packaging assets
-- experimental in `0.2.1`: none
+- stable in `0.3.0`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, and release packaging assets
+- experimental in `0.3.0`: read-only native Home Assistant Lovelace dashboard access
 - planned next: SSE transport and optional OAuth evaluation

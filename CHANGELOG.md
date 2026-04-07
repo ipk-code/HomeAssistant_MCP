@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.3.0
+
+Release focus:
+
+- fix the request-path failures surfaced during live Home Assistant validation
+- move managed dashboard repository access off the Home Assistant event loop where it affected MCP requests
+- add read-only access to native Home Assistant Lovelace dashboards without mixing them into the MCP-managed repository model
+
+Added:
+
+- read-only native Lovelace dashboard tools:
+  - `hass.list_lovelace_dashboards`
+  - `hass.get_lovelace_dashboard`
+- read-only native Lovelace dashboard resources:
+  - `hass://lovelace/dashboards`
+  - `hass://lovelace/dashboard/{url_path}`
+
+Changed:
+
+- `resources/read` now returns controlled MCP errors for invalid managed dashboard URIs instead of surfacing a `500`
+- managed dashboard repository access used by MCP tools, resources, completions, and prompts now runs through Home Assistant's executor-aware path where needed
+- documentation now explains the difference between MCP-managed dashboards and native Home Assistant Lovelace dashboards, and classifies native dashboard access as experimental
+
+Notes:
+
+- the MCP API version remains `1.0.0`
+- the integration package version is now `0.3.0`
+- native Home Assistant Lovelace dashboard access is read-only and experimental in this release
+
 ## 0.2.1
 
 Release focus:

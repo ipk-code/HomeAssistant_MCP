@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import inspect
 import json
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 from ..discovery import HomeAssistantDiscoveryProvider
+from ..managed import ManagedDashboardExecutor
 from ..lovelace.errors import DashboardNotFoundError
 from ..lovelace.repository import YamlDashboardRepository
 
-PromptHandler = Callable[[dict[str, Any]], dict[str, Any]]
+PromptHandler = Callable[[dict[str, Any]], dict[str, Any] | Awaitable[dict[str, Any]]]
 
 _SUPPORTED_CARD_KINDS = (
     "heading",
@@ -78,7 +80,21 @@ class PromptRegistry:
             _definition, handler = self._prompts[name]
         except KeyError as err:
             raise KeyError(f"unknown prompt: {name}") from err
-        return handler(arguments)
+        result = handler(arguments)
+        if inspect.isawaitable(result):
+            raise RuntimeError("async prompt handler requires async_get")
+        return result
+
+    async def async_get(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Return one prompt payload by name, awaiting async handlers when needed."""
+        try:
+            _definition, handler = self._prompts[name]
+        except KeyError as err:
+            raise KeyError(f"unknown prompt: {name}") from err
+        result = handler(arguments)
+        if inspect.isawaitable(result):
+            result = await result
+        return result
 
 
 def register_builtin_prompts(
@@ -86,6 +102,7 @@ def register_builtin_prompts(
     *,
     repository: YamlDashboardRepository,
     discovery: HomeAssistantDiscoveryProvider,
+    managed: ManagedDashboardExecutor | None = None,
 ) -> None:
     """Register the shipped dashboard-focused prompt catalog."""
     registry.register(
@@ -105,7 +122,17 @@ def register_builtin_prompts(
                 ),
             ),
         ),
-        lambda arguments: _dashboard_builder_prompt(repository, discovery, arguments),
+        (
+            (
+                lambda arguments: _dashboard_builder_prompt_async(
+                    managed, discovery, arguments
+                )
+            )
+            if managed is not None
+            else lambda arguments: _dashboard_builder_prompt(
+                repository, discovery, arguments
+            )
+        ),
     )
     registry.register(
         PromptDefinition(
@@ -119,7 +146,11 @@ def register_builtin_prompts(
                 ),
             ),
         ),
-        lambda arguments: _dashboard_review_prompt(repository, arguments),
+        (
+            (lambda arguments: _dashboard_review_prompt_async(managed, arguments))
+            if managed is not None
+            else lambda arguments: _dashboard_review_prompt(repository, arguments)
+        ),
     )
     registry.register(
         PromptDefinition(
@@ -133,7 +164,11 @@ def register_builtin_prompts(
                 ),
             ),
         ),
-        lambda arguments: _layout_consistency_prompt(repository, arguments),
+        (
+            (lambda arguments: _layout_consistency_prompt_async(managed, arguments))
+            if managed is not None
+            else lambda arguments: _layout_consistency_prompt(repository, arguments)
+        ),
     )
     registry.register(
         PromptDefinition(
@@ -154,7 +189,17 @@ def register_builtin_prompts(
                 ),
             ),
         ),
-        lambda arguments: _entity_card_mapping_prompt(repository, discovery, arguments),
+        (
+            (
+                lambda arguments: _entity_card_mapping_prompt_async(
+                    managed, discovery, arguments
+                )
+            )
+            if managed is not None
+            else lambda arguments: _entity_card_mapping_prompt(
+                repository, discovery, arguments
+            )
+        ),
     )
     registry.register(
         PromptDefinition(
@@ -168,8 +213,128 @@ def register_builtin_prompts(
                 ),
             ),
         ),
-        lambda arguments: _dashboard_cleanup_prompt(repository, arguments),
+        (
+            (lambda arguments: _dashboard_cleanup_prompt_async(managed, arguments))
+            if managed is not None
+            else lambda arguments: _dashboard_cleanup_prompt(repository, arguments)
+        ),
     )
+
+
+async def _dashboard_builder_prompt_async(
+    managed: ManagedDashboardExecutor,
+    discovery: HomeAssistantDiscoveryProvider,
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    dashboard_id = arguments.get("dashboard_id")
+    area_id = arguments.get("area_id")
+    goal = arguments.get("goal")
+    dashboards = _bounded_items(await managed.list_dashboards())
+    area_summary = (
+        _lookup_area(discovery, area_id) if isinstance(area_id, str) else None
+    )
+
+    lines = [
+        "Design or extend a Lovelace dashboard using `homeassistant_mcp`.",
+        f"Available managed dashboards: {json.dumps(dashboards, indent=2)}",
+        f"Supported typed card kinds: {', '.join(_SUPPORTED_CARD_KINDS)}.",
+        "Recommended workflow:",
+        "1. Read `hass://areas`, `hass://entities`, and `hass://services` for context.",
+        "2. If you are updating a dashboard, read `hass://dashboard/{dashboard_id}` before proposing changes.",
+        "3. Use `completion/complete` for `entity_id`, `icon`, `view_id`, and `card_id` whenever identifiers are uncertain.",
+        "4. Prefer typed `lovelace.*` tools over free-form patches unless a targeted patch is clearly smaller.",
+    ]
+    if isinstance(goal, str) and goal:
+        lines.insert(1, f"Goal: {goal}")
+    if isinstance(dashboard_id, str) and dashboard_id:
+        lines.insert(1, f"Target dashboard_id: {dashboard_id}")
+    if area_summary is not None:
+        lines.insert(
+            1, f"Preferred area context: {json.dumps(area_summary, sort_keys=True)}"
+        )
+    return _prompt_result("Dashboard builder", lines)
+
+
+async def _dashboard_review_prompt_async(
+    managed: ManagedDashboardExecutor,
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    dashboard_id = _require_string(arguments, "dashboard_id")
+    summary = await _dashboard_summary_async(managed, dashboard_id)
+    lines = [
+        f"Review managed dashboard `{dashboard_id}` for clarity, navigation, grouping, and follow-up MCP changes.",
+        f"Dashboard summary: {json.dumps(summary, indent=2)}",
+        f"Read `hass://dashboard/{dashboard_id}` before suggesting edits.",
+        "Focus on title clarity, view purpose, card density, icon consistency, and whether the current views match the available entities.",
+        "Return concrete recommendations and the smallest typed `lovelace.*` operations needed to apply them.",
+    ]
+    return _prompt_result(f"Dashboard review for {dashboard_id}", lines)
+
+
+async def _layout_consistency_prompt_async(
+    managed: ManagedDashboardExecutor,
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    dashboard_id = _require_string(arguments, "dashboard_id")
+    summary = await _dashboard_summary_async(managed, dashboard_id)
+    lines = [
+        f"Review dashboard `{dashboard_id}` for layout consistency.",
+        f"Dashboard summary: {json.dumps(summary, indent=2)}",
+        "Check for inconsistent view titles, paths, icons, card grouping, and repeated card patterns that should be normalized.",
+        f"Use `hass://dashboard/{dashboard_id}` to inspect the full document and propose minimal typed `lovelace.*` changes.",
+    ]
+    return _prompt_result(f"Layout consistency review for {dashboard_id}", lines)
+
+
+async def _entity_card_mapping_prompt_async(
+    managed: ManagedDashboardExecutor,
+    discovery: HomeAssistantDiscoveryProvider,
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    entity_id = _require_string(arguments, "entity_id")
+    entity_summary = discovery.get_entity_summary(entity_id)
+    dashboard_id = arguments.get("dashboard_id")
+    view_id = arguments.get("view_id")
+    suggestions = _recommended_card_kinds(entity_summary)
+
+    lines = [
+        f"Suggest the best supported typed helper cards for entity `{entity_id}`.",
+        f"Entity summary: {json.dumps(entity_summary, indent=2)}",
+        f"Recommended card kinds in this server: {', '.join(suggestions)}.",
+        "Explain which card kind is the best primary choice and which alternative layouts are acceptable.",
+        "Include the exact `lovelace.create_card` or `lovelace.update_card` payload you would use.",
+    ]
+    if isinstance(dashboard_id, str) and dashboard_id:
+        lines.append(f"Placement dashboard_id: `{dashboard_id}`.")
+    if isinstance(view_id, str) and view_id:
+        lines.append(f"Placement view_id: `{view_id}`.")
+    if isinstance(dashboard_id, str) and dashboard_id:
+        try:
+            summary = await _dashboard_summary_async(managed, dashboard_id)
+        except KeyError:
+            lines.append(
+                f"Dashboard `{dashboard_id}` is not currently managed; treat this as a new placement target."
+            )
+        else:
+            lines.append(
+                f"Placement dashboard summary: {json.dumps(summary, indent=2)}"
+            )
+    return _prompt_result(f"Entity card mapping for {entity_id}", lines)
+
+
+async def _dashboard_cleanup_prompt_async(
+    managed: ManagedDashboardExecutor,
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    dashboard_id = _require_string(arguments, "dashboard_id")
+    summary = await _dashboard_summary_async(managed, dashboard_id)
+    lines = [
+        f"Audit dashboard `{dashboard_id}` for cleanup opportunities.",
+        f"Dashboard summary: {json.dumps(summary, indent=2)}",
+        f"Read `hass://dashboard/{dashboard_id}` and look for redundant views, vague titles, over-nested stacks, and cards that should be consolidated.",
+        "Prefer low-risk cleanups that can be expressed as a short sequence of typed `lovelace.*` calls.",
+    ]
+    return _prompt_result(f"Cleanup audit for {dashboard_id}", lines)
 
 
 def _dashboard_builder_prompt(
@@ -293,6 +458,32 @@ def _dashboard_summary(
 ) -> dict[str, Any]:
     try:
         dashboard = repository.get_dashboard(dashboard_id)
+    except DashboardNotFoundError as err:
+        raise KeyError(f"unknown dashboard: {dashboard_id}") from err
+    return {
+        "dashboard_id": dashboard["metadata"]["dashboard_id"],
+        "title": dashboard["metadata"]["title"],
+        "url_path": dashboard["metadata"]["url_path"],
+        "dashboard_version": dashboard["dashboard_version"],
+        "views": _bounded_items(
+            [
+                {
+                    "view_id": view["view_id"],
+                    "title": view["title"],
+                    "path": view["path"],
+                    "card_count": len(view.get("cards", [])),
+                }
+                for view in dashboard["views"]
+            ]
+        ),
+    }
+
+
+async def _dashboard_summary_async(
+    managed: ManagedDashboardExecutor, dashboard_id: str
+) -> dict[str, Any]:
+    try:
+        dashboard = await managed.get_dashboard(dashboard_id)
     except DashboardNotFoundError as err:
         raise KeyError(f"unknown dashboard: {dashboard_id}") from err
     return {

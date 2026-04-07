@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Any, Callable
+import inspect
+from typing import Any, Awaitable, Callable
 
 from ..discovery import HomeAssistantDiscoveryProvider
+from ..managed import ManagedDashboardExecutor
 from ..lovelace.errors import DashboardNotFoundError
 from ..lovelace.repository import YamlDashboardRepository
 
-CompletionProvider = Callable[[dict[str, Any], dict[str, Any]], dict[str, Any]]
+CompletionProvider = Callable[
+    [dict[str, Any], dict[str, Any]], dict[str, Any] | Awaitable[dict[str, Any]]
+]
 MAX_COMPLETION_VALUES = 25
 
 _COMMON_ICONS = (
@@ -64,7 +68,29 @@ class CompletionRegistry:
             provider = self._providers.get((None, argument_name))
         if provider is None:
             return {"values": [], "hasMore": False}
-        return _normalize_completion_result(provider(ref, argument))
+        result = provider(ref, argument)
+        if inspect.isawaitable(result):
+            raise RuntimeError("async completion provider requires async_complete")
+        return _normalize_completion_result(result)
+
+    async def async_complete(
+        self, ref: dict[str, Any], argument: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Return completion candidates for one argument, awaiting async providers."""
+        argument_name = argument.get("name")
+        if not isinstance(argument_name, str):
+            return {"values": [], "hasMore": False}
+
+        ref_name = ref.get("name") if isinstance(ref.get("name"), str) else None
+        provider = self._providers.get((ref_name, argument_name))
+        if provider is None:
+            provider = self._providers.get((None, argument_name))
+        if provider is None:
+            return {"values": [], "hasMore": False}
+        result = provider(ref, argument)
+        if inspect.isawaitable(result):
+            result = await result
+        return _normalize_completion_result(result)
 
     def provider_count(self) -> int:
         """Return the number of registered completion providers."""
@@ -76,6 +102,7 @@ def register_builtin_completions(
     *,
     repository: YamlDashboardRepository,
     discovery: HomeAssistantDiscoveryProvider,
+    managed: ManagedDashboardExecutor | None = None,
 ) -> None:
     """Register the built-in completion providers for shipped identifiers."""
     registry.register(
@@ -87,25 +114,40 @@ def register_builtin_completions(
     )
     registry.register(
         argument_name="dashboard_id",
-        provider=lambda ref, argument: _complete_values(
-            [dashboard["dashboard_id"] for dashboard in repository.list_dashboards()],
-            _prefix(argument),
+        provider=(
+            (lambda ref, argument: _complete_dashboard_ids_async(managed, argument))
+            if managed is not None
+            else lambda ref, argument: _complete_values(
+                [
+                    dashboard["dashboard_id"]
+                    for dashboard in repository.list_dashboards()
+                ],
+                _prefix(argument),
+            )
         ),
     )
     registry.register(
         argument_name="view_id",
-        provider=lambda ref, argument: _complete_view_ids(
-            repository,
-            ref,
-            _prefix(argument),
+        provider=(
+            (lambda ref, argument: _complete_view_ids_async(managed, ref, argument))
+            if managed is not None
+            else lambda ref, argument: _complete_view_ids(
+                repository,
+                ref,
+                _prefix(argument),
+            )
         ),
     )
     registry.register(
         argument_name="card_id",
-        provider=lambda ref, argument: _complete_card_ids(
-            repository,
-            ref,
-            _prefix(argument),
+        provider=(
+            (lambda ref, argument: _complete_card_ids_async(managed, ref, argument))
+            if managed is not None
+            else lambda ref, argument: _complete_card_ids(
+                repository,
+                ref,
+                _prefix(argument),
+            )
         ),
     )
     registry.register(
@@ -149,6 +191,52 @@ def _complete_card_ids(
     return _complete_values(
         [card["card_id"] for card in cards if isinstance(card.get("card_id"), str)],
         prefix,
+    )
+
+
+async def _complete_dashboard_ids_async(
+    managed: ManagedDashboardExecutor,
+    argument: dict[str, Any],
+) -> dict[str, Any]:
+    dashboards = await managed.list_dashboards()
+    return _complete_values(
+        [dashboard["dashboard_id"] for dashboard in dashboards],
+        _prefix(argument),
+    )
+
+
+async def _complete_view_ids_async(
+    managed: ManagedDashboardExecutor,
+    ref: dict[str, Any],
+    argument: dict[str, Any],
+) -> dict[str, Any]:
+    dashboard_id = _context_arguments(ref).get("dashboard_id")
+    if not isinstance(dashboard_id, str):
+        return {"values": [], "hasMore": False}
+    try:
+        views = await managed.list_views(dashboard_id)
+    except DashboardNotFoundError:
+        return {"values": [], "hasMore": False}
+    return _complete_values([view["view_id"] for view in views], _prefix(argument))
+
+
+async def _complete_card_ids_async(
+    managed: ManagedDashboardExecutor,
+    ref: dict[str, Any],
+    argument: dict[str, Any],
+) -> dict[str, Any]:
+    context = _context_arguments(ref)
+    dashboard_id = context.get("dashboard_id")
+    view_id = context.get("view_id")
+    if not isinstance(dashboard_id, str) or not isinstance(view_id, str):
+        return {"values": [], "hasMore": False}
+    try:
+        cards = await managed.list_cards(dashboard_id, view_id)
+    except DashboardNotFoundError:
+        return {"values": [], "hasMore": False}
+    return _complete_values(
+        [card["card_id"] for card in cards if isinstance(card.get("card_id"), str)],
+        _prefix(argument),
     )
 
 

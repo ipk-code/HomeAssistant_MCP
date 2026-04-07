@@ -41,6 +41,38 @@ class _FakeDiscoveryProvider:
         }
 
 
+class _FakeNativeLovelaceProvider:
+    async def list_dashboards(self, *, limit: int = 200) -> dict:
+        return {
+            "dashboards": [
+                {
+                    "id": "pv_energy",
+                    "title": "Photovoltaik",
+                    "url_path": "pv-energy",
+                    "mode": "storage",
+                    "source": "home_assistant_lovelace",
+                    "view_count": 2,
+                }
+            ],
+            "truncated": False,
+        }
+
+    async def get_dashboard(self, url_path: str) -> dict:
+        if url_path != "pv-energy":
+            raise KeyError(f"unknown lovelace dashboard: {url_path}")
+        return {
+            "metadata": {
+                "id": "pv_energy",
+                "title": "Photovoltaik",
+                "url_path": "pv-energy",
+                "mode": "storage",
+                "source": "home_assistant_lovelace",
+                "view_count": 2,
+            },
+            "config": {"views": []},
+        }
+
+
 class BuiltinResourceTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tempdir = TemporaryDirectory()
@@ -99,3 +131,51 @@ class BuiltinResourceTests(unittest.TestCase):
     def test_unknown_template_resource_is_rejected(self) -> None:
         with self.assertRaisesRegex(KeyError, "unknown resource"):
             self.registry.read("hass://dashboard/missing")
+
+
+class BuiltinAsyncResourceTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self) -> None:
+        self.tempdir = TemporaryDirectory()
+        self.addAsyncCleanup(self._cleanup_tempdir)
+        self.repository = YamlDashboardRepository(self.tempdir.name)
+        self.repository.create_dashboard(
+            {
+                "dashboard_id": "main",
+                "title": "Main",
+                "url_path": "main",
+                "views": [],
+            }
+        )
+
+    async def _cleanup_tempdir(self) -> None:
+        self.tempdir.cleanup()
+
+    async def test_builtin_native_resources_return_async_payloads(self) -> None:
+        registry = ResourceRegistry()
+        register_builtin_resources(
+            registry,
+            repository=self.repository,
+            discovery=_FakeDiscoveryProvider(),
+            native=_FakeNativeLovelaceProvider(),
+        )
+
+        payload = registry.list_payload()
+        self.assertIn(
+            "hass://lovelace/dashboards", [item["uri"] for item in payload["resources"]]
+        )
+        self.assertEqual(
+            payload["resourceTemplates"][1]["uriTemplate"],
+            "hass://lovelace/dashboard/{url_path}",
+        )
+
+        native_dashboards = json.loads(
+            (await registry.async_read("hass://lovelace/dashboards"))[0]["text"]
+        )
+        self.assertEqual(native_dashboards["dashboards"][0]["id"], "pv_energy")
+
+        native_dashboard = json.loads(
+            (await registry.async_read("hass://lovelace/dashboard/pv-energy"))[0][
+                "text"
+            ]
+        )
+        self.assertEqual(native_dashboard["metadata"]["url_path"], "pv-energy")

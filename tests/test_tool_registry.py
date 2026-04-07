@@ -53,12 +53,12 @@ class ToolRegistryTests(unittest.TestCase):
     def test_contract_loader_exposes_all_tools(self) -> None:
         payload, tools = load_api_contract()
         self.assertEqual(payload["api_version"], "1.0.0")
-        self.assertEqual(len(tools), 22)
+        self.assertEqual(len(tools), 24)
         self.assertEqual(tools[0].name, "lovelace.list_dashboards")
 
     def test_registry_lists_serialized_tools(self) -> None:
         tools = self.registry.list_tools()
-        self.assertEqual(len(tools), 22)
+        self.assertEqual(len(tools), 24)
         self.assertEqual(tools[0]["name"], "lovelace.list_dashboards")
         self.assertIn("inputSchema", tools[0])
 

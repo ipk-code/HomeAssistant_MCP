@@ -82,6 +82,8 @@ Expected runtime behavior:
 - `tools/list` returns the stable `lovelace.*` and `hass.*` tool catalog
 - `resources/list` returns built-in resources for config, entities, areas, devices, services, and managed dashboards
 - `resources/read` returns JSON payloads for those built-in resources
+- `hass.list_lovelace_dashboards` and `hass.get_lovelace_dashboard` expose standard Home Assistant dashboards read-only
+- `hass://lovelace/dashboards` and `hass://lovelace/dashboard/{url_path}` expose the same native dashboards as read-only resources
 - `prompts/list` returns built-in dashboard workflow prompts
 - `prompts/get` returns contextual prompt text for dashboard building, review, layout consistency, entity-card mapping, and cleanup audits
 - `completion/complete` returns built-in suggestions for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon`
@@ -131,6 +133,12 @@ Example 5:
 
 ```text
 Use homeassistant_mcp resources to read `hass://entities` and `hass://dashboard/main` before proposing a dashboard cleanup patch.
+```
+
+Example 5b:
+
+```text
+Use homeassistant_mcp to list native Home Assistant Lovelace dashboards and inspect `hass://lovelace/dashboard/pv-energy` before deciding whether that dashboard should be migrated into MCP-managed form.
 ```
 
 Example 6:
