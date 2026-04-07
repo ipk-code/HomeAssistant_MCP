@@ -1,6 +1,16 @@
 # Tool Catalog
 
-All stable v1 tools currently live under the `lovelace.*` namespace.
+The stable v1 tool surface currently spans the read-only `hass.*` namespace and the mutating `lovelace.*` namespace.
+
+## Home Assistant Discovery Tools
+
+| Tool | Mutation | Purpose |
+|---|---|---|
+| `hass.list_entities` | no | List entities with optional domain and area filters |
+| `hass.search_entities` | no | Search entities by query with optional domain, area, and device-class filters |
+| `hass.list_services` | no | List registered Home Assistant services |
+| `hass.list_areas` | no | List configured Home Assistant areas |
+| `hass.list_devices` | no | List devices with an optional area filter |
 
 ## Dashboard Tools
 
@@ -36,8 +46,8 @@ All stable v1 tools currently live under the `lovelace.*` namespace.
 
 ## Stability
 
-- All tools listed here are part of the stable v1 Lovelace authoring surface.
-- Resources, prompts, completions, and read-only `hass.*` discovery tools are not shipped yet.
+- All tools listed here are part of the stable v1 dashboard authoring and read-only discovery surface.
+- Resources, prompts, and completions are not shipped yet.
 
 ## Source Of Truth
 

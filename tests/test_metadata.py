@@ -80,6 +80,7 @@ class MetadataTests(unittest.TestCase):
         self.assertIn("## API Docs", docs_index)
 
         expected_tools = {
+            "hass.list_entities",
             "lovelace.list_dashboards",
             "lovelace.create_dashboard",
             "lovelace.patch_dashboard",

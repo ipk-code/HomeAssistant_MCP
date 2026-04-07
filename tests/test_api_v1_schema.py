@@ -1,4 +1,4 @@
-"""Tests for the v1 MCP Lovelace tool contract."""
+"""Tests for the v1 MCP tool contract."""
 
 from __future__ import annotations
 
@@ -46,6 +46,11 @@ class ToolContractSchemaTests(unittest.TestCase):
             "lovelace.delete_card",
             "lovelace.patch_dashboard",
             "lovelace.validate_dashboard",
+            "hass.list_entities",
+            "hass.search_entities",
+            "hass.list_services",
+            "hass.list_areas",
+            "hass.list_devices",
         }
         self.assertEqual(set(self.tools), expected)
 
@@ -116,6 +121,34 @@ class ToolContractSchemaTests(unittest.TestCase):
     def test_validate_dashboard_supports_document_or_patch_validation(self) -> None:
         validate_schema = self.tools["lovelace.validate_dashboard"]["input_schema"]
         self.assertEqual(len(validate_schema["oneOf"]), 2)
+
+    def test_hass_discovery_tools_are_read_only_and_bounded(self) -> None:
+        for name in (
+            "hass.list_entities",
+            "hass.search_entities",
+            "hass.list_services",
+            "hass.list_areas",
+            "hass.list_devices",
+        ):
+            self.assertFalse(self.tools[name]["mutation"], name)
+            properties = self.tools[name]["output_schema"]["properties"]
+            self.assertIn("truncated", properties)
+
+        self.assertEqual(
+            self.tools["hass.list_entities"]["input_schema"]["properties"]["limit"][
+                "$ref"
+            ],
+            "#/$defs/result_limit",
+        )
+        self.assertEqual(
+            self.tools["hass.list_devices"]["input_schema"]["properties"]["limit"][
+                "$ref"
+            ],
+            "#/$defs/result_limit",
+        )
+        self.assertIn(
+            "query", self.tools["hass.search_entities"]["input_schema"]["required"]
+        )
 
 
 if __name__ == "__main__":

@@ -118,7 +118,7 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIsNotNone(response)
         assert response is not None
-        self.assertEqual(len(response["result"]["tools"]), 17)
+        self.assertEqual(len(response["result"]["tools"]), 22)
         self.assertEqual(
             response["result"]["tools"][0]["name"], "lovelace.list_dashboards"
         )

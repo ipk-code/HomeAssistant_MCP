@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from ..discovery import HomeAssistantDiscoveryProvider
 from ..lovelace.repository import YamlDashboardRepository
 from .schema import ToolSchemaValidator
 
@@ -64,8 +65,13 @@ def load_api_contract(
 class ToolRegistry:
     """Dispatch v1 tool calls against a YAML dashboard repository."""
 
-    def __init__(self, repository: YamlDashboardRepository) -> None:
+    def __init__(
+        self,
+        repository: YamlDashboardRepository,
+        discovery: HomeAssistantDiscoveryProvider | None = None,
+    ) -> None:
         self._repository = repository
+        self._discovery = discovery
         spec, contracts = load_api_contract()
         self._contracts = contracts
         self._validator = ToolSchemaValidator(spec)
@@ -83,6 +89,16 @@ class ToolRegistry:
 
     def call(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         self._validator.validate_tool_arguments(name, arguments)
+        if name == "hass.list_entities":
+            return self._require_discovery().list_entities(arguments)
+        if name == "hass.search_entities":
+            return self._require_discovery().search_entities(arguments)
+        if name == "hass.list_services":
+            return self._require_discovery().list_services(arguments)
+        if name == "hass.list_areas":
+            return self._require_discovery().list_areas(arguments)
+        if name == "hass.list_devices":
+            return self._require_discovery().list_devices(arguments)
         if name == "lovelace.list_dashboards":
             return {"dashboards": self._repository.list_dashboards()}
         if name == "lovelace.get_dashboard":
@@ -217,3 +233,8 @@ class ToolRegistry:
                 "warnings": [],
             }
         raise KeyError(f"unknown tool: {name}")
+
+    def _require_discovery(self) -> HomeAssistantDiscoveryProvider:
+        if self._discovery is None:
+            raise KeyError("Home Assistant discovery provider is unavailable")
+        return self._discovery

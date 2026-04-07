@@ -110,6 +110,7 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
             Path(self.tempdir.name) / STORAGE_DIRECTORY / self.entry.entry_id
         )
         self.assertEqual(runtime.root_path, expected_root)
+        self.assertIsNotNone(runtime.discovery)
         self.assertEqual(len(self.hass.executor_jobs), 1)
         self.assertIs(get_runtime(self.hass), runtime)
         self.assertEqual(

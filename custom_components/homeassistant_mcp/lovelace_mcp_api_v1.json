@@ -53,6 +53,49 @@
       "minLength": 3,
       "maxLength": 128
     },
+    "opaque_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_:-]{1,128}$",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "area_id": {
+      "$ref": "#/$defs/opaque_id"
+    },
+    "device_id": {
+      "$ref": "#/$defs/opaque_id"
+    },
+    "domain_name": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "service_name": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "result_limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200
+    },
+    "search_query": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "device_class": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "state_value": {
+      "type": "string",
+      "maxLength": 1024
+    },
     "dashboard_version": {
       "type": "integer",
       "minimum": 0
@@ -966,6 +1009,108 @@
           ]
         }
       }
+    },
+    "entity_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entity_id",
+        "domain",
+        "state",
+        "friendly_name"
+      ],
+      "properties": {
+        "entity_id": {
+          "$ref": "#/$defs/entity_id"
+        },
+        "domain": {
+          "$ref": "#/$defs/domain_name"
+        },
+        "state": {
+          "$ref": "#/$defs/state_value"
+        },
+        "friendly_name": {
+          "$ref": "#/$defs/title"
+        },
+        "area_id": {
+          "$ref": "#/$defs/area_id"
+        },
+        "device_id": {
+          "$ref": "#/$defs/device_id"
+        },
+        "device_class": {
+          "$ref": "#/$defs/device_class"
+        },
+        "unit_of_measurement": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        }
+      }
+    },
+    "service_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain",
+        "services"
+      ],
+      "properties": {
+        "domain": {
+          "$ref": "#/$defs/domain_name"
+        },
+        "services": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {
+            "$ref": "#/$defs/service_name"
+          }
+        }
+      }
+    },
+    "area_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "area_id",
+        "name"
+      ],
+      "properties": {
+        "area_id": {
+          "$ref": "#/$defs/area_id"
+        },
+        "name": {
+          "$ref": "#/$defs/title"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        }
+      }
+    },
+    "device_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device_id",
+        "name"
+      ],
+      "properties": {
+        "device_id": {
+          "$ref": "#/$defs/device_id"
+        },
+        "name": {
+          "$ref": "#/$defs/title"
+        },
+        "area_id": {
+          "$ref": "#/$defs/area_id"
+        },
+        "manufacturer": {
+          "$ref": "#/$defs/title"
+        },
+        "model": {
+          "$ref": "#/$defs/title"
+        }
+      }
     }
   },
   "tools": [
@@ -1726,6 +1871,203 @@
               "$ref": "#/$defs/validation_message"
             },
             "maxItems": 200
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.list_entities",
+      "mutation": false,
+      "description": "List Home Assistant entities with optional domain and area filters for dashboard discovery.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "domain": {
+            "$ref": "#/$defs/domain_name"
+          },
+          "area_id": {
+            "$ref": "#/$defs/area_id"
+          },
+          "limit": {
+            "$ref": "#/$defs/result_limit"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entities",
+          "truncated"
+        ],
+        "properties": {
+          "entities": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/$defs/entity_summary"
+            }
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.search_entities",
+      "mutation": false,
+      "description": "Search Home Assistant entities by query with optional domain, area, and device-class filters.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "query"
+        ],
+        "properties": {
+          "query": {
+            "$ref": "#/$defs/search_query"
+          },
+          "domain": {
+            "$ref": "#/$defs/domain_name"
+          },
+          "area_id": {
+            "$ref": "#/$defs/area_id"
+          },
+          "device_class": {
+            "$ref": "#/$defs/device_class"
+          },
+          "limit": {
+            "$ref": "#/$defs/result_limit"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entities",
+          "truncated"
+        ],
+        "properties": {
+          "entities": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/$defs/entity_summary"
+            }
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.list_services",
+      "mutation": false,
+      "description": "List registered Home Assistant services with an optional domain filter.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "domain": {
+            "$ref": "#/$defs/domain_name"
+          },
+          "limit": {
+            "$ref": "#/$defs/result_limit"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "services",
+          "truncated"
+        ],
+        "properties": {
+          "services": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/$defs/service_summary"
+            }
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.list_areas",
+      "mutation": false,
+      "description": "List configured Home Assistant areas for dashboard grouping.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "$ref": "#/$defs/result_limit"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "areas",
+          "truncated"
+        ],
+        "properties": {
+          "areas": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/$defs/area_summary"
+            }
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.list_devices",
+      "mutation": false,
+      "description": "List Home Assistant devices with an optional area filter.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "area_id": {
+            "$ref": "#/$defs/area_id"
+          },
+          "limit": {
+            "$ref": "#/$defs/result_limit"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "devices",
+          "truncated"
+        ],
+        "properties": {
+          "devices": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/$defs/device_summary"
+            }
+          },
+          "truncated": {
+            "type": "boolean"
           }
         }
       }

@@ -8,6 +8,7 @@ Current integration version: `0.1.1`
 
 - Runs an MCP server inside Home Assistant.
 - Exposes typed Lovelace dashboard, view, and card tools.
+- Exposes read-only `hass.*` discovery tools for entities, services, areas, and devices.
 - Uses stateless Streamable HTTP at `/api/homeassistant_mcp`.
 - Uses standard Home Assistant authentication with a long-lived access token for remote clients.
 - Keeps dashboard mutations inside a constrained YAML dashboard model with restricted JSON Patch support.
@@ -74,6 +75,7 @@ OpenCode can connect as a remote MCP client with a Home Assistant long-lived acc
 | Capability | Status | Notes |
 |---|---|---|
 | `initialize`, `ping`, `tools/list`, `tools/call` | Stable in v1 | Current dashboard authoring MCP method surface |
+| Read-only `hass.*` discovery tools | Stable in v1 | Includes `hass.list_entities`, `hass.search_entities`, `hass.list_services`, `hass.list_areas`, `hass.list_devices` |
 | Dashboard tools | Stable in v1 | Includes `lovelace.list_dashboards`, `lovelace.get_dashboard`, `lovelace.create_dashboard`, `lovelace.update_dashboard_metadata`, `lovelace.delete_dashboard`, `lovelace.patch_dashboard`, `lovelace.validate_dashboard` |
 | View tools | Stable in v1 | Includes `lovelace.list_views`, `lovelace.get_view`, `lovelace.create_view`, `lovelace.update_view`, `lovelace.delete_view` |
 | Card tools | Stable in v1 | Includes `lovelace.list_cards`, `lovelace.get_card`, `lovelace.create_card`, `lovelace.update_card`, `lovelace.delete_card` |
@@ -85,13 +87,13 @@ OpenCode can connect as a remote MCP client with a Home Assistant long-lived acc
 Stable in v1:
 
 - typed Lovelace dashboard, view, and card operations
+- read-only `hass.*` discovery tools with bounded result sizes
 - bundled contract-driven tool schemas
 - stateless Streamable HTTP transport
 - Home Assistant-authenticated remote access
 
 Not available yet:
 
-- read-only `hass.*` discovery tools
 - built-in MCP resources
 - built-in MCP prompts
 - built-in MCP completions
@@ -101,7 +103,7 @@ Not available yet:
 
 **What is this server for?**
 
-It is focused on Lovelace dashboard authoring inside Home Assistant. It is not a general-purpose Home Assistant admin server.
+It is focused on Lovelace dashboard authoring inside Home Assistant, with read-only discovery tools that help clients inspect entities, services, areas, and devices. It is not a general-purpose Home Assistant admin server.
 
 **How does authentication work?**
 

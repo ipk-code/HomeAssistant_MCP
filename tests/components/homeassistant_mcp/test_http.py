@@ -6,6 +6,9 @@ from __future__ import annotations
 
 import json
 
+from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -218,6 +221,206 @@ async def test_streamable_http_supports_phase2_capability_methods(
     assert completion_payload["result"] == {
         "completion": {"values": [], "hasMore": False}
     }
+
+
+async def test_streamable_http_hass_discovery_tools_return_valid_results(
+    hass, hass_client
+) -> None:
+    """Test authenticated read-only Home Assistant discovery tools."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "transport": DEFAULT_TRANSPORT,
+            "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+        },
+        title="Home Assistant MCP",
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    area_registry = ar.async_get(hass)
+    area = area_registry.async_create("Kitchen")
+
+    device_registry = dr.async_get(hass)
+    device = device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, "kitchen-hub")},
+        manufacturer="Acme",
+        model="Hub",
+        name="Kitchen Hub",
+    )
+    device = device_registry.async_update_device(device.id, area_id=area.id)
+
+    entity_registry = er.async_get(hass)
+    entity_registry.async_get_or_create(
+        "sensor",
+        DOMAIN,
+        "kitchen-temperature",
+        suggested_object_id="kitchen_temperature",
+        config_entry=entry,
+        device_id=device.id,
+        original_name="Kitchen Temperature",
+        original_device_class="temperature",
+        unit_of_measurement="C",
+    )
+
+    hass.states.async_set(
+        "sensor.kitchen_temperature",
+        "21",
+        {
+            "friendly_name": "Kitchen Temperature",
+            "device_class": "temperature",
+            "unit_of_measurement": "C",
+        },
+    )
+    hass.states.async_set(
+        "light.porch",
+        "off",
+        {"friendly_name": "Porch Light"},
+    )
+
+    async def _handle_light_turn_on(call):
+        return None
+
+    hass.services.async_register("light", "turn_on", _handle_light_turn_on)
+    await hass.async_block_till_done()
+
+    client = await hass_client()
+
+    entities_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "1",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.list_entities",
+                "arguments": {"area_id": area.id},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert entities_response.status == 200
+    entities_payload = await entities_response.json()
+    entities_result = _decode_tool_result(entities_payload)
+    _VALIDATOR.validate_tool_result("hass.list_entities", entities_result)
+    assert entities_result["entities"][0]["entity_id"] == "sensor.kitchen_temperature"
+
+    search_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "2",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.search_entities",
+                "arguments": {"query": "kitchen"},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert search_response.status == 200
+    search_payload = await search_response.json()
+    search_result = _decode_tool_result(search_payload)
+    _VALIDATOR.validate_tool_result("hass.search_entities", search_result)
+    assert search_result["entities"][0]["entity_id"] == "sensor.kitchen_temperature"
+
+    services_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "3",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.list_services",
+                "arguments": {"domain": "light"},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert services_response.status == 200
+    services_payload = await services_response.json()
+    services_result = _decode_tool_result(services_payload)
+    _VALIDATOR.validate_tool_result("hass.list_services", services_result)
+    assert "turn_on" in services_result["services"][0]["services"]
+
+    areas_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "4",
+            "method": "tools/call",
+            "params": {"name": "hass.list_areas", "arguments": {}},
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert areas_response.status == 200
+    areas_payload = await areas_response.json()
+    areas_result = _decode_tool_result(areas_payload)
+    _VALIDATOR.validate_tool_result("hass.list_areas", areas_result)
+    assert any(item["name"] == "Kitchen" for item in areas_result["areas"])
+
+    devices_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "5",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.list_devices",
+                "arguments": {"area_id": area.id},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert devices_response.status == 200
+    devices_payload = await devices_response.json()
+    devices_result = _decode_tool_result(devices_payload)
+    _VALIDATOR.validate_tool_result("hass.list_devices", devices_result)
+    assert devices_result["devices"][0]["device_id"] == device.id
+
+
+async def test_streamable_http_hass_discovery_tools_respect_limit(
+    hass, hass_client
+) -> None:
+    """Test bounded list responses from the discovery tool surface."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "transport": DEFAULT_TRANSPORT,
+            "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+        },
+        title="Home Assistant MCP",
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    hass.states.async_set("sensor.one", "1", {"friendly_name": "One"})
+    hass.states.async_set("sensor.two", "2", {"friendly_name": "Two"})
+    await hass.async_block_till_done()
+
+    client = await hass_client()
+    response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "1",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.list_entities",
+                "arguments": {"domain": "sensor", "limit": 1},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert response.status == 200
+    payload = await response.json()
+    result = _decode_tool_result(payload)
+    _VALIDATOR.validate_tool_result("hass.list_entities", result)
+    assert len(result["entities"]) == 1
+    assert result["truncated"] is True
 
 
 async def test_streamable_http_returns_jsonrpc_error_for_invalid_payload(

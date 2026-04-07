@@ -10,6 +10,7 @@
 - Transport: stateless Streamable HTTP
 - Mutation model: typed tools plus restricted JSON Patch
 - Card model: typed helper inputs only
+- Read-only discovery model: bounded `hass.*` inspection tools
 - HTTP endpoint: `/api/homeassistant_mcp`
 
 ## Capability Matrix
@@ -19,6 +20,7 @@
 | Transport | Stable in v1 | `streamable_http_stateless` only |
 | Auth | Stable in v1 | Standard Home Assistant authentication |
 | MCP methods | Stable in v1 | `initialize`, `ping`, `tools/list`, `tools/call` |
+| Read-only Home Assistant discovery tools | Stable in v1 | `hass.list_entities`, `hass.search_entities`, `hass.list_services`, `hass.list_areas`, `hass.list_devices` |
 | Lovelace dashboard tools | Stable in v1 | Dashboard, view, and card CRUD plus validation and patching |
 | Resources | Foundation shipped | `resources/list` and `resources/read` are available, but no built-in resources are registered yet |
 | Prompts | Foundation shipped | `prompts/list` and `prompts/get` are available, but no built-in prompts are registered yet |
@@ -31,6 +33,7 @@
 - Dashboard identity fields are immutable through JSON Patch.
 - Stateful transports such as SSE are deferred until the stateless transport is stable.
 - The server is currently dashboard-first, not a general-purpose Home Assistant admin surface.
+- Discovery tools are read-only and enforce bounded response sizes.
 
 ## Runtime Model
 

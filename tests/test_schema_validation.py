@@ -77,3 +77,20 @@ class SchemaValidationTests(unittest.TestCase):
                 }
             },
         )
+
+    def test_accepts_valid_hass_discovery_payloads(self) -> None:
+        self.validator.validate_tool_arguments(
+            "hass.list_entities",
+            {"domain": "light", "limit": 25},
+        )
+        self.validator.validate_tool_arguments(
+            "hass.search_entities",
+            {"query": "kitchen", "device_class": "temperature", "limit": 10},
+        )
+
+    def test_rejects_invalid_hass_discovery_payloads(self) -> None:
+        with self.assertRaises(ToolSchemaValidationError):
+            self.validator.validate_tool_arguments("hass.search_entities", {"limit": 5})
+
+        with self.assertRaises(ToolSchemaValidationError):
+            self.validator.validate_tool_arguments("hass.list_devices", {"limit": 201})

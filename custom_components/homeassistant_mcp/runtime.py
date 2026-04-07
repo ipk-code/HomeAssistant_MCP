@@ -5,7 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 import logging
 from pathlib import Path
+from typing import Any
 
+from .discovery import HomeAssistantDiscoveryProvider
 from .lovelace.repository import YamlDashboardRepository
 from .mcp.completions import CompletionRegistry
 from .mcp.prompts import PromptRegistry
@@ -22,6 +24,7 @@ class IntegrationRuntime:
 
     root_path: Path
     repository: YamlDashboardRepository
+    discovery: HomeAssistantDiscoveryProvider
     registry: ToolRegistry
     resources: ResourceRegistry
     prompts: PromptRegistry
@@ -29,11 +32,12 @@ class IntegrationRuntime:
     transport: StatelessMCPTransport
 
 
-def create_runtime(root_path: Path) -> IntegrationRuntime:
+def create_runtime(hass: Any, root_path: Path) -> IntegrationRuntime:
     """Build repository and transport objects for one config entry."""
     _LOGGER.debug("Creating Home Assistant MCP runtime at %s", root_path)
     repository = YamlDashboardRepository(root_path)
-    registry = ToolRegistry(repository)
+    discovery = HomeAssistantDiscoveryProvider(hass)
+    registry = ToolRegistry(repository, discovery=discovery)
     resources = ResourceRegistry()
     prompts = PromptRegistry()
     completions = CompletionRegistry()
@@ -46,6 +50,7 @@ def create_runtime(root_path: Path) -> IntegrationRuntime:
     return IntegrationRuntime(
         root_path=root_path,
         repository=repository,
+        discovery=discovery,
         registry=registry,
         resources=resources,
         prompts=prompts,

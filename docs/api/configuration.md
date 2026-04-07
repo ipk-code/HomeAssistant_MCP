@@ -23,6 +23,8 @@ There are no user-editable options in v1.
 - `endpoint`: `/api/homeassistant_mcp`
 - `storage_directory`: `.storage/homeassistant_mcp/<config_entry_id>`
 - `max_request_bytes`: `1048576` (1 MiB)
+- `discovery_default_limit`: `100`
+- `discovery_max_limit`: `200`
 - `single_config_entry`: `true`
 - `requires_home_assistant_auth`: `true`
 - `open_code_oauth_mode`: `false` recommended for the current token-based setup
@@ -32,6 +34,7 @@ There are no user-editable options in v1.
 - Keep the default stateless transport.
 - Keep the default YAML dashboard mode.
 - Run only a single config entry.
+- Use discovery tool `limit` arguments when clients do not need the full result set.
 - Use HTTPS for remote access.
 - Pass the Home Assistant token through the MCP client configuration instead of hardcoding it.
 

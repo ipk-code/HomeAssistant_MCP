@@ -12,7 +12,7 @@ This directory contains the user and contributor documentation for `HomeAssistan
 
 - `api/overview.md`: MCP scope, design boundaries, and architecture layers
 - `api/configuration.md`: endpoint, auth model, defaults, and current limitations
-- `api/tools.md`: stable v1 Lovelace tool catalog
+- `api/tools.md`: stable v1 discovery and Lovelace tool catalog
 
 ## Guides
 
@@ -39,5 +39,6 @@ This directory contains the user and contributor documentation for `HomeAssistan
 - YAML dashboards only
 - stateless Streamable HTTP transport first
 - standard Home Assistant auth with bearer tokens for remote access
+- read-only `hass.*` discovery tools with bounded result sets
 - typed card helpers only
 - RFC 6902 JSON Patch for dashboard patch operations

@@ -47,7 +47,9 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
     async_register(hass)
     await hass.async_add_executor_job(load_api_contract)
     runtime_root = _runtime_root(hass) / entry.entry_id
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = create_runtime(runtime_root)
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = create_runtime(
+        hass, runtime_root
+    )
     _LOGGER.info(
         "Loaded Home Assistant MCP version %s entry %s",
         INTEGRATION_VERSION,

@@ -79,7 +79,7 @@ Expected runtime behavior:
 - the MCP server should appear in `opencode mcp list`
 - an unauthenticated direct HTTP request returns `401 Unauthorized`
 - an authenticated MCP `initialize` request returns `Home Assistant MCP`
-- `tools/list` returns the stable `lovelace.*` tool catalog
+- `tools/list` returns the stable `lovelace.*` and `hass.*` tool catalog
 - `resources/list` and `prompts/list` currently return empty lists until later phases add built-in definitions
 - `completion/complete` is available but currently returns empty suggestions unless a future phase registers providers
 
@@ -91,6 +91,12 @@ Example 1:
 
 ```text
 Use homeassistant_mcp to list my YAML dashboards and summarize their current views.
+```
+
+Example 1b:
+
+```text
+Use homeassistant_mcp to list my Home Assistant entities in the kitchen and suggest which ones should appear on a Lovelace dashboard.
 ```
 
 Example 2:
