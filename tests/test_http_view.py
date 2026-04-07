@@ -114,7 +114,25 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(self.hass.executor_jobs), 1)
         self.assertIs(get_runtime(self.hass), runtime)
         self.assertEqual(
-            runtime.resources.list_payload(), {"resources": [], "resourceTemplates": []}
+            [item["uri"] for item in runtime.resources.list_payload()["resources"]],
+            [
+                "hass://config",
+                "hass://entities",
+                "hass://areas",
+                "hass://devices",
+                "hass://services",
+            ],
+        )
+        self.assertEqual(
+            runtime.resources.list_payload()["resourceTemplates"],
+            [
+                {
+                    "uriTemplate": "hass://dashboard/{dashboard_id}",
+                    "name": "Managed Dashboard",
+                    "description": "A managed Lovelace dashboard document by dashboard identifier.",
+                    "mimeType": "application/json",
+                }
+            ],
         )
         self.assertEqual(runtime.prompts.list_prompts(), [])
         self.assertEqual(

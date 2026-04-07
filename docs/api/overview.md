@@ -22,7 +22,7 @@
 | MCP methods | Stable in v1 | `initialize`, `ping`, `tools/list`, `tools/call` |
 | Read-only Home Assistant discovery tools | Stable in v1 | `hass.list_entities`, `hass.search_entities`, `hass.list_services`, `hass.list_areas`, `hass.list_devices` |
 | Lovelace dashboard tools | Stable in v1 | Dashboard, view, and card CRUD plus validation and patching |
-| Resources | Foundation shipped | `resources/list` and `resources/read` are available, but no built-in resources are registered yet |
+| Resources | Stable in v1 | `resources/list` and `resources/read` expose config, entities, areas, devices, services, and `hass://dashboard/{dashboard_id}` |
 | Prompts | Foundation shipped | `prompts/list` and `prompts/get` are available, but no built-in prompts are registered yet |
 | Completions | Stable in v1 | `completion/complete` provides built-in suggestions for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon` |
 | OAuth client flow | Not shipped yet | Current remote setup uses bearer tokens |
@@ -34,6 +34,7 @@
 - Stateful transports such as SSE are deferred until the stateless transport is stable.
 - The server is currently dashboard-first, not a general-purpose Home Assistant admin surface.
 - Discovery tools are read-only and enforce bounded response sizes.
+- Resources are read-only and only expose bounded Home Assistant context plus managed dashboards.
 
 ## Runtime Model
 

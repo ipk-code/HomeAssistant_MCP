@@ -52,7 +52,14 @@ class TransportTests(unittest.TestCase):
                 name="Dashboard",
                 description="Dashboard template",
                 mime_type="application/json",
-            )
+            ),
+            lambda params, uri: [
+                {
+                    "uri": uri,
+                    "mimeType": "application/json",
+                    "text": params["dashboard_id"],
+                }
+            ],
         )
         prompts.register(
             PromptDefinition(
@@ -146,6 +153,19 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(status, 200)
         assert response is not None
         self.assertEqual(response["result"]["contents"][0]["uri"], "hass://test")
+
+    def test_resources_read_supports_template_backed_resources(self) -> None:
+        status, response = self.transport.handle_jsonrpc_message(
+            {
+                "jsonrpc": "2.0",
+                "id": "3",
+                "method": "resources/read",
+                "params": {"uri": "hass://dashboard/main"},
+            }
+        )
+        self.assertEqual(status, 200)
+        assert response is not None
+        self.assertEqual(response["result"]["contents"][0]["text"], "main")
 
     def test_resources_read_unknown_uri_is_rejected(self) -> None:
         status, response = self.transport.handle_jsonrpc_message(

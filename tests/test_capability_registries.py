@@ -40,7 +40,14 @@ class ResourceRegistryTests(unittest.TestCase):
                 name="Dashboard",
                 description="Dashboard template",
                 mime_type="application/json",
-            )
+            ),
+            lambda params, uri: [
+                {
+                    "uri": uri,
+                    "mimeType": "application/json",
+                    "text": params["dashboard_id"],
+                }
+            ],
         )
 
         payload = registry.list_payload()
@@ -50,6 +57,10 @@ class ResourceRegistryTests(unittest.TestCase):
             "hass://dashboard/{dashboard_id}",
         )
         self.assertEqual(registry.read("hass://config")[0]["text"], "{}")
+        self.assertEqual(
+            registry.read("hass://dashboard/main")[0]["text"],
+            "main",
+        )
 
     def test_resource_registry_rejects_unknown_uri(self) -> None:
         registry = ResourceRegistry()

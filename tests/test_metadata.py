@@ -71,6 +71,9 @@ class MetadataTests(unittest.TestCase):
         self.assertIn("completion/complete", readme)
         self.assertIn("completion/complete", overview)
         self.assertIn("completion/complete", opencode)
+        self.assertIn("resources/read", readme)
+        self.assertIn("resources/read", overview)
+        self.assertIn("resources/read", opencode)
 
     def test_docs_publish_stable_v1_capability_summary(self) -> None:
         readme = README_PATH.read_text(encoding="utf-8")
@@ -97,3 +100,4 @@ class MetadataTests(unittest.TestCase):
         self.assertIn(
             "entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon`", readme
         )
+        self.assertIn("hass://dashboard/{dashboard_id}", readme)

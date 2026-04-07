@@ -37,6 +37,7 @@ There are no user-editable options in v1.
 - Run only a single config entry.
 - Use discovery tool `limit` arguments when clients do not need the full result set.
 - Pass current tool arguments in the MCP completion `ref.arguments` payload when completing dependent identifiers like `view_id` or `card_id`.
+- Use `resources/read` for large, read-only context like entity inventories or a managed dashboard document.
 - Use HTTPS for remote access.
 - Pass the Home Assistant token through the MCP client configuration instead of hardcoding it.
 
@@ -46,5 +47,5 @@ There are no user-editable options in v1.
 - No SSE transport yet
 - No user-facing options flow yet
 - Storage directory and request-size limit are internal constants, not UI-configurable
-- No built-in resources or prompts registered yet
+- No built-in prompts registered yet
 - No OAuth flow yet for browser-style MCP clients

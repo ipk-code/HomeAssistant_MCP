@@ -80,7 +80,9 @@ Expected runtime behavior:
 - an unauthenticated direct HTTP request returns `401 Unauthorized`
 - an authenticated MCP `initialize` request returns `Home Assistant MCP`
 - `tools/list` returns the stable `lovelace.*` and `hass.*` tool catalog
-- `resources/list` and `prompts/list` currently return empty lists until later phases add built-in definitions
+- `resources/list` returns built-in resources for config, entities, areas, devices, services, and managed dashboards
+- `resources/read` returns JSON payloads for those built-in resources
+- `prompts/list` currently returns an empty list until a later phase adds built-in definitions
 - `completion/complete` returns built-in suggestions for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon`
 
 ## Completion Context
@@ -122,6 +124,12 @@ Example 4:
 
 ```text
 Use homeassistant_mcp completion support to suggest the right `entity_id` and `icon` values while creating a new tile card.
+```
+
+Example 5:
+
+```text
+Use homeassistant_mcp resources to read `hass://entities` and `hass://dashboard/main` before proposing a dashboard cleanup patch.
 ```
 
 ## Example AGENTS.md Rule

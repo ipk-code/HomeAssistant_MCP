@@ -11,7 +11,7 @@ from .discovery import HomeAssistantDiscoveryProvider
 from .lovelace.repository import YamlDashboardRepository
 from .mcp.completions import CompletionRegistry, register_builtin_completions
 from .mcp.prompts import PromptRegistry
-from .mcp.resources import ResourceRegistry
+from .mcp.resources import ResourceRegistry, register_builtin_resources
 from .mcp.server import ToolRegistry
 from .mcp.transport import StatelessMCPTransport
 
@@ -39,6 +39,11 @@ def create_runtime(hass: Any, root_path: Path) -> IntegrationRuntime:
     discovery = HomeAssistantDiscoveryProvider(hass)
     registry = ToolRegistry(repository, discovery=discovery)
     resources = ResourceRegistry()
+    register_builtin_resources(
+        resources,
+        repository=repository,
+        discovery=discovery,
+    )
     prompts = PromptRegistry()
     completions = CompletionRegistry()
     register_builtin_completions(

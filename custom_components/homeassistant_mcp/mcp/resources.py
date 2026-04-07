@@ -3,9 +3,32 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
+import re
 from typing import Any, Callable
 
+from ..const import (
+    DEFAULT_DASHBOARD_MODE,
+    DEFAULT_TRANSPORT,
+    DOMAIN,
+    INTEGRATION_VERSION,
+    STREAMABLE_HTTP_API,
+    TITLE,
+)
+from ..discovery import (
+    DEFAULT_DISCOVERY_LIMIT,
+    HomeAssistantDiscoveryProvider,
+    MAX_DISCOVERY_LIMIT,
+)
+from ..lovelace.errors import DashboardNotFoundError
+from ..lovelace.repository import YamlDashboardRepository
+from .completions import MAX_COMPLETION_VALUES
+
 ResourceReader = Callable[[], list[dict[str, Any]]]
+ResourceTemplateReader = Callable[[dict[str, str], str], list[dict[str, Any]]]
+
+
+_RESOURCE_MIME_TYPE = "application/json"
 
 
 @dataclass(frozen=True)
@@ -44,20 +67,40 @@ class ResourceTemplateDefinition:
         }
 
 
+@dataclass(frozen=True)
+class _ResourceTemplateBinding:
+    """Template binding with compiled matching metadata."""
+
+    definition: ResourceTemplateDefinition
+    reader: ResourceTemplateReader | None
+    pattern: re.Pattern[str]
+    parameter_names: tuple[str, ...]
+
+
 class ResourceRegistry:
     """Registry for MCP resources and templates."""
 
     def __init__(self) -> None:
         self._resources: dict[str, tuple[ResourceDefinition, ResourceReader]] = {}
-        self._templates: dict[str, ResourceTemplateDefinition] = {}
+        self._templates: dict[str, _ResourceTemplateBinding] = {}
 
     def register(self, definition: ResourceDefinition, reader: ResourceReader) -> None:
         """Register a concrete resource and its reader."""
         self._resources[definition.uri] = (definition, reader)
 
-    def register_template(self, definition: ResourceTemplateDefinition) -> None:
-        """Register a resource template definition."""
-        self._templates[definition.uri_template] = definition
+    def register_template(
+        self,
+        definition: ResourceTemplateDefinition,
+        reader: ResourceTemplateReader | None = None,
+    ) -> None:
+        """Register a resource template definition and optional reader."""
+        pattern, parameter_names = _compile_uri_template(definition.uri_template)
+        self._templates[definition.uri_template] = _ResourceTemplateBinding(
+            definition=definition,
+            reader=reader,
+            pattern=pattern,
+            parameter_names=parameter_names,
+        )
 
     def list_payload(self) -> dict[str, list[dict[str, Any]]]:
         """Return the MCP `resources/list` payload."""
@@ -66,14 +109,152 @@ class ResourceRegistry:
                 definition.as_mcp() for definition, _reader in self._resources.values()
             ],
             "resourceTemplates": [
-                definition.as_mcp() for definition in self._templates.values()
+                binding.definition.as_mcp() for binding in self._templates.values()
             ],
         }
 
     def read(self, uri: str) -> list[dict[str, Any]]:
         """Read one concrete resource by URI."""
-        try:
-            _definition, reader = self._resources[uri]
-        except KeyError as err:
-            raise KeyError(f"unknown resource: {uri}") from err
-        return reader()
+        resource = self._resources.get(uri)
+        if resource is not None:
+            _definition, reader = resource
+            return reader()
+
+        for binding in self._templates.values():
+            match = binding.pattern.fullmatch(uri)
+            if match is None or binding.reader is None:
+                continue
+            return binding.reader(match.groupdict(), uri)
+
+        raise KeyError(f"unknown resource: {uri}")
+
+
+def register_builtin_resources(
+    registry: ResourceRegistry,
+    *,
+    repository: YamlDashboardRepository,
+    discovery: HomeAssistantDiscoveryProvider,
+) -> None:
+    """Register the built-in Home Assistant MCP resources."""
+    registry.register(
+        ResourceDefinition(
+            uri="hass://config",
+            name="Home Assistant MCP Config",
+            description="Current integration transport, auth, and default runtime settings.",
+            mime_type=_RESOURCE_MIME_TYPE,
+        ),
+        lambda: _json_resource(
+            "hass://config",
+            {
+                "integration": {
+                    "domain": DOMAIN,
+                    "title": TITLE,
+                    "version": INTEGRATION_VERSION,
+                },
+                "transport": {
+                    "endpoint": STREAMABLE_HTTP_API,
+                    "mode": DEFAULT_TRANSPORT,
+                    "requires_auth": True,
+                },
+                "defaults": {
+                    "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+                    "discovery_default_limit": DEFAULT_DISCOVERY_LIMIT,
+                    "discovery_max_limit": MAX_DISCOVERY_LIMIT,
+                    "completion_max_values": MAX_COMPLETION_VALUES,
+                },
+            },
+        ),
+    )
+    registry.register(
+        ResourceDefinition(
+            uri="hass://entities",
+            name="Home Assistant Entities",
+            description="Bounded read-only entity inventory used by the discovery tools.",
+            mime_type=_RESOURCE_MIME_TYPE,
+        ),
+        lambda: _json_resource(
+            "hass://entities",
+            discovery.list_entities({"limit": MAX_DISCOVERY_LIMIT}),
+        ),
+    )
+    registry.register(
+        ResourceDefinition(
+            uri="hass://areas",
+            name="Home Assistant Areas",
+            description="Configured Home Assistant areas.",
+            mime_type=_RESOURCE_MIME_TYPE,
+        ),
+        lambda: _json_resource(
+            "hass://areas",
+            discovery.list_areas({"limit": MAX_DISCOVERY_LIMIT}),
+        ),
+    )
+    registry.register(
+        ResourceDefinition(
+            uri="hass://devices",
+            name="Home Assistant Devices",
+            description="Bounded read-only Home Assistant device inventory.",
+            mime_type=_RESOURCE_MIME_TYPE,
+        ),
+        lambda: _json_resource(
+            "hass://devices",
+            discovery.list_devices({"limit": MAX_DISCOVERY_LIMIT}),
+        ),
+    )
+    registry.register(
+        ResourceDefinition(
+            uri="hass://services",
+            name="Home Assistant Services",
+            description="Registered Home Assistant services grouped by domain.",
+            mime_type=_RESOURCE_MIME_TYPE,
+        ),
+        lambda: _json_resource(
+            "hass://services",
+            discovery.list_services({"limit": MAX_DISCOVERY_LIMIT}),
+        ),
+    )
+    registry.register_template(
+        ResourceTemplateDefinition(
+            uri_template="hass://dashboard/{dashboard_id}",
+            name="Managed Dashboard",
+            description="A managed Lovelace dashboard document by dashboard identifier.",
+            mime_type=_RESOURCE_MIME_TYPE,
+        ),
+        lambda params, uri: _dashboard_resource(repository, params, uri),
+    )
+
+
+def _dashboard_resource(
+    repository: YamlDashboardRepository,
+    params: dict[str, str],
+    uri: str,
+) -> list[dict[str, Any]]:
+    dashboard_id = params.get("dashboard_id")
+    if not dashboard_id:
+        raise KeyError(f"unknown resource: {uri}")
+    try:
+        payload = repository.get_dashboard(dashboard_id)
+    except DashboardNotFoundError as err:
+        raise KeyError(f"unknown resource: {uri}") from err
+    return _json_resource(uri, payload)
+
+
+def _json_resource(uri: str, payload: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        {
+            "uri": uri,
+            "mimeType": _RESOURCE_MIME_TYPE,
+            "text": json.dumps(payload, sort_keys=True),
+        }
+    ]
+
+
+def _compile_uri_template(uri_template: str) -> tuple[re.Pattern[str], tuple[str, ...]]:
+    parameter_names = tuple(re.findall(r"\{([A-Za-z_][A-Za-z0-9_]*)\}", uri_template))
+    pattern = re.escape(uri_template)
+    for parameter_name in parameter_names:
+        pattern = pattern.replace(
+            re.escape("{" + parameter_name + "}"),
+            rf"(?P<{parameter_name}>[^/]+)",
+        )
+    return re.compile(rf"^{pattern}$"), parameter_names

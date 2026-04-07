@@ -192,7 +192,21 @@ async def test_streamable_http_supports_phase2_capability_methods(
     )
     assert resources_response.status == 200
     resources_payload = await resources_response.json()
-    assert resources_payload["result"] == {"resources": [], "resourceTemplates": []}
+    assert [item["uri"] for item in resources_payload["result"]["resources"]] == [
+        "hass://config",
+        "hass://entities",
+        "hass://areas",
+        "hass://devices",
+        "hass://services",
+    ]
+    assert resources_payload["result"]["resourceTemplates"] == [
+        {
+            "uriTemplate": "hass://dashboard/{dashboard_id}",
+            "name": "Managed Dashboard",
+            "description": "A managed Lovelace dashboard document by dashboard identifier.",
+            "mimeType": "application/json",
+        }
+    ]
 
     prompts_response = await client.post(
         STREAMABLE_HTTP_API,
@@ -221,6 +235,109 @@ async def test_streamable_http_supports_phase2_capability_methods(
     assert completion_payload["result"] == {
         "completion": {"values": [], "hasMore": False}
     }
+
+
+async def test_streamable_http_builtin_resources_return_json_payloads(
+    hass, hass_client
+) -> None:
+    """Test built-in MCP resources over the real HA stack."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "transport": DEFAULT_TRANSPORT,
+            "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+        },
+        title="Home Assistant MCP",
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    hass.states.async_set(
+        "sensor.kitchen_temperature",
+        "21",
+        {"friendly_name": "Kitchen Temperature"},
+    )
+
+    client = await hass_client()
+    create_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "1",
+            "method": "tools/call",
+            "params": {
+                "name": "lovelace.create_dashboard",
+                "arguments": {
+                    "dashboard_id": "main",
+                    "title": "Main",
+                    "url_path": "main",
+                    "views": [],
+                },
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert create_response.status == 200
+
+    config_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "2",
+            "method": "resources/read",
+            "params": {"uri": "hass://config"},
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert config_response.status == 200
+    config_payload = await config_response.json()
+    config_result = json.loads(config_payload["result"]["contents"][0]["text"])
+    assert config_result["integration"]["domain"] == DOMAIN
+
+    entities_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "3",
+            "method": "resources/read",
+            "params": {"uri": "hass://entities"},
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert entities_response.status == 200
+    entities_payload = await entities_response.json()
+    entities_result = json.loads(entities_payload["result"]["contents"][0]["text"])
+    assert entities_result["entities"][0]["entity_id"] == "sensor.kitchen_temperature"
+
+    dashboard_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "4",
+            "method": "resources/read",
+            "params": {"uri": "hass://dashboard/main"},
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert dashboard_response.status == 200
+    dashboard_payload = await dashboard_response.json()
+    dashboard_result = json.loads(dashboard_payload["result"]["contents"][0]["text"])
+    assert dashboard_result["metadata"]["dashboard_id"] == "main"
+
+    missing_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "5",
+            "method": "resources/read",
+            "params": {"uri": "hass://dashboard/missing"},
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert missing_response.status == 400
+    missing_payload = await missing_response.json()
+    assert missing_payload["error"]["code"] == -32602
 
 
 async def test_streamable_http_builtin_completions_return_contextual_results(
