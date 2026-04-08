@@ -168,14 +168,17 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(response["result"]["contents"][0]["text"], "main")
 
     def test_resources_read_unknown_uri_is_rejected(self) -> None:
-        status, response = self.transport.handle_jsonrpc_message(
-            {
-                "jsonrpc": "2.0",
-                "id": "1",
-                "method": "resources/read",
-                "params": {"uri": "hass://missing"},
-            }
-        )
+        with self.assertNoLogs(
+            "custom_components.homeassistant_mcp.mcp.transport", level="WARNING"
+        ):
+            status, response = self.transport.handle_jsonrpc_message(
+                {
+                    "jsonrpc": "2.0",
+                    "id": "1",
+                    "method": "resources/read",
+                    "params": {"uri": "hass://missing"},
+                }
+            )
         self.assertEqual(status, 400)
         assert response is not None
         self.assertEqual(response["error"]["code"], -32602)

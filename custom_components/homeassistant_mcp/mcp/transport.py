@@ -197,10 +197,11 @@ class StatelessMCPTransport:
                     "result": {"contents": self._resources.read(uri)},
                 }
             except KeyError as err:
-                _LOGGER.warning(
-                    "Rejected MCP resources/read request %s because resource %s was unknown",
+                _LOGGER.debug(
+                    "Rejected MCP resources/read request %s because resource %s was unknown: %s",
                     request_id,
                     uri,
+                    err,
                 )
                 return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
                     request_id, -32602, str(err)
@@ -393,10 +394,11 @@ class StatelessMCPTransport:
                     "result": {"contents": await self._resources.async_read(uri)},
                 }
             except (KeyError, LovelaceMCPError) as err:
-                _LOGGER.warning(
-                    "Rejected MCP resources/read request %s because resource %s was invalid or unknown",
+                _LOGGER.debug(
+                    "Rejected MCP resources/read request %s because resource %s was invalid or unknown: %s",
                     request_id,
                     uri,
+                    err,
                 )
                 return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
                     request_id, -32602, str(err)
