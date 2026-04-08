@@ -26,7 +26,9 @@ This directory contains the user and contributor documentation for `HomeAssistan
 - `CONTRIBUTING.md`: contribution and development workflow
 - `CODE_OF_CONDUCT.md`: contributor behavior expectations
 - `../CHANGELOG.md`: release notes and version-to-version feature changes
-- `../icon.png` and `../icon.svg`: HACS repository icon assets
+- `../brand/icon.png`: HACS repository icon asset
+- `../icon.svg`: editable icon source artwork
+- `../custom_components/homeassistant_mcp/brand/`: Home Assistant integration brand assets
 
 ## Audience
 
@@ -50,6 +52,6 @@ This directory contains the user and contributor documentation for `HomeAssistan
 
 ## Capability Status
 
-- stable in `0.3.0`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, and repository packaging assets
-- experimental in `0.3.0`: read-only native Home Assistant Lovelace dashboard access
+- stable in `0.3.1`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, and correctly placed HACS/Home Assistant brand assets
+- experimental in `0.3.1`: read-only native Home Assistant Lovelace dashboard access
 - planned next: SSE transport and optional OAuth evaluation

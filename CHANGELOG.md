@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.3.1
+
+Release focus:
+
+- fix branding asset placement so the custom integration icon appears in HACS and Home Assistant
+
+Added:
+
+- integration-local brand assets in `custom_components/homeassistant_mcp/brand/`:
+  - `brand/icon.png`
+  - `brand/logo.png`
+- a repository-level `brand/icon.png` for HACS validation and presentation checks
+
+Changed:
+
+- bumped the integration package version to `0.3.1`
+- updated docs and metadata tests to reference the actual HACS and Home Assistant brand asset locations
+
+Notes:
+
+- the MCP API version remains `1.0.0`
+- the functional MCP feature surface from `0.3.0` is unchanged in this release
+
 ## 0.3.0
 
 Release focus:
