@@ -102,6 +102,36 @@ class _FakeFrontendPanelsProvider:
         }
 
 
+class _FakeLovelaceResourcesProvider:
+    async def list_resources(self, *, limit: int = 200) -> dict:
+        return {
+            "resource_mode": "storage",
+            "resources": [
+                {
+                    "resource_id": "abc123",
+                    "id_kind": "storage",
+                    "resource_mode": "storage",
+                    "type": "module",
+                    "url": "/hacsfiles/energy-flow.js",
+                    "source": "home_assistant_lovelace_resource",
+                }
+            ],
+            "truncated": False,
+        }
+
+    async def get_resource(self, resource_id: str) -> dict:
+        if resource_id != "abc123":
+            raise KeyError(f"unknown lovelace resource: {resource_id}")
+        return {
+            "resource_id": "abc123",
+            "id_kind": "storage",
+            "resource_mode": "storage",
+            "type": "module",
+            "url": "/hacsfiles/energy-flow.js",
+            "source": "home_assistant_lovelace_resource",
+        }
+
+
 class BuiltinResourceTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tempdir = TemporaryDirectory()
@@ -186,6 +216,7 @@ class BuiltinAsyncResourceTests(unittest.IsolatedAsyncioTestCase):
             repository=self.repository,
             discovery=_FakeDiscoveryProvider(),
             native=_FakeNativeLovelaceProvider(),
+            lovelace_resources=_FakeLovelaceResourcesProvider(),
             frontend=_FakeFrontendPanelsProvider(),
         )
 
@@ -196,12 +227,19 @@ class BuiltinAsyncResourceTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn(
             "hass://frontend/panels", [item["uri"] for item in payload["resources"]]
         )
+        self.assertIn(
+            "hass://lovelace/resources", [item["uri"] for item in payload["resources"]]
+        )
         self.assertEqual(
             payload["resourceTemplates"][1]["uriTemplate"],
             "hass://lovelace/dashboard/{url_path}",
         )
         self.assertEqual(
             payload["resourceTemplates"][2]["uriTemplate"],
+            "hass://lovelace/resource/{resource_id}",
+        )
+        self.assertEqual(
+            payload["resourceTemplates"][3]["uriTemplate"],
             "hass://frontend/panel/{url_path}",
         )
 
@@ -221,6 +259,16 @@ class BuiltinAsyncResourceTests(unittest.IsolatedAsyncioTestCase):
             (await registry.async_read("hass://frontend/panels"))[0]["text"]
         )
         self.assertEqual(frontend_panels["panels"][0]["url_path"], "energy")
+
+        lovelace_resources = json.loads(
+            (await registry.async_read("hass://lovelace/resources"))[0]["text"]
+        )
+        self.assertEqual(lovelace_resources["resources"][0]["resource_id"], "abc123")
+
+        lovelace_resource = json.loads(
+            (await registry.async_read("hass://lovelace/resource/abc123"))[0]["text"]
+        )
+        self.assertEqual(lovelace_resource["resource_id"], "abc123")
 
         frontend_panel = json.loads(
             (await registry.async_read("hass://frontend/panel/energy"))[0]["text"]

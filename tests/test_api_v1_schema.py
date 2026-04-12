@@ -57,6 +57,8 @@ class ToolContractSchemaTests(unittest.TestCase):
             "hass.update_lovelace_dashboard_metadata",
             "hass.save_lovelace_dashboard_config",
             "hass.delete_lovelace_dashboard",
+            "hass.list_lovelace_resources",
+            "hass.get_lovelace_resource",
             "hass.list_frontend_panels",
             "hass.get_frontend_panel",
         }
@@ -156,6 +158,7 @@ class ToolContractSchemaTests(unittest.TestCase):
             "hass.list_areas",
             "hass.list_devices",
             "hass.list_lovelace_dashboards",
+            "hass.list_lovelace_resources",
             "hass.list_frontend_panels",
         ):
             properties = self.tools[name]["output_schema"]["properties"]
@@ -184,6 +187,10 @@ class ToolContractSchemaTests(unittest.TestCase):
             "url_path",
             self.tools["hass.get_frontend_panel"]["input_schema"]["required"],
         )
+        self.assertIn(
+            "resource_id",
+            self.tools["hass.get_lovelace_resource"]["input_schema"]["required"],
+        )
 
     def test_frontend_panel_tools_expose_read_only_panel_documents(self) -> None:
         panel_summary = self.spec["$defs"]["frontend_panel_summary"]
@@ -209,6 +216,19 @@ class ToolContractSchemaTests(unittest.TestCase):
         self.assertIn(
             "dashboard",
             self.tools["hass.delete_lovelace_dashboard"]["output_schema"]["required"],
+        )
+
+    def test_lovelace_resource_tools_expose_sanitized_resource_documents(self) -> None:
+        resource_summary = self.spec["$defs"]["lovelace_resource_summary"]
+        self.assertEqual(
+            resource_summary["properties"]["source"]["const"],
+            "home_assistant_lovelace_resource",
+        )
+        self.assertEqual(
+            self.tools["hass.list_lovelace_resources"]["output_schema"]["properties"][
+                "resource_mode"
+            ]["$ref"],
+            "#/$defs/lovelace_resource_mode",
         )
 
 

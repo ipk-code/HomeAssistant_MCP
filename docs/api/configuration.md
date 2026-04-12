@@ -40,6 +40,7 @@ There are no user-editable options in v1.
 - Use `resources/read` for large, read-only context like entity inventories or a managed dashboard document.
 - Use `hass.get_lovelace_dashboard` or `hass://lovelace/dashboard/{url_path}` when you need to inspect a standard Home Assistant dashboard that is not MCP-managed.
 - Use the native Lovelace write tools only for storage dashboards and only with an admin-authenticated MCP client.
+- Use `hass.list_lovelace_resources` or `hass://lovelace/resources` when you need to inspect installed Lovelace frontend resources such as custom card bundles.
 - Use `hass.get_frontend_panel` or `hass://frontend/panel/{url_path}` when a Home Assistant sidebar item is not a Lovelace dashboard and you need its exposed panel metadata or config.
 - Use `prompts/get` when you want an MCP-native workflow scaffold before calling `lovelace.*` tools.
 - Use HTTPS for remote access.
@@ -51,6 +52,7 @@ There are no user-editable options in v1.
 - MCP-managed dashboard mutations remain available; native Home Assistant Lovelace writes are limited to storage dashboards and require admin authentication
 - Frontend panel discovery is read-only and follows the caller's Home Assistant admin visibility
 - Built-in frontend panels may expose metadata only; internal frontend layouts are not generally available through Home Assistant APIs
+- Lovelace resource discovery is read-only; YAML-mode resource identifiers are synthetic MCP identifiers rather than persistent Home Assistant IDs
 - No SSE transport yet
 - No user-facing options flow yet
 - Storage directory and request-size limit are internal constants, not UI-configurable
@@ -58,6 +60,6 @@ There are no user-editable options in v1.
 
 ## Capability Status
 
-- stable in `0.3.4`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, correctly placed HACS/Home Assistant brand assets, and broader OpenCode-compatible tool catalog loading
-- experimental in `0.3.4`: native Home Assistant Lovelace dashboard access with storage-dashboard writes and read-only frontend panel discovery
+- stable in `0.3.5`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, correctly placed HACS/Home Assistant brand assets, and broader OpenCode-compatible tool catalog loading
+- experimental in `0.3.5`: native Home Assistant Lovelace dashboard access with storage-dashboard writes, Lovelace resource discovery, and read-only frontend panel discovery
 - planned next: SSE transport and optional OAuth evaluation

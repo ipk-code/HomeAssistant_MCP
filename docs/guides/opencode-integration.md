@@ -99,7 +99,7 @@ Expected runtime behavior:
 - an authenticated MCP `initialize` request returns `Home Assistant MCP`
 - `tools/list` returns the stable `lovelace.*` and `hass.*` tool catalog
 - `tools/list` exposes object-rooted tool input schemas so OpenCode can load every tool, including `lovelace.validate_dashboard`
-- `resources/list` returns built-in resources for config, entities, areas, devices, services, managed dashboards, native Lovelace dashboards, and frontend panels
+- `resources/list` returns built-in resources for config, entities, areas, devices, services, managed dashboards, native Lovelace dashboards, Lovelace frontend resources, and frontend panels
 - `resources/read` returns JSON payloads for those built-in resources
 - `hass.list_lovelace_dashboards` and `hass.get_lovelace_dashboard` expose standard Home Assistant dashboards read-only
 - `hass://lovelace/dashboards` and `hass://lovelace/dashboard/{url_path}` expose the same native dashboards as read-only resources

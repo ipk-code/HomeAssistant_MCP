@@ -23,6 +23,13 @@ The stable v1 tool surface currently spans the read-only `hass.*` namespace and 
 | `hass.save_lovelace_dashboard_config` | yes | Replace the config for one storage-mode Home Assistant Lovelace dashboard |
 | `hass.delete_lovelace_dashboard` | yes | Delete one storage-mode Home Assistant Lovelace dashboard |
 
+## Lovelace Resource Tools
+
+| Tool | Mutation | Purpose |
+|---|---|---|
+| `hass.list_lovelace_resources` | no | List installed Home Assistant Lovelace frontend resources |
+| `hass.get_lovelace_resource` | no | Return one Lovelace frontend resource by MCP resource identifier |
+
 ## Frontend Panel Tools
 
 | Tool | Mutation | Purpose |
@@ -67,9 +74,11 @@ The stable v1 tool surface currently spans the read-only `hass.*` namespace and 
 - The `lovelace.*` tool family and the read-only `hass.*` discovery tools are stable in the current dashboard-first MCP surface.
 - Built-in completions are available for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon`.
 - Built-in resources are available for config, entities, areas, devices, services, managed dashboards, native Lovelace dashboards, and frontend panels.
+- Built-in resources are available for config, entities, areas, devices, services, managed dashboards, native Lovelace dashboards, Lovelace frontend resources, and frontend panels.
 - Built-in prompts are available for dashboard building, review, layout consistency, entity-card mapping, and cleanup audits.
-- Native Home Assistant Lovelace dashboard tools are experimental in `0.3.4`; writes are limited to storage dashboards and require an admin-authenticated Home Assistant user.
-- Frontend panel tools are experimental in `0.3.4` and remain read-only.
+- Native Home Assistant Lovelace dashboard tools are experimental in `0.3.5`; writes are limited to storage dashboards and require an admin-authenticated Home Assistant user.
+- Lovelace resource tools are experimental in `0.3.5` and remain read-only.
+- Frontend panel tools are experimental in `0.3.5` and remain read-only.
 
 ## Source Of Truth
 

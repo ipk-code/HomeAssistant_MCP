@@ -133,6 +133,7 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
                 "hass://devices",
                 "hass://services",
                 "hass://lovelace/dashboards",
+                "hass://lovelace/resources",
                 "hass://frontend/panels",
             ],
         )
@@ -149,6 +150,12 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
                     "uriTemplate": "hass://lovelace/dashboard/{url_path}",
                     "name": "Native Lovelace Dashboard",
                     "description": "A native Home Assistant Lovelace dashboard document by url_path.",
+                    "mimeType": "application/json",
+                },
+                {
+                    "uriTemplate": "hass://lovelace/resource/{resource_id}",
+                    "name": "Lovelace Resource",
+                    "description": "One Home Assistant Lovelace resource by resource identifier.",
                     "mimeType": "application/json",
                 },
                 {

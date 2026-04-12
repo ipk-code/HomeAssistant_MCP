@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.3.5
+
+Release focus:
+
+- add read-only Lovelace resource discovery so MCP clients can inspect installed frontend resource URLs and types without guessing from dashboards alone
+
+Added:
+
+- Lovelace resource discovery tools:
+  - `hass.list_lovelace_resources`
+  - `hass.get_lovelace_resource`
+- Lovelace resource discovery resources:
+  - `hass://lovelace/resources`
+  - `hass://lovelace/resource/{resource_id}`
+- regression coverage for storage and synthetic resource identifiers, URL sanitization, resource registry exposure, and HTTP transport access
+
+Changed:
+
+- bumped the integration package version to `0.3.5`
+- extended built-in MCP resources to expose the Home Assistant Lovelace resource inventory separately from dashboard documents
+- sanitized obvious secret-like query parameters in exposed Lovelace resource URLs before returning them through MCP
+
+Notes:
+
+- the MCP API version remains `1.0.0`
+- YAML-mode resource identifiers are synthetic MCP identifiers derived from the current resource list and remain read-only
+
 ## 0.3.4
 
 Release focus:

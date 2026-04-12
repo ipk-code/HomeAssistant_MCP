@@ -75,6 +75,36 @@ class _FakeFrontendPanels:
         raise KeyError(f"unknown frontend panel: {url_path}")
 
 
+class _FakeLovelaceResources:
+    async def list_resources(self, *, limit=200):
+        return {
+            "resource_mode": "storage",
+            "resources": [
+                {
+                    "resource_id": "abc123",
+                    "id_kind": "storage",
+                    "resource_mode": "storage",
+                    "type": "module",
+                    "url": "/hacsfiles/frontend.js",
+                    "source": "home_assistant_lovelace_resource",
+                }
+            ],
+            "truncated": False,
+        }
+
+    async def get_resource(self, resource_id: str):
+        if resource_id != "abc123":
+            raise KeyError(f"unknown lovelace resource: {resource_id}")
+        return {
+            "resource_id": "abc123",
+            "id_kind": "storage",
+            "resource_mode": "storage",
+            "type": "module",
+            "url": "/hacsfiles/frontend.js",
+            "source": "home_assistant_lovelace_resource",
+        }
+
+
 class _FakeAdminUser:
     is_admin = True
 
@@ -151,6 +181,7 @@ class TransportTests(unittest.TestCase):
             resources=resources,
             prompts=prompts,
             completions=completions,
+            lovelace_resources=_FakeLovelaceResources(),
             frontend_panels=_FakeFrontendPanels(),
         )
 
@@ -178,10 +209,48 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIsNotNone(response)
         assert response is not None
-        self.assertEqual(len(response["result"]["tools"]), 30)
+        self.assertEqual(len(response["result"]["tools"]), 32)
         self.assertEqual(
             response["result"]["tools"][0]["name"], "lovelace.list_dashboards"
         )
+
+    def test_async_lovelace_resource_tools_return_provider_payloads(self) -> None:
+        async def _run() -> None:
+            status, response = await self.transport.handle_jsonrpc_message_async(
+                {
+                    "jsonrpc": "2.0",
+                    "id": "6",
+                    "method": "tools/call",
+                    "params": {
+                        "name": "hass.list_lovelace_resources",
+                        "arguments": {},
+                    },
+                }
+            )
+            self.assertEqual(status, 200)
+            assert response is not None
+            payload = json.loads(response["result"]["content"][0]["text"])
+            self.assertEqual(payload["resources"][0]["resource_id"], "abc123")
+
+            status, response = await self.transport.handle_jsonrpc_message_async(
+                {
+                    "jsonrpc": "2.0",
+                    "id": "7",
+                    "method": "tools/call",
+                    "params": {
+                        "name": "hass.get_lovelace_resource",
+                        "arguments": {"resource_id": "abc123"},
+                    },
+                }
+            )
+            self.assertEqual(status, 200)
+            assert response is not None
+            payload = json.loads(response["result"]["content"][0]["text"])
+            self.assertEqual(payload["resource"]["type"], "module")
+
+        import asyncio
+
+        asyncio.run(_run())
 
     def test_frontend_panel_tools_respect_user_visibility(self) -> None:
         status, response = self.transport.handle_jsonrpc_message(

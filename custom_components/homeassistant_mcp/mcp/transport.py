@@ -9,6 +9,7 @@ from typing import Any
 
 from ..const import API_VERSION, MAX_REQUEST_BYTES, TITLE
 from ..frontend_panels import FrontendPanelProvider
+from ..lovelace_resources import LovelaceResourceProvider
 from ..managed import ManagedDashboardExecutor
 from ..lovelace.errors import LovelaceMCPError
 from ..native_lovelace import NativeLovelaceProvider
@@ -34,6 +35,7 @@ class StatelessMCPTransport:
         completions: CompletionRegistry | None = None,
         managed: ManagedDashboardExecutor | None = None,
         native_lovelace: NativeLovelaceProvider | None = None,
+        lovelace_resources: LovelaceResourceProvider | None = None,
         frontend_panels: FrontendPanelProvider | None = None,
     ) -> None:
         self._registry = registry
@@ -42,6 +44,7 @@ class StatelessMCPTransport:
         self._completions = completions or CompletionRegistry()
         self._managed = managed
         self._native_lovelace = native_lovelace
+        self._lovelace_resources = lovelace_resources
         self._frontend_panels = frontend_panels
 
     def handle_http_request(
@@ -621,6 +624,21 @@ class StatelessMCPTransport:
             return await self._native_lovelace.delete_dashboard(
                 arguments["url_path"], user=user
             )
+        if tool_name == "hass.list_lovelace_resources":
+            self._registry.validate_arguments(tool_name, arguments)
+            if self._lovelace_resources is None:
+                raise KeyError("lovelace resource provider is unavailable")
+            limit = arguments.get("limit", 100)
+            return await self._lovelace_resources.list_resources(limit=limit)
+        if tool_name == "hass.get_lovelace_resource":
+            self._registry.validate_arguments(tool_name, arguments)
+            if self._lovelace_resources is None:
+                raise KeyError("lovelace resource provider is unavailable")
+            return {
+                "resource": await self._lovelace_resources.get_resource(
+                    arguments["resource_id"]
+                )
+            }
         if tool_name.startswith("lovelace.") and self._managed is not None:
             return await self._managed.call(self._registry.call, tool_name, arguments)
         return self._registry.call(tool_name, arguments)

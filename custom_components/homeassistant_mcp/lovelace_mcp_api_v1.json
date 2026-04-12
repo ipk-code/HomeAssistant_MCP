@@ -1207,6 +1207,70 @@
         }
       }
     },
+    "lovelace_resource_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,64}$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "lovelace_resource_mode": {
+      "type": "string",
+      "enum": [
+        "yaml",
+        "storage"
+      ]
+    },
+    "lovelace_resource_id_kind": {
+      "type": "string",
+      "enum": [
+        "storage",
+        "synthetic"
+      ]
+    },
+    "lovelace_resource_type": {
+      "type": "string",
+      "enum": [
+        "js",
+        "css",
+        "module",
+        "html"
+      ]
+    },
+    "lovelace_resource_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resource_id",
+        "id_kind",
+        "resource_mode",
+        "type",
+        "url",
+        "source"
+      ],
+      "properties": {
+        "resource_id": {
+          "$ref": "#/$defs/lovelace_resource_id"
+        },
+        "id_kind": {
+          "$ref": "#/$defs/lovelace_resource_id_kind"
+        },
+        "resource_mode": {
+          "$ref": "#/$defs/lovelace_resource_mode"
+        },
+        "type": {
+          "$ref": "#/$defs/lovelace_resource_type"
+        },
+        "url": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "source": {
+          "type": "string",
+          "const": "home_assistant_lovelace_resource"
+        }
+      }
+    },
     "frontend_panel_url_path": {
       "type": "string",
       "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]{0,127}$",
@@ -2507,6 +2571,73 @@
           },
           "dashboard": {
             "$ref": "#/$defs/native_lovelace_dashboard_summary"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.list_lovelace_resources",
+      "mutation": false,
+      "description": "List Home Assistant Lovelace frontend resources in either storage or YAML mode.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "$ref": "#/$defs/result_limit"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_mode",
+          "resources",
+          "truncated"
+        ],
+        "properties": {
+          "resource_mode": {
+            "$ref": "#/$defs/lovelace_resource_mode"
+          },
+          "resources": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/$defs/lovelace_resource_summary"
+            }
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.get_lovelace_resource",
+      "mutation": false,
+      "description": "Return one Home Assistant Lovelace resource by resource identifier.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "$ref": "#/$defs/lovelace_resource_id"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource"
+        ],
+        "properties": {
+          "resource": {
+            "$ref": "#/$defs/lovelace_resource_summary"
           }
         }
       }

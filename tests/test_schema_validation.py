@@ -131,6 +131,14 @@ class SchemaValidationTests(unittest.TestCase):
             {"url_path": "pv-preview"},
         )
         self.validator.validate_tool_arguments(
+            "hass.list_lovelace_resources",
+            {"limit": 10},
+        )
+        self.validator.validate_tool_arguments(
+            "hass.get_lovelace_resource",
+            {"resource_id": "yaml-abc123"},
+        )
+        self.validator.validate_tool_arguments(
             "hass.list_frontend_panels",
             {"limit": 10},
         )
@@ -155,6 +163,11 @@ class SchemaValidationTests(unittest.TestCase):
         with self.assertRaises(ToolSchemaValidationError):
             self.validator.validate_tool_arguments(
                 "hass.get_frontend_panel", {"url_path": "bad path"}
+            )
+
+        with self.assertRaises(ToolSchemaValidationError):
+            self.validator.validate_tool_arguments(
+                "hass.get_lovelace_resource", {"resource_id": "bad path"}
             )
 
         with self.assertRaises(ToolSchemaValidationError):

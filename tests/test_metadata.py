@@ -116,6 +116,7 @@ class MetadataTests(unittest.TestCase):
             "hass.list_entities",
             "hass.list_frontend_panels",
             "hass.list_lovelace_dashboards",
+            "hass.list_lovelace_resources",
             "hass.create_lovelace_dashboard",
             "lovelace.list_dashboards",
             "lovelace.create_dashboard",
@@ -132,9 +133,11 @@ class MetadataTests(unittest.TestCase):
         )
         self.assertIn("hass://dashboard/{dashboard_id}", readme)
         self.assertIn("hass://lovelace/dashboard/{url_path}", readme)
+        self.assertIn("hass://lovelace/resource/{resource_id}", readme)
         self.assertIn("hass://frontend/panel/{url_path}", readme)
         self.assertIn("dashboard.review", readme)
         self.assertIn("hass.get_lovelace_dashboard", readme)
+        self.assertIn("hass.get_lovelace_resource", readme)
         self.assertIn("hass.get_frontend_panel", readme)
         self.assertIn("hass.create_lovelace_dashboard", readme)
 
@@ -147,9 +150,9 @@ class MetadataTests(unittest.TestCase):
         changelog = CHANGELOG_PATH.read_text(encoding="utf-8")
 
         self.assertIn(f"Latest release: `{INTEGRATION_VERSION}`", readme)
-        self.assertIn("Highlights in `0.3.4` compared with `0.3.3`", readme)
+        self.assertIn("Highlights in `0.3.5` compared with `0.3.4`", readme)
         self.assertIn(
-            "experimental in `0.3.4`: native Home Assistant Lovelace dashboard access with storage-dashboard writes and read-only Home Assistant frontend panel discovery",
+            "experimental in `0.3.5`: native Home Assistant Lovelace dashboard access with storage-dashboard writes, Lovelace resource discovery, and read-only Home Assistant frontend panel discovery",
             docs_index,
         )
         self.assertIn(

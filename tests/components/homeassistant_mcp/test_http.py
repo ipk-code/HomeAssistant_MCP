@@ -199,6 +199,7 @@ async def test_streamable_http_supports_phase2_capability_methods(
         "hass://devices",
         "hass://services",
         "hass://lovelace/dashboards",
+        "hass://lovelace/resources",
         "hass://frontend/panels",
     ]
     assert resources_payload["result"]["resourceTemplates"] == [
@@ -212,6 +213,12 @@ async def test_streamable_http_supports_phase2_capability_methods(
             "uriTemplate": "hass://lovelace/dashboard/{url_path}",
             "name": "Native Lovelace Dashboard",
             "description": "A native Home Assistant Lovelace dashboard document by url_path.",
+            "mimeType": "application/json",
+        },
+        {
+            "uriTemplate": "hass://lovelace/resource/{resource_id}",
+            "name": "Lovelace Resource",
+            "description": "One Home Assistant Lovelace resource by resource identifier.",
             "mimeType": "application/json",
         },
         {
@@ -880,6 +887,115 @@ async def test_streamable_http_frontend_panels_are_available_read_only(
         panel_resource_payload["result"]["contents"][0]["text"]
     )
     assert panel_resource_result["url_path"] == panel_url_path
+
+
+async def test_streamable_http_lovelace_resources_are_available_read_only(
+    hass, hass_client
+) -> None:
+    """Test read-only access to Home Assistant Lovelace resources."""
+    assert await async_setup_component(
+        hass, "lovelace", {"lovelace": {"mode": "storage"}}
+    )
+    await hass.async_block_till_done()
+
+    from homeassistant.components.lovelace.const import LOVELACE_DATA
+
+    class _ResourceFixture:
+        loaded = True
+
+        def async_items(self):
+            return [
+                {
+                    "id": "abc123",
+                    "type": "module",
+                    "url": "/hacsfiles/energy-flow.js?token=secret",
+                }
+            ]
+
+    hass.data[LOVELACE_DATA].resources = _ResourceFixture()
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "transport": DEFAULT_TRANSPORT,
+            "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+        },
+        title="Home Assistant MCP",
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    client = await hass_client()
+
+    list_tool_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "1",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.list_lovelace_resources",
+                "arguments": {},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert list_tool_response.status == 200
+    list_tool_payload = await list_tool_response.json()
+    list_tool_result = _decode_tool_result(list_tool_payload)
+    _VALIDATOR.validate_tool_result("hass.list_lovelace_resources", list_tool_result)
+    assert list_tool_result["resources"][0]["resource_id"] == "abc123"
+    assert "%5Bredacted%5D" in list_tool_result["resources"][0]["url"]
+
+    get_tool_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "2",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.get_lovelace_resource",
+                "arguments": {"resource_id": "abc123"},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert get_tool_response.status == 200
+    get_tool_payload = await get_tool_response.json()
+    get_tool_result = _decode_tool_result(get_tool_payload)
+    _VALIDATOR.validate_tool_result("hass.get_lovelace_resource", get_tool_result)
+    assert get_tool_result["resource"]["type"] == "module"
+
+    resource_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "3",
+            "method": "resources/read",
+            "params": {"uri": "hass://lovelace/resources"},
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert resource_response.status == 200
+    resource_payload = await resource_response.json()
+    resource_result = json.loads(resource_payload["result"]["contents"][0]["text"])
+    assert resource_result["resources"][0]["resource_id"] == "abc123"
+
+    item_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "4",
+            "method": "resources/read",
+            "params": {"uri": "hass://lovelace/resource/abc123"},
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert item_response.status == 200
+    item_payload = await item_response.json()
+    item_result = json.loads(item_payload["result"]["contents"][0]["text"])
+    assert item_result["resource_id"] == "abc123"
 
 
 async def test_streamable_http_builtin_completions_return_contextual_results(

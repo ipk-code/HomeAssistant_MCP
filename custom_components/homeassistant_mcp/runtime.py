@@ -10,6 +10,7 @@ from typing import Any
 from .discovery import HomeAssistantDiscoveryProvider
 from .frontend_panels import FrontendPanelProvider
 from .managed import ManagedDashboardExecutor
+from .lovelace_resources import LovelaceResourceProvider
 from .lovelace.repository import YamlDashboardRepository
 from .mcp.completions import CompletionRegistry, register_builtin_completions
 from .mcp.prompts import PromptRegistry, register_builtin_prompts
@@ -29,6 +30,7 @@ class IntegrationRuntime:
     repository: YamlDashboardRepository
     managed: ManagedDashboardExecutor
     native_lovelace: NativeLovelaceProvider
+    lovelace_resources: LovelaceResourceProvider
     frontend_panels: FrontendPanelProvider
     discovery: HomeAssistantDiscoveryProvider
     registry: ToolRegistry
@@ -44,6 +46,7 @@ def create_runtime(hass: Any, root_path: Path) -> IntegrationRuntime:
     repository = YamlDashboardRepository(root_path)
     managed = ManagedDashboardExecutor(hass, repository)
     native_lovelace = NativeLovelaceProvider(hass)
+    lovelace_resources = LovelaceResourceProvider(hass)
     frontend_panels = FrontendPanelProvider(hass)
     discovery = HomeAssistantDiscoveryProvider(hass)
     registry = ToolRegistry(repository, discovery=discovery)
@@ -54,6 +57,7 @@ def create_runtime(hass: Any, root_path: Path) -> IntegrationRuntime:
         discovery=discovery,
         managed=managed,
         native=native_lovelace,
+        lovelace_resources=lovelace_resources,
         frontend=frontend_panels,
     )
     prompts = PromptRegistry()
@@ -77,6 +81,7 @@ def create_runtime(hass: Any, root_path: Path) -> IntegrationRuntime:
         completions=completions,
         managed=managed,
         native_lovelace=native_lovelace,
+        lovelace_resources=lovelace_resources,
         frontend_panels=frontend_panels,
     )
     return IntegrationRuntime(
@@ -84,6 +89,7 @@ def create_runtime(hass: Any, root_path: Path) -> IntegrationRuntime:
         repository=repository,
         managed=managed,
         native_lovelace=native_lovelace,
+        lovelace_resources=lovelace_resources,
         frontend_panels=frontend_panels,
         discovery=discovery,
         registry=registry,

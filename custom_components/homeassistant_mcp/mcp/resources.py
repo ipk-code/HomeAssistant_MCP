@@ -22,6 +22,7 @@ from ..discovery import (
     MAX_DISCOVERY_LIMIT,
 )
 from ..frontend_panels import FrontendPanelProvider
+from ..lovelace_resources import LovelaceResourceProvider
 from ..managed import ManagedDashboardExecutor
 from ..native_lovelace import NativeLovelaceProvider
 from ..lovelace.errors import DashboardNotFoundError
@@ -219,6 +220,7 @@ def register_builtin_resources(
     discovery: HomeAssistantDiscoveryProvider,
     managed: ManagedDashboardExecutor | None = None,
     native: NativeLovelaceProvider | None = None,
+    lovelace_resources: LovelaceResourceProvider | None = None,
     frontend: FrontendPanelProvider | None = None,
 ) -> None:
     """Register the built-in Home Assistant MCP resources."""
@@ -333,6 +335,27 @@ def register_builtin_resources(
                 native, params, uri, user=user
             ),
         )
+    if lovelace_resources is not None:
+        registry.register(
+            ResourceDefinition(
+                uri="hass://lovelace/resources",
+                name="Lovelace Resources",
+                description="Read-only Home Assistant Lovelace resource inventory.",
+                mime_type=_RESOURCE_MIME_TYPE,
+            ),
+            lambda: _lovelace_resources_list_resource(lovelace_resources),
+        )
+        registry.register_template(
+            ResourceTemplateDefinition(
+                uri_template="hass://lovelace/resource/{resource_id}",
+                name="Lovelace Resource",
+                description="One Home Assistant Lovelace resource by resource identifier.",
+                mime_type=_RESOURCE_MIME_TYPE,
+            ),
+            lambda params, uri: _lovelace_resource_resource(
+                lovelace_resources, params, uri
+            ),
+        )
     if frontend is not None:
         registry.register(
             ResourceDefinition(
@@ -412,6 +435,30 @@ async def _native_dashboard_resource(
         raise KeyError(f"unknown resource: {uri}")
     try:
         payload = await native.get_dashboard(url_path, user=user)
+    except KeyError as err:
+        raise KeyError(f"unknown resource: {uri}") from err
+    return _json_resource(uri, payload)
+
+
+async def _lovelace_resources_list_resource(
+    provider: LovelaceResourceProvider,
+) -> list[dict[str, Any]]:
+    return _json_resource(
+        "hass://lovelace/resources",
+        await provider.list_resources(limit=MAX_DISCOVERY_LIMIT),
+    )
+
+
+async def _lovelace_resource_resource(
+    provider: LovelaceResourceProvider,
+    params: dict[str, str],
+    uri: str,
+) -> list[dict[str, Any]]:
+    resource_id = params.get("resource_id")
+    if not resource_id:
+        raise KeyError(f"unknown resource: {uri}")
+    try:
+        payload = await provider.get_resource(resource_id)
     except KeyError as err:
         raise KeyError(f"unknown resource: {uri}") from err
     return _json_resource(uri, payload)

@@ -2,7 +2,7 @@
 
 Home Assistant custom integration for MCP-driven Lovelace dashboard authoring.
 
-Current integration version: `0.3.4`
+Current integration version: `0.3.5`
 
 ## What It Does
 
@@ -10,6 +10,7 @@ Current integration version: `0.3.4`
 - Exposes typed Lovelace dashboard, view, and card tools.
 - Exposes read-only `hass.*` discovery tools for entities, services, areas, and devices.
 - Exposes experimental access to native Home Assistant Lovelace dashboards, including admin-gated storage-dashboard writes.
+- Exposes experimental read-only discovery for Home Assistant Lovelace frontend resources.
 - Exposes experimental read-only access to Home Assistant frontend panels, including built-in, custom, and Lovelace-backed sidebar panels.
 - Uses stateless Streamable HTTP at `/api/homeassistant_mcp`.
 - Uses standard Home Assistant authentication with a long-lived access token for remote clients.
@@ -48,7 +49,7 @@ HACS flow:
 3. Search for `Home Assistant MCP`.
 4. Complete the config flow.
 
-After setup, the integration logs `Loaded Home Assistant MCP version 0.3.4 entry ...` and `Home Assistant MCP server version 0.3.4 started successfully ...` when the config entry is active.
+After setup, the integration logs `Loaded Home Assistant MCP version 0.3.5 entry ...` and `Home Assistant MCP server version 0.3.5 started successfully ...` when the config entry is active.
 
 Repository icon assets:
 
@@ -59,13 +60,13 @@ Repository icon assets:
 
 ## Release Notes
 
-Latest release: `0.3.4`
+Latest release: `0.3.5`
 
-Highlights in `0.3.4` compared with `0.3.3`:
+Highlights in `0.3.5` compared with `0.3.4`:
 
-- added admin-gated native Home Assistant storage dashboard writes through dedicated `hass.*` tools
-- restricted native writes to storage dashboards while keeping default, YAML, and auto-generated dashboards protected
-- made native dashboard reads follow `require_admin` visibility so non-admin callers do not learn about protected dashboards
+- added explicit Lovelace resource discovery tools and resources for installed frontend dependencies
+- exposed storage-mode and YAML-mode resource inventories through a separate MCP surface instead of folding them into dashboard reads
+- sanitized secret-like query parameters in returned resource URLs
 
 Full release notes: `CHANGELOG.md`
 
@@ -103,21 +104,23 @@ Detailed OpenCode registration guidance: `docs/guides/opencode-integration.md`
 |---|---|---|
 | `initialize`, `ping`, `tools/list`, `tools/call` | Stable in v1 | Current dashboard authoring MCP method surface |
 | Read-only `hass.*` discovery tools | Stable in v1 | Includes `hass.list_entities`, `hass.search_entities`, `hass.list_services`, `hass.list_areas`, `hass.list_devices` |
-| Frontend panel tools | Experimental in `0.3.4` | Includes `hass.list_frontend_panels` and `hass.get_frontend_panel` for read-only inspection of Home Assistant sidebar panels |
+| Frontend panel tools | Experimental in `0.3.5` | Includes `hass.list_frontend_panels` and `hass.get_frontend_panel` for read-only inspection of Home Assistant sidebar panels |
 | Dashboard tools | Stable in v1 | Includes `lovelace.list_dashboards`, `lovelace.get_dashboard`, `lovelace.create_dashboard`, `lovelace.update_dashboard_metadata`, `lovelace.delete_dashboard`, `lovelace.patch_dashboard`, `lovelace.validate_dashboard` |
-| Native Lovelace dashboard tools | Experimental in `0.3.4` | Includes read-only listing/get plus storage-dashboard writes through `hass.create_lovelace_dashboard`, `hass.update_lovelace_dashboard_metadata`, `hass.save_lovelace_dashboard_config`, and `hass.delete_lovelace_dashboard` |
+| Native Lovelace dashboard tools | Experimental in `0.3.5` | Includes read-only listing/get plus storage-dashboard writes through `hass.create_lovelace_dashboard`, `hass.update_lovelace_dashboard_metadata`, `hass.save_lovelace_dashboard_config`, and `hass.delete_lovelace_dashboard` |
+| Lovelace resource tools | Experimental in `0.3.5` | Includes `hass.list_lovelace_resources` and `hass.get_lovelace_resource` for installed frontend resource discovery |
 | View tools | Stable in v1 | Includes `lovelace.list_views`, `lovelace.get_view`, `lovelace.create_view`, `lovelace.update_view`, `lovelace.delete_view` |
 | Card tools | Stable in v1 | Includes `lovelace.list_cards`, `lovelace.get_card`, `lovelace.create_card`, `lovelace.update_card`, `lovelace.delete_card` |
 | `completion/complete` | Stable in v1 | Built-in completions are available for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon` |
 | `resources/list`, `resources/read` | Stable in v1 | Built-in resources are available for config, entities, areas, devices, services, and managed dashboards |
-| Native Lovelace dashboard resources | Experimental in `0.3.4` | Includes `hass://lovelace/dashboards` and `hass://lovelace/dashboard/{url_path}` for standard-dashboard inspection |
-| Frontend panel resources | Experimental in `0.3.4` | Includes `hass://frontend/panels` and `hass://frontend/panel/{url_path}` for read-only frontend panel inspection |
+| Native Lovelace dashboard resources | Experimental in `0.3.5` | Includes `hass://lovelace/dashboards` and `hass://lovelace/dashboard/{url_path}` for standard-dashboard inspection |
+| Lovelace resource resources | Experimental in `0.3.5` | Includes `hass://lovelace/resources` and `hass://lovelace/resource/{resource_id}` for installed Lovelace frontend resource inspection |
+| Frontend panel resources | Experimental in `0.3.5` | Includes `hass://frontend/panels` and `hass://frontend/panel/{url_path}` for read-only frontend panel inspection |
 | `prompts/list`, `prompts/get` | Stable in v1 | Built-in prompts include `dashboard.builder`, `dashboard.review`, `dashboard.layout_consistency_review`, `dashboard.entity_card_mapping`, and `dashboard.cleanup_audit` |
 | OAuth browser-client flow | Not shipped yet | Current deployment uses Home Assistant token auth |
 
 ## Capability Status
 
-Stable in `0.3.4`:
+Stable in `0.3.5`:
 
 - typed Lovelace dashboard, view, and card operations
 - read-only `hass.*` discovery tools with bounded result sizes
@@ -128,9 +131,10 @@ Stable in `0.3.4`:
 - stateless Streamable HTTP transport
 - Home Assistant-authenticated remote access
 
-Experimental in `0.3.4`:
+Experimental in `0.3.5`:
 
 - native Home Assistant Lovelace dashboard access via `hass.list_lovelace_dashboards`, `hass.get_lovelace_dashboard`, `hass.create_lovelace_dashboard`, `hass.update_lovelace_dashboard_metadata`, `hass.save_lovelace_dashboard_config`, `hass.delete_lovelace_dashboard`, `hass://lovelace/dashboards`, and `hass://lovelace/dashboard/{url_path}`
+- Lovelace frontend resource discovery via `hass.list_lovelace_resources`, `hass.get_lovelace_resource`, `hass://lovelace/resources`, and `hass://lovelace/resource/{resource_id}`
 - read-only frontend panel discovery via `hass.list_frontend_panels`, `hass.get_frontend_panel`, `hass://frontend/panels`, and `hass://frontend/panel/{url_path}`
 
 Planned next:
@@ -151,7 +155,7 @@ It is focused on Lovelace dashboard authoring inside Home Assistant, with read-o
 
 **Can MCP read how every sidebar panel is built?**
 
-Not always. Frontend panel discovery returns the panel metadata and any config Home Assistant exposes for that panel. Lovelace panels can be read in detail through `hass.get_lovelace_dashboard`, while many built-in panels only expose metadata and optional backend-facing config, not their internal frontend layout implementation.
+Not always. Frontend panel discovery returns the panel metadata and any config Home Assistant exposes for that panel. Lovelace panels can be read in detail through `hass.get_lovelace_dashboard`, while installed Lovelace frontend dependencies can be inspected through `hass.list_lovelace_resources`. Many built-in panels still only expose metadata and optional backend-facing config, not their internal frontend layout implementation.
 
 **How does authentication work?**
 
@@ -170,7 +174,7 @@ No. The recommended OpenCode setup keeps `oauth: false` and sends a Home Assista
 ## Troubleshooting
 
 - Enable `custom_components.homeassistant_mcp: debug` in the Home Assistant logger when diagnosing setup or request issues.
-- Verify the active build in Home Assistant logs with `Loaded Home Assistant MCP version 0.3.4 entry ...` and `Home Assistant MCP server version 0.3.4 started successfully ...`.
+- Verify the active build in Home Assistant logs with `Loaded Home Assistant MCP version 0.3.5 entry ...` and `Home Assistant MCP server version 0.3.5 started successfully ...`.
 - Confirm clients use `POST` requests to `/api/homeassistant_mcp`.
 - Confirm remote clients send a valid Home Assistant bearer token.
 - If `opencode mcp list` shows `Failed to get tools`, verify the Home Assistant instance is running a build that emits object-rooted MCP tool input schemas.
