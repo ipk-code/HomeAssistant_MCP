@@ -31,6 +31,12 @@ from .validation import (
 )
 
 
+# CWE-400: Hard caps prevent authenticated clients from exhausting storage
+# and memory by creating unboundedly large dashboard structures.
+MAX_VIEWS_PER_DASHBOARD = 50
+MAX_CARDS_PER_VIEW = 200
+
+
 class YamlDashboardRepository:
     """Manage canonical dashboard documents and rendered YAML dashboard files."""
 
@@ -133,6 +139,10 @@ class YamlDashboardRepository:
     ) -> tuple[dict[str, Any], int]:
         document = self._read_document(validate_dashboard_id(dashboard_id))
         ensure_expected_version(document, expected_version)
+        if len(document["views"]) >= MAX_VIEWS_PER_DASHBOARD:
+            raise DashboardValidationError(
+                f"dashboard already has the maximum of {MAX_VIEWS_PER_DASHBOARD} views"
+            )
         normalized = self._normalize_view(view)
         if any(item["view_id"] == normalized["view_id"] for item in document["views"]):
             raise DashboardConflictError(f"view already exists: {normalized['view_id']}")
@@ -209,6 +219,10 @@ class YamlDashboardRepository:
         document = self._read_document(validate_dashboard_id(dashboard_id))
         ensure_expected_version(document, expected_version)
         view = self._find_view(document, validate_view_id(view_id))
+        if len(view["cards"]) >= MAX_CARDS_PER_VIEW:
+            raise DashboardValidationError(
+                f"view already has the maximum of {MAX_CARDS_PER_VIEW} cards"
+            )
         normalized = normalize_card_helper(card)
         self._insert_item(view["cards"], normalized, position)
         document["dashboard_version"] += 1
