@@ -124,3 +124,11 @@ class CardHelperTests(unittest.TestCase):
         self.assertTrue(card_id.startswith("card:"), f"Expected 'card:' prefix, got {card_id!r}")
         hex_part = card_id[len("card:"):]
         self.assertTrue(all(c in "0123456789abcdef" for c in hex_part), f"Non-hex chars in {hex_part!r}")
+
+    def test_gauge_rejects_nan_and_infinity(self) -> None:
+        """CWE-20: NaN and Infinity must not pass numeric validation."""
+        for bad_value in (float("nan"), float("inf"), float("-inf")):
+            with self.assertRaises(DashboardValidationError, msg=f"should reject {bad_value}"):
+                normalize_card_helper(
+                    {"kind": "gauge", "entity_id": "sensor.temp", "min": bad_value}
+                )

@@ -105,6 +105,11 @@ def ensure_boolean(value: Any, field: str) -> bool:
 def ensure_number(value: Any, field: str) -> float | int:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise DashboardValidationError(f"{field} must be numeric")
+    # CWE-20: Reject special float values that produce non-standard JSON
+    # tokens (NaN, Infinity, -Infinity) which corrupt persisted documents
+    # and break cross-system interoperability.
+    if isinstance(value, float) and (value != value or value in (float("inf"), float("-inf"))):
+        raise DashboardValidationError(f"{field} must be a finite number")
     return value
 
 
