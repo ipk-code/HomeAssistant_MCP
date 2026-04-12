@@ -26,7 +26,13 @@
 
 OpenCode supports remote MCP servers in `opencode.json`.
 
-Example:
+Recommended user-wide registration:
+
+- global config file: `~/.config/opencode/opencode.json`
+- config style: remote MCP server with `oauth: false`
+- endpoint source: environment variable so the Home Assistant host can change without editing the config file
+
+Recommended global configuration:
 
 ```json
 {
@@ -34,10 +40,10 @@ Example:
   "mcp": {
     "homeassistant_mcp": {
       "type": "remote",
-      "url": "https://ha.example.com/api/homeassistant_mcp",
+      "url": "{env:HA_MCP_URL}",
       "oauth": false,
       "headers": {
-        "Authorization": "Bearer {env:HOMEASSISTANT_TOKEN}"
+        "Authorization": "Bearer {env:HA_TOKEN}"
       },
       "enabled": true,
       "timeout": 15000
@@ -49,17 +55,28 @@ Example:
 Recommended:
 
 - use `https`
+- register the server globally in `~/.config/opencode/opencode.json` when you want the same Home Assistant MCP server available across projects
 - keep `oauth: false` for the current token-based setup
-- inject the token via environment variable instead of hardcoding it
+- inject both the MCP URL and the token via environment variables instead of hardcoding them
 - use a slightly higher timeout than the default if your Home Assistant host is slower
 
-## Export The Token
+Project-local config is still supported through `./opencode.json`, but the global file is usually the best fit for a personal Home Assistant server.
 
-Example shell setup:
+## Prepare Environment Variables
+
+Required variables:
+
+- `HA_MCP_URL`: full MCP endpoint URL ending in `/api/homeassistant_mcp`
+- `HA_TOKEN`: Home Assistant long-lived access token
+
+Example shell profile entries:
 
 ```bash
-export HOMEASSISTANT_TOKEN="your-long-lived-access-token"
+export HA_MCP_URL="https://home-assistant.example/api/homeassistant_mcp"
+export HA_TOKEN="set-this-in-your-shell-profile"
 ```
+
+Avoid committing these values into a repository or hardcoding them in `opencode.json`.
 
 ## Verify The MCP Server In OpenCode
 

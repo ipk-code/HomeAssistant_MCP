@@ -74,16 +74,18 @@ OpenCode can connect as a remote MCP client with a Home Assistant long-lived acc
 
 The remote tool catalog is emitted with object-rooted input schemas so OpenCode and other MCP clients that expect `inputSchema.type == "object"` can load the full server capability set, including `lovelace.validate_dashboard`.
 
+For a reusable personal setup, register the server globally in `~/.config/opencode/opencode.json` and point the config at environment variables for both the MCP URL and the bearer token.
+
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "homeassistant_mcp": {
       "type": "remote",
-      "url": "https://ha.example.com/api/homeassistant_mcp",
+      "url": "{env:HA_MCP_URL}",
       "oauth": false,
       "headers": {
-        "Authorization": "Bearer {env:HOMEASSISTANT_TOKEN}"
+        "Authorization": "Bearer {env:HA_TOKEN}"
       },
       "enabled": true,
       "timeout": 15000
@@ -91,6 +93,8 @@ The remote tool catalog is emitted with object-rooted input schemas so OpenCode 
   }
 }
 ```
+
+Detailed OpenCode registration guidance: `docs/guides/opencode-integration.md`
 
 ## Capability Summary
 
