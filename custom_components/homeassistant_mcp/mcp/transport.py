@@ -26,9 +26,16 @@ _LOGGER = logging.getLogger(__name__)
 def _s(value: Any) -> str:
     """Sanitize a value for safe log inclusion (CWE-117: log injection).
 
-    Replaces CR/LF characters that could let a client inject fake log lines.
+    Strips all ASCII control characters (0x00-0x1F, 0x7F) so that a
+    malicious client cannot inject fake log lines via CR/LF, corrupt
+    terminal output via ANSI escape sequences (ESC = 0x1B), or embed
+    null bytes that truncate log entries in certain log aggregators.
     """
-    return str(value).replace("\r", "\\r").replace("\n", "\\n")
+    text = str(value)
+    return "".join(
+        ch if 0x20 <= ord(ch) < 0x7F or ord(ch) > 0x7F else f"\\x{ord(ch):02x}"
+        for ch in text
+    )
 
 
 def _accepts_json(accept: str) -> bool:

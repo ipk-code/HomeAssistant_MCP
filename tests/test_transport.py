@@ -624,3 +624,25 @@ class TransportTests(unittest.TestCase):
             body='{"jsonrpc":"2.0","id":"1","method":"ping","params":{}}',
         )
         self.assertEqual(status, 200)
+
+    def test_log_sanitizer_strips_null_bytes_and_ansi_escapes(self) -> None:
+        """CWE-117: Null bytes and ANSI escape sequences must not pass through _s()."""
+        from custom_components.homeassistant_mcp.mcp.transport import _s
+
+        # Null byte — can truncate log entries in some log aggregators
+        self.assertNotIn("\x00", _s("before\x00after"))
+        self.assertIn("\\x00", _s("before\x00after"))
+
+        # ANSI escape sequence — can corrupt terminal output and hide log lines
+        ansi_input = "normal\x1b[31mred\x1b[0mnormal"
+        sanitized = _s(ansi_input)
+        self.assertNotIn("\x1b", sanitized)
+        self.assertIn("\\x1b", sanitized)
+
+        # Tab and other control characters
+        self.assertNotIn("\t", _s("a\tb"))
+        self.assertIn("\\x09", _s("a\tb"))
+
+        # Printable ASCII and non-ASCII (unicode) pass through unchanged
+        self.assertEqual(_s("hello world"), "hello world")
+        self.assertEqual(_s("café"), "café")
