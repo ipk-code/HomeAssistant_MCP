@@ -13,6 +13,7 @@
 - Transport: `streamable_http_stateless`
 - Authentication: standard Home Assistant bearer token
 - OpenCode setting: `oauth: false`
+- Tool catalog compatibility: tool `inputSchema` payloads are object-rooted so OpenCode can ingest the full catalog without schema coercion
 
 ## Create A Home Assistant Token
 
@@ -80,6 +81,7 @@ Expected runtime behavior:
 - an unauthenticated direct HTTP request returns `401 Unauthorized`
 - an authenticated MCP `initialize` request returns `Home Assistant MCP`
 - `tools/list` returns the stable `lovelace.*` and `hass.*` tool catalog
+- `tools/list` exposes object-rooted tool input schemas so OpenCode can load every tool, including `lovelace.validate_dashboard`
 - `resources/list` returns built-in resources for config, entities, areas, devices, services, and managed dashboards
 - `resources/read` returns JSON payloads for those built-in resources
 - `hass.list_lovelace_dashboards` and `hass.get_lovelace_dashboard` expose standard Home Assistant dashboards read-only
@@ -163,3 +165,4 @@ Prefer typed dashboard, view, and card operations over ad-hoc edits.
 - `405 Method Not Allowed`: the endpoint is loaded, but the request used `GET` instead of `POST`
 - timeout: increase the MCP timeout in `opencode.json`
 - no tools available: verify the server is enabled and reachable with `opencode mcp list`
+- `Failed to get tools`: update Home Assistant MCP to a build that emits object-rooted tool input schemas and retry `opencode mcp list`

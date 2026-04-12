@@ -45,6 +45,7 @@
 - The integration runs inside Home Assistant as a config entry.
 - Home Assistant registers an authenticated HTTP view at `/api/homeassistant_mcp`.
 - A bundled MCP contract defines the stable v1 tool surface.
+- Tool input schemas are emitted as object-rooted JSON Schema documents for broad remote-client compatibility.
 - Requests are handled as stateless JSON-RPC messages over HTTP `POST`.
 - Resources, prompts, and completions are provided by dedicated registries so new capabilities can be added without rewriting the transport.
 

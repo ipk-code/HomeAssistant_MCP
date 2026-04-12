@@ -1880,6 +1880,7 @@
       "mutation": false,
       "description": "Validate either a candidate dashboard document or a JSON Patch request before mutation.",
       "input_schema": {
+        "type": "object",
         "oneOf": [
           {
             "type": "object",

@@ -61,6 +61,10 @@ class ToolRegistryTests(unittest.TestCase):
         self.assertEqual(len(tools), 24)
         self.assertEqual(tools[0]["name"], "lovelace.list_dashboards")
         self.assertIn("inputSchema", tools[0])
+        validate_tool = next(
+            tool for tool in tools if tool["name"] == "lovelace.validate_dashboard"
+        )
+        self.assertEqual(validate_tool["inputSchema"]["type"], "object")
 
     def test_registry_dispatches_hass_discovery_calls(self) -> None:
         entities = self.registry.call("hass.list_entities", {})

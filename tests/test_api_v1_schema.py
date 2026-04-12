@@ -122,6 +122,7 @@ class ToolContractSchemaTests(unittest.TestCase):
 
     def test_validate_dashboard_supports_document_or_patch_validation(self) -> None:
         validate_schema = self.tools["lovelace.validate_dashboard"]["input_schema"]
+        self.assertEqual(validate_schema["type"], "object")
         self.assertEqual(len(validate_schema["oneOf"]), 2)
 
     def test_hass_discovery_tools_are_read_only_and_bounded(self) -> None:

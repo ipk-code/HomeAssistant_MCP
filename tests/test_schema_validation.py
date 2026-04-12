@@ -78,6 +78,21 @@ class SchemaValidationTests(unittest.TestCase):
             },
         )
 
+    def test_validate_dashboard_one_of_allows_patch_variant(self) -> None:
+        self.validator.validate_tool_arguments(
+            "lovelace.validate_dashboard",
+            {
+                "dashboard_id": "main",
+                "operations": [
+                    {
+                        "op": "replace",
+                        "path": "/metadata/title",
+                        "value": "Renamed Main",
+                    }
+                ],
+            },
+        )
+
     def test_accepts_valid_hass_discovery_payloads(self) -> None:
         self.validator.validate_tool_arguments(
             "hass.list_entities",
