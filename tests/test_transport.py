@@ -562,3 +562,65 @@ class TransportTests(unittest.TestCase):
         assert response is not None
         self.assertTrue(response["result"]["isError"])
         self.assertIn("required", response["result"]["content"][0]["text"])
+
+    def test_log_injection_via_method_name_is_neutralised(self) -> None:
+        """CWE-117: Newlines in user-supplied method names must not reach the log."""
+        import logging
+
+        with self.assertLogs("custom_components.homeassistant_mcp.mcp.transport", level=logging.WARNING) as captured:
+            status, _resp = self.transport.handle_jsonrpc_message(
+                {
+                    "jsonrpc": "2.0",
+                    "id": "1",
+                    "method": "unknown\nINJECTED fake log line",
+                    "params": {},
+                }
+            )
+        self.assertEqual(status, 404)
+        for line in captured.output:
+            self.assertNotIn("\n", line, "Raw newline leaked into log output")
+            self.assertIn("\\n", line, "Newline should appear escaped in log")
+
+    def test_log_injection_via_request_id_is_neutralised(self) -> None:
+        """CWE-117: Newlines in request_id must not reach the log."""
+        import logging
+
+        with self.assertLogs("custom_components.homeassistant_mcp.mcp.transport", level=logging.DEBUG) as captured:
+            status, _resp = self.transport.handle_jsonrpc_message(
+                {
+                    "jsonrpc": "2.0",
+                    "id": "abc\nINJECTED",
+                    "method": "ping",
+                    "params": {},
+                }
+            )
+        self.assertEqual(status, 200)
+        for line in captured.output:
+            self.assertNotIn("\n", line, "Raw newline leaked into log output")
+
+    def test_accept_header_substring_false_positive_is_rejected(self) -> None:
+        """Accept: application/json-patch+json must NOT satisfy the json check."""
+        status, response = self.transport.handle_http_request(
+            accept="application/json-patch+json",
+            content_type="application/json",
+            body='{"jsonrpc":"2.0","id":"1","method":"ping","params":{}}',
+        )
+        self.assertEqual(status, 400)
+
+    def test_accept_wildcard_is_accepted(self) -> None:
+        """Accept: */* must be treated as accepting application/json."""
+        status, response = self.transport.handle_http_request(
+            accept="*/*",
+            content_type="application/json",
+            body='{"jsonrpc":"2.0","id":"1","method":"ping","params":{}}',
+        )
+        self.assertEqual(status, 200)
+
+    def test_accept_application_wildcard_is_accepted(self) -> None:
+        """Accept: application/* must be treated as accepting application/json."""
+        status, response = self.transport.handle_http_request(
+            accept="application/*",
+            content_type="application/json",
+            body='{"jsonrpc":"2.0","id":"1","method":"ping","params":{}}',
+        )
+        self.assertEqual(status, 200)

@@ -6,6 +6,7 @@ from copy import deepcopy
 import json
 import os
 from pathlib import Path
+import stat
 from tempfile import NamedTemporaryFile
 from typing import Any
 
@@ -31,6 +32,25 @@ from .validation import (
 )
 
 
+# CWE-400: Hard caps prevent authenticated clients from exhausting storage
+# and memory by creating unboundedly large dashboard structures.
+MAX_VIEWS_PER_DASHBOARD = 50
+MAX_CARDS_PER_VIEW = 200
+
+# CWE-732: Owner-only directory mode. Dashboard JSON files contain the
+# full Lovelace configuration; group/world read access is unnecessary.
+_DIR_MODE = stat.S_IRWXU  # 0o700
+
+
+def _restrict_directory(path: Path) -> None:
+    """Apply owner-only permissions to a storage directory (best-effort)."""
+    try:
+        path.chmod(_DIR_MODE)
+    except OSError:
+        # chmod may fail on some platforms or Docker volumes; do not abort.
+        pass
+
+
 class YamlDashboardRepository:
     """Manage canonical dashboard documents and rendered YAML dashboard files."""
 
@@ -40,6 +60,8 @@ class YamlDashboardRepository:
         self._rendered_path = self._root_path / "rendered"
         self._managed_path.mkdir(parents=True, exist_ok=True)
         self._rendered_path.mkdir(parents=True, exist_ok=True)
+        _restrict_directory(self._managed_path)
+        _restrict_directory(self._rendered_path)
 
     def list_dashboards(self) -> list[dict[str, Any]]:
         dashboards: list[dict[str, Any]] = []
@@ -133,6 +155,10 @@ class YamlDashboardRepository:
     ) -> tuple[dict[str, Any], int]:
         document = self._read_document(validate_dashboard_id(dashboard_id))
         ensure_expected_version(document, expected_version)
+        if len(document["views"]) >= MAX_VIEWS_PER_DASHBOARD:
+            raise DashboardValidationError(
+                f"dashboard already has the maximum of {MAX_VIEWS_PER_DASHBOARD} views"
+            )
         normalized = self._normalize_view(view)
         if any(item["view_id"] == normalized["view_id"] for item in document["views"]):
             raise DashboardConflictError(f"view already exists: {normalized['view_id']}")
@@ -209,6 +235,10 @@ class YamlDashboardRepository:
         document = self._read_document(validate_dashboard_id(dashboard_id))
         ensure_expected_version(document, expected_version)
         view = self._find_view(document, validate_view_id(view_id))
+        if len(view["cards"]) >= MAX_CARDS_PER_VIEW:
+            raise DashboardValidationError(
+                f"view already has the maximum of {MAX_CARDS_PER_VIEW} cards"
+            )
         normalized = normalize_card_helper(card)
         self._insert_item(view["cards"], normalized, position)
         document["dashboard_version"] += 1

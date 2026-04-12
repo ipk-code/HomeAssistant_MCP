@@ -73,3 +73,25 @@ class PatchTests(unittest.TestCase):
                 self.document,
                 [{"op": "replace", "path": "/metadata/dashboard_id", "value": "other"}],
             )
+
+    def test_patch_rejects_too_many_operations(self) -> None:
+        """CWE-400: Batches beyond MAX_PATCH_OPERATIONS must be rejected."""
+        from custom_components.homeassistant_mcp.lovelace.patch import MAX_PATCH_OPERATIONS
+
+        ops = [
+            {"op": "replace", "path": "/metadata/title", "value": f"Title {i}"}
+            for i in range(MAX_PATCH_OPERATIONS + 1)
+        ]
+        with self.assertRaises(PatchApplicationError):
+            apply_json_patch(self.document, ops)
+
+    def test_patch_at_max_operations_is_accepted(self) -> None:
+        """Exactly MAX_PATCH_OPERATIONS operations must succeed."""
+        from custom_components.homeassistant_mcp.lovelace.patch import MAX_PATCH_OPERATIONS
+
+        ops = [
+            {"op": "replace", "path": "/metadata/title", "value": f"Title {i}"}
+            for i in range(MAX_PATCH_OPERATIONS)
+        ]
+        _, applied = apply_json_patch(self.document, ops)
+        self.assertEqual(applied, MAX_PATCH_OPERATIONS)

@@ -186,3 +186,52 @@ class RepositoryTests(unittest.TestCase):
 
         leftovers = list((temp_dir / "managed").glob(".*.tmp"))
         self.assertEqual(leftovers, [])
+
+    def test_create_view_rejects_when_dashboard_is_full(self) -> None:
+        """CWE-400: Adding views beyond MAX_VIEWS_PER_DASHBOARD must be rejected."""
+        from custom_components.homeassistant_mcp.lovelace.repository import MAX_VIEWS_PER_DASHBOARD
+
+        self.repository.create_dashboard(
+            {"dashboard_id": "big", "title": "Big", "url_path": "big", "views": []}
+        )
+        for i in range(MAX_VIEWS_PER_DASHBOARD):
+            self.repository.create_view(
+                "big", {"view_id": f"view{i}", "title": f"V{i}", "path": f"v{i}", "cards": []}
+            )
+        with self.assertRaises(DashboardValidationError):
+            self.repository.create_view(
+                "big", {"view_id": "overflow", "title": "Over", "path": "overflow", "cards": []}
+            )
+
+    def test_create_card_rejects_when_view_is_full(self) -> None:
+        """CWE-400: Adding cards beyond MAX_CARDS_PER_VIEW must be rejected."""
+        from custom_components.homeassistant_mcp.lovelace.repository import MAX_CARDS_PER_VIEW
+
+        self.repository.create_dashboard(
+            {"dashboard_id": "d2", "title": "D2", "url_path": "d2", "views": []}
+        )
+        self.repository.create_view(
+            "d2", {"view_id": "v1", "title": "V1", "path": "v1", "cards": []}
+        )
+        for _ in range(MAX_CARDS_PER_VIEW):
+            self.repository.create_card(
+                "d2", "v1", {"kind": "tile", "entity_id": "light.test"}
+            )
+        with self.assertRaises(DashboardValidationError):
+            self.repository.create_card(
+                "d2", "v1", {"kind": "tile", "entity_id": "light.overflow"}
+            )
+
+    def test_storage_directories_have_owner_only_permissions(self) -> None:
+        """CWE-732: Storage directories must be created with owner-only permissions."""
+        import stat
+
+        managed = Path(self.tempdir.name) / "managed"
+        rendered = Path(self.tempdir.name) / "rendered"
+        for directory in (managed, rendered):
+            mode = directory.stat().st_mode & 0o777
+            self.assertEqual(
+                mode,
+                stat.S_IRWXU,
+                f"{directory.name} directory has mode {oct(mode)}, expected {oct(stat.S_IRWXU)}",
+            )

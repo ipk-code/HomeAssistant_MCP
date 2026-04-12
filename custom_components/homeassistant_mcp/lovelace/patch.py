@@ -7,6 +7,9 @@ from typing import Any
 
 from .errors import PatchApplicationError
 
+# CWE-400: Cap operations to prevent CPU exhaustion from large patch payloads
+MAX_PATCH_OPERATIONS = 50
+
 
 def _decode_token(token: str) -> str:
     return token.replace("~1", "/").replace("~0", "~")
@@ -130,6 +133,10 @@ def apply_json_patch(
     document: dict[str, Any], operations: list[dict[str, Any]]
 ) -> tuple[dict[str, Any], int]:
     """Apply restricted RFC 6902 operations to a dashboard document."""
+    if len(operations) > MAX_PATCH_OPERATIONS:
+        raise PatchApplicationError(
+            f"patch exceeds maximum of {MAX_PATCH_OPERATIONS} operations"
+        )
     patched = deepcopy(document)
     applied = 0
     for operation in operations:
