@@ -136,9 +136,9 @@ class MetadataTests(unittest.TestCase):
         changelog = CHANGELOG_PATH.read_text(encoding="utf-8")
 
         self.assertIn(f"Latest release: `{INTEGRATION_VERSION}`", readme)
-        self.assertIn("Highlights in `0.3.1` compared with `0.3.0`", readme)
+        self.assertIn("Highlights in `0.3.2` compared with `0.3.1`", readme)
         self.assertIn(
-            "experimental in `0.3.1`: read-only native Home Assistant Lovelace dashboard access",
+            "experimental in `0.3.2`: read-only native Home Assistant Lovelace dashboard access",
             docs_index,
         )
         self.assertIn(

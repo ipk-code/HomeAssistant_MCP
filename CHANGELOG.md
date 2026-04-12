@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.3.2
+
+Release focus:
+
+- improve OpenCode compatibility by publishing an object-rooted schema for the full MCP tool catalog
+
+Added:
+
+- regression coverage for both `lovelace.validate_dashboard` argument variants in the spec-driven validator and tool registry tests
+
+Changed:
+
+- bumped the integration package version to `0.3.2`
+- updated `lovelace.validate_dashboard` to emit an object-rooted `input_schema` while preserving the existing `oneOf` validation behavior
+- refreshed the OpenCode and capability docs to explain the compatibility expectation and troubleshooting flow
+
+Notes:
+
+- the MCP API version remains `1.0.0`
+- the functional MCP feature surface from `0.3.1` is unchanged aside from improved remote-client compatibility for tool loading
+
 ## 0.3.1
 
 Release focus:

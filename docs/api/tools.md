@@ -57,7 +57,7 @@ The stable v1 tool surface currently spans the read-only `hass.*` namespace and 
 - Built-in completions are available for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon`.
 - Built-in resources are available for config, entities, areas, devices, services, and managed dashboards.
 - Built-in prompts are available for dashboard building, review, layout consistency, entity-card mapping, and cleanup audits.
-- Native Home Assistant Lovelace dashboard tools are experimental in `0.3.1` and remain read-only.
+- Native Home Assistant Lovelace dashboard tools are experimental in `0.3.2` and remain read-only.
 
 ## Source Of Truth
 
