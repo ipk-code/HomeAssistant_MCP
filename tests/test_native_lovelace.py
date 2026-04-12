@@ -25,6 +25,14 @@ class _FakeLovelaceData:
         self.dashboards = dashboards
 
 
+class _FakeAdminUser:
+    is_admin = True
+
+
+class _FakeUser:
+    is_admin = False
+
+
 class NativeLovelaceProviderTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         from homeassistant.components.lovelace.const import LOVELACE_DATA
@@ -44,13 +52,25 @@ class NativeLovelaceProviderTests(unittest.IsolatedAsyncioTestCase):
             },
             info={"mode": "storage", "views": 2},
         )
+        admin = _FakeLovelaceConfig(
+            url_path="admin-only",
+            config={
+                "id": "admin_only",
+                "title": "Admin",
+                "show_in_sidebar": True,
+                "require_admin": True,
+            },
+            info={"mode": "storage", "views": 1},
+        )
 
         self.hass = type(
             "FakeHass",
             (),
             {
                 "data": {
-                    LOVELACE_DATA: _FakeLovelaceData({None: default, "pv-energy": pv})
+                    LOVELACE_DATA: _FakeLovelaceData(
+                        {None: default, "pv-energy": pv, "admin-only": admin}
+                    )
                 }
             },
         )()
@@ -77,3 +97,16 @@ class NativeLovelaceProviderTests(unittest.IsolatedAsyncioTestCase):
     async def test_unknown_dashboard_raises_key_error(self) -> None:
         with self.assertRaisesRegex(KeyError, "unknown lovelace dashboard"):
             await self.provider.get_dashboard("missing")
+
+    async def test_non_admin_users_do_not_see_admin_only_dashboards(self) -> None:
+        payload = await self.provider.list_dashboards(user=_FakeUser(), limit=10)
+        self.assertEqual(
+            [item["url_path"] for item in payload["dashboards"]],
+            ["default", "pv-energy"],
+        )
+
+        with self.assertRaisesRegex(KeyError, "unknown lovelace dashboard"):
+            await self.provider.get_dashboard("admin-only", user=_FakeUser())
+
+        admin = await self.provider.get_dashboard("admin-only", user=_FakeAdminUser())
+        self.assertEqual(admin["metadata"]["url_path"], "admin-only")

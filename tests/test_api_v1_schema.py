@@ -53,6 +53,10 @@ class ToolContractSchemaTests(unittest.TestCase):
             "hass.list_devices",
             "hass.list_lovelace_dashboards",
             "hass.get_lovelace_dashboard",
+            "hass.create_lovelace_dashboard",
+            "hass.update_lovelace_dashboard_metadata",
+            "hass.save_lovelace_dashboard_config",
+            "hass.delete_lovelace_dashboard",
             "hass.list_frontend_panels",
             "hass.get_frontend_panel",
         }
@@ -70,6 +74,10 @@ class ToolContractSchemaTests(unittest.TestCase):
             "lovelace.update_card",
             "lovelace.delete_card",
             "lovelace.patch_dashboard",
+            "hass.create_lovelace_dashboard",
+            "hass.update_lovelace_dashboard_metadata",
+            "hass.save_lovelace_dashboard_config",
+            "hass.delete_lovelace_dashboard",
         ):
             self.assertTrue(self.tools[name]["mutation"], name)
 
@@ -185,6 +193,22 @@ class ToolContractSchemaTests(unittest.TestCase):
         self.assertEqual(
             panel_summary["properties"]["panel_kind"]["$ref"],
             "#/$defs/frontend_panel_kind",
+        )
+
+    def test_native_lovelace_write_tools_are_storage_scoped(self) -> None:
+        self.assertEqual(
+            self.spec["$defs"]["native_lovelace_storage_url_path"]["pattern"],
+            "^(?!default$)[a-z0-9][a-z0-9_-]{0,63}$",
+        )
+        self.assertEqual(
+            self.tools["hass.create_lovelace_dashboard"]["input_schema"]["properties"][
+                "config"
+            ]["type"],
+            "object",
+        )
+        self.assertIn(
+            "dashboard",
+            self.tools["hass.delete_lovelace_dashboard"]["output_schema"]["required"],
         )
 
 

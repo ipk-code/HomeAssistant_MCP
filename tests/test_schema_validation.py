@@ -111,6 +111,26 @@ class SchemaValidationTests(unittest.TestCase):
             {"url_path": "pv-energy"},
         )
         self.validator.validate_tool_arguments(
+            "hass.create_lovelace_dashboard",
+            {
+                "title": "PV Preview",
+                "url_path": "pv-preview",
+                "config": {"views": []},
+            },
+        )
+        self.validator.validate_tool_arguments(
+            "hass.update_lovelace_dashboard_metadata",
+            {"url_path": "pv-preview", "show_in_sidebar": False},
+        )
+        self.validator.validate_tool_arguments(
+            "hass.save_lovelace_dashboard_config",
+            {"url_path": "pv-preview", "config": {"views": []}},
+        )
+        self.validator.validate_tool_arguments(
+            "hass.delete_lovelace_dashboard",
+            {"url_path": "pv-preview"},
+        )
+        self.validator.validate_tool_arguments(
             "hass.list_frontend_panels",
             {"limit": 10},
         )
@@ -125,6 +145,12 @@ class SchemaValidationTests(unittest.TestCase):
 
         with self.assertRaises(ToolSchemaValidationError):
             self.validator.validate_tool_arguments("hass.list_devices", {"limit": 201})
+
+        with self.assertRaises(ToolSchemaValidationError):
+            self.validator.validate_tool_arguments(
+                "hass.create_lovelace_dashboard",
+                {"title": "Default Clone", "url_path": "default"},
+            )
 
         with self.assertRaises(ToolSchemaValidationError):
             self.validator.validate_tool_arguments(

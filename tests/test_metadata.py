@@ -116,6 +116,7 @@ class MetadataTests(unittest.TestCase):
             "hass.list_entities",
             "hass.list_frontend_panels",
             "hass.list_lovelace_dashboards",
+            "hass.create_lovelace_dashboard",
             "lovelace.list_dashboards",
             "lovelace.create_dashboard",
             "lovelace.patch_dashboard",
@@ -135,6 +136,7 @@ class MetadataTests(unittest.TestCase):
         self.assertIn("dashboard.review", readme)
         self.assertIn("hass.get_lovelace_dashboard", readme)
         self.assertIn("hass.get_frontend_panel", readme)
+        self.assertIn("hass.create_lovelace_dashboard", readme)
 
     def test_release_notes_and_status_docs_reflect_current_release(self) -> None:
         readme = README_PATH.read_text(encoding="utf-8")
@@ -145,9 +147,9 @@ class MetadataTests(unittest.TestCase):
         changelog = CHANGELOG_PATH.read_text(encoding="utf-8")
 
         self.assertIn(f"Latest release: `{INTEGRATION_VERSION}`", readme)
-        self.assertIn("Highlights in `0.3.3` compared with `0.3.2`", readme)
+        self.assertIn("Highlights in `0.3.4` compared with `0.3.3`", readme)
         self.assertIn(
-            "experimental in `0.3.3`: read-only native Home Assistant Lovelace dashboard access and read-only Home Assistant frontend panel discovery",
+            "experimental in `0.3.4`: native Home Assistant Lovelace dashboard access with storage-dashboard writes and read-only Home Assistant frontend panel discovery",
             docs_index,
         )
         self.assertIn(

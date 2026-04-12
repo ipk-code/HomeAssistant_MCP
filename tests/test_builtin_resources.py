@@ -42,7 +42,7 @@ class _FakeDiscoveryProvider:
 
 
 class _FakeNativeLovelaceProvider:
-    async def list_dashboards(self, *, limit: int = 200) -> dict:
+    async def list_dashboards(self, *, user=None, limit: int = 200) -> dict:
         return {
             "dashboards": [
                 {
@@ -57,7 +57,7 @@ class _FakeNativeLovelaceProvider:
             "truncated": False,
         }
 
-    async def get_dashboard(self, url_path: str) -> dict:
+    async def get_dashboard(self, url_path: str, *, user=None) -> dict:
         if url_path != "pv-energy":
             raise KeyError(f"unknown lovelace dashboard: {url_path}")
         return {

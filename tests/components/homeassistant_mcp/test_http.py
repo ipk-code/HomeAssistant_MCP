@@ -600,6 +600,171 @@ async def test_streamable_http_native_lovelace_dashboards_are_available_read_onl
     assert dashboard_resource_result["metadata"]["url_path"] == "pv-energy"
 
 
+async def test_streamable_http_native_lovelace_write_tools_manage_storage_dashboards(
+    hass, hass_client
+) -> None:
+    """Test admin-gated native Lovelace storage dashboard writes."""
+    assert await async_setup_component(
+        hass, "lovelace", {"lovelace": {"mode": "storage"}}
+    )
+    await hass.async_block_till_done()
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "transport": DEFAULT_TRANSPORT,
+            "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+        },
+        title="Home Assistant MCP",
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    client = await hass_client()
+
+    create_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "1",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.create_lovelace_dashboard",
+                "arguments": {
+                    "title": "Preview Native",
+                    "url_path": "preview-native",
+                    "icon": "mdi:test-tube",
+                    "show_in_sidebar": True,
+                    "config": {
+                        "views": [
+                            {"title": "Overview", "path": "overview", "cards": []}
+                        ]
+                    },
+                },
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert create_response.status == 200
+    create_payload = await create_response.json()
+    create_result = _decode_tool_result(create_payload)
+    _VALIDATOR.validate_tool_result("hass.create_lovelace_dashboard", create_result)
+    assert create_result["dashboard"]["metadata"]["url_path"] == "preview-native"
+
+    update_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "2",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.update_lovelace_dashboard_metadata",
+                "arguments": {
+                    "url_path": "preview-native",
+                    "title": "Preview Native Updated",
+                    "show_in_sidebar": False,
+                },
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert update_response.status == 200
+    update_payload = await update_response.json()
+    update_result = _decode_tool_result(update_payload)
+    _VALIDATOR.validate_tool_result(
+        "hass.update_lovelace_dashboard_metadata", update_result
+    )
+    assert update_result["dashboard"]["metadata"]["title"] == "Preview Native Updated"
+    assert update_result["dashboard"]["metadata"]["show_in_sidebar"] is False
+
+    save_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "3",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.save_lovelace_dashboard_config",
+                "arguments": {
+                    "url_path": "preview-native",
+                    "config": {
+                        "views": [
+                            {
+                                "title": "Solar",
+                                "path": "solar",
+                                "cards": [{"type": "markdown", "content": "Hello"}],
+                            }
+                        ]
+                    },
+                },
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert save_response.status == 200
+    save_payload = await save_response.json()
+    save_result = _decode_tool_result(save_payload)
+    _VALIDATOR.validate_tool_result("hass.save_lovelace_dashboard_config", save_result)
+    assert save_result["dashboard"]["config"]["views"][0]["path"] == "solar"
+
+    list_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "4",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.list_lovelace_dashboards",
+                "arguments": {},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert list_response.status == 200
+    list_payload = await list_response.json()
+    list_result = _decode_tool_result(list_payload)
+    assert any(
+        item["url_path"] == "preview-native" for item in list_result["dashboards"]
+    )
+
+    delete_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "5",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.delete_lovelace_dashboard",
+                "arguments": {"url_path": "preview-native"},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert delete_response.status == 200
+    delete_payload = await delete_response.json()
+    delete_result = _decode_tool_result(delete_payload)
+    _VALIDATOR.validate_tool_result("hass.delete_lovelace_dashboard", delete_result)
+    assert delete_result["deleted"] is True
+
+    missing_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "6",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.get_lovelace_dashboard",
+                "arguments": {"url_path": "preview-native"},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert missing_response.status == 200
+    missing_payload = await missing_response.json()
+    assert missing_payload["result"]["isError"] is True
+
+
 async def test_streamable_http_frontend_panels_are_available_read_only(
     hass, hass_client
 ) -> None:

@@ -1185,6 +1185,28 @@
         }
       }
     },
+    "native_lovelace_storage_url_path": {
+      "type": "string",
+      "pattern": "^(?!default$)[a-z0-9][a-z0-9_-]{0,63}$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "native_lovelace_delete_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "deleted",
+        "dashboard"
+      ],
+      "properties": {
+        "deleted": {
+          "type": "boolean"
+        },
+        "dashboard": {
+          "$ref": "#/$defs/native_lovelace_dashboard_summary"
+        }
+      }
+    },
     "frontend_panel_url_path": {
       "type": "string",
       "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]{0,127}$",
@@ -2326,6 +2348,165 @@
         "properties": {
           "dashboard": {
             "$ref": "#/$defs/native_lovelace_dashboard_document"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.create_lovelace_dashboard",
+      "mutation": true,
+      "description": "Create a new storage-mode Home Assistant Lovelace dashboard and optionally save its initial config.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "url_path"
+        ],
+        "properties": {
+          "title": {
+            "$ref": "#/$defs/title"
+          },
+          "url_path": {
+            "$ref": "#/$defs/native_lovelace_storage_url_path"
+          },
+          "icon": {
+            "$ref": "#/$defs/icon"
+          },
+          "show_in_sidebar": {
+            "type": "boolean"
+          },
+          "require_admin": {
+            "type": "boolean"
+          },
+          "allow_single_word": {
+            "type": "boolean"
+          },
+          "config": {
+            "type": "object"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard"
+        ],
+        "properties": {
+          "dashboard": {
+            "$ref": "#/$defs/native_lovelace_dashboard_document"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.update_lovelace_dashboard_metadata",
+      "mutation": true,
+      "description": "Update metadata for one storage-mode Home Assistant Lovelace dashboard.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "url_path"
+        ],
+        "properties": {
+          "url_path": {
+            "$ref": "#/$defs/native_lovelace_url_path"
+          },
+          "title": {
+            "$ref": "#/$defs/title"
+          },
+          "icon": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 64
+          },
+          "show_in_sidebar": {
+            "type": "boolean"
+          },
+          "require_admin": {
+            "type": "boolean"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard"
+        ],
+        "properties": {
+          "dashboard": {
+            "$ref": "#/$defs/native_lovelace_dashboard_document"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.save_lovelace_dashboard_config",
+      "mutation": true,
+      "description": "Replace the config for one storage-mode Home Assistant Lovelace dashboard.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "url_path",
+          "config"
+        ],
+        "properties": {
+          "url_path": {
+            "$ref": "#/$defs/native_lovelace_url_path"
+          },
+          "config": {
+            "type": "object"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dashboard"
+        ],
+        "properties": {
+          "dashboard": {
+            "$ref": "#/$defs/native_lovelace_dashboard_document"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.delete_lovelace_dashboard",
+      "mutation": true,
+      "description": "Delete one storage-mode Home Assistant Lovelace dashboard by url_path.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "url_path"
+        ],
+        "properties": {
+          "url_path": {
+            "$ref": "#/$defs/native_lovelace_url_path"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "deleted",
+          "dashboard"
+        ],
+        "properties": {
+          "deleted": {
+            "type": "boolean"
+          },
+          "dashboard": {
+            "$ref": "#/$defs/native_lovelace_dashboard_summary"
           }
         }
       }

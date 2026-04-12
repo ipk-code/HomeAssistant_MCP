@@ -320,7 +320,7 @@ def register_builtin_resources(
                 description="Read-only Home Assistant Lovelace dashboards outside the MCP-managed repository.",
                 mime_type=_RESOURCE_MIME_TYPE,
             ),
-            lambda: _native_dashboard_list_resource(native),
+            lambda user: _native_dashboard_list_resource(native, user=user),
         )
         registry.register_template(
             ResourceTemplateDefinition(
@@ -329,7 +329,9 @@ def register_builtin_resources(
                 description="A native Home Assistant Lovelace dashboard document by url_path.",
                 mime_type=_RESOURCE_MIME_TYPE,
             ),
-            lambda params, uri: _native_dashboard_resource(native, params, uri),
+            lambda params, uri, user: _native_dashboard_resource(
+                native, params, uri, user=user
+            ),
         )
     if frontend is not None:
         registry.register(
@@ -389,10 +391,12 @@ async def _dashboard_resource_async(
 
 async def _native_dashboard_list_resource(
     native: NativeLovelaceProvider,
+    *,
+    user: Any | None = None,
 ) -> list[dict[str, Any]]:
     return _json_resource(
         "hass://lovelace/dashboards",
-        await native.list_dashboards(limit=MAX_DISCOVERY_LIMIT),
+        await native.list_dashboards(user=user, limit=MAX_DISCOVERY_LIMIT),
     )
 
 
@@ -400,12 +404,14 @@ async def _native_dashboard_resource(
     native: NativeLovelaceProvider,
     params: dict[str, str],
     uri: str,
+    *,
+    user: Any | None = None,
 ) -> list[dict[str, Any]]:
     url_path = params.get("url_path")
     if not url_path:
         raise KeyError(f"unknown resource: {uri}")
     try:
-        payload = await native.get_dashboard(url_path)
+        payload = await native.get_dashboard(url_path, user=user)
     except KeyError as err:
         raise KeyError(f"unknown resource: {uri}") from err
     return _json_resource(uri, payload)

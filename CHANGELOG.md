@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.3.4
+
+Release focus:
+
+- add admin-gated native Home Assistant Lovelace dashboard writes for storage dashboards while preserving read-only safety for protected dashboard types
+
+Added:
+
+- native Home Assistant dashboard write tools:
+  - `hass.create_lovelace_dashboard`
+  - `hass.update_lovelace_dashboard_metadata`
+  - `hass.save_lovelace_dashboard_config`
+  - `hass.delete_lovelace_dashboard`
+- regression coverage for native dashboard create, metadata update, config save, delete, and admin-only visibility filtering
+
+Changed:
+
+- bumped the integration package version to `0.3.4`
+- native Home Assistant Lovelace dashboard reads now respect `require_admin` so non-admin MCP callers do not learn about protected dashboards
+- native dashboard writes are limited to storage dashboards and reject the default, YAML, and auto-generated dashboard variants
+
+Notes:
+
+- the MCP API version remains `1.0.0`
+- native dashboard writes remain experimental and intentionally do not add generic Home Assistant admin mutation capabilities beyond Lovelace storage dashboards
+
 ## 0.3.3
 
 Release focus:
