@@ -21,6 +21,14 @@ CONTENT_TYPE_JSON = "application/json"
 _LOGGER = logging.getLogger(__name__)
 
 
+def _s(value: Any) -> str:
+    """Sanitize a value for safe log inclusion (CWE-117: log injection).
+
+    Replaces CR/LF characters that could let a client inject fake log lines.
+    """
+    return str(value).replace("\r", "\\r").replace("\n", "\\n")
+
+
 class StatelessMCPTransport:
     """Minimal stateless MCP transport facade over the tool registry."""
 
@@ -136,11 +144,11 @@ class StatelessMCPTransport:
 
         request_id = message.get("id")
         if request_id is None:
-            _LOGGER.debug("Accepted MCP notification for method %s", method)
+            _LOGGER.debug("Accepted MCP notification for method %s", _s(method))
             return HTTPStatus.ACCEPTED, None
 
         if method == "initialize":
-            _LOGGER.debug("Handled MCP initialize request %s", request_id)
+            _LOGGER.debug("Handled MCP initialize request %s", _s(request_id))
             return HTTPStatus.OK, {
                 "jsonrpc": "2.0",
                 "id": request_id,
@@ -156,7 +164,7 @@ class StatelessMCPTransport:
             }
 
         if method == "ping":
-            _LOGGER.debug("Handled MCP ping request %s", request_id)
+            _LOGGER.debug("Handled MCP ping request %s", _s(request_id))
             return HTTPStatus.OK, {
                 "jsonrpc": "2.0",
                 "id": request_id,
@@ -164,7 +172,7 @@ class StatelessMCPTransport:
             }
 
         if method == "tools/list":
-            _LOGGER.debug("Handled MCP tools/list request %s", request_id)
+            _LOGGER.debug("Handled MCP tools/list request %s", _s(request_id))
             return HTTPStatus.OK, {
                 "jsonrpc": "2.0",
                 "id": request_id,
@@ -172,7 +180,7 @@ class StatelessMCPTransport:
             }
 
         if method == "resources/list":
-            _LOGGER.debug("Handled MCP resources/list request %s", request_id)
+            _LOGGER.debug("Handled MCP resources/list request %s", _s(request_id))
             return HTTPStatus.OK, {
                 "jsonrpc": "2.0",
                 "id": request_id,
@@ -190,7 +198,9 @@ class StatelessMCPTransport:
                     request_id, -32602, "resources/read requires a string uri"
                 )
             try:
-                _LOGGER.debug("Reading MCP resource %s for request %s", uri, request_id)
+                _LOGGER.debug(
+                    "Reading MCP resource %s for request %s", _s(uri), _s(request_id)
+                )
                 return HTTPStatus.OK, {
                     "jsonrpc": "2.0",
                     "id": request_id,
@@ -199,16 +209,16 @@ class StatelessMCPTransport:
             except KeyError as err:
                 _LOGGER.debug(
                     "Rejected MCP resources/read request %s because resource %s was unknown: %s",
-                    request_id,
-                    uri,
-                    err,
+                    _s(request_id),
+                    _s(uri),
+                    _s(err),
                 )
                 return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
                     request_id, -32602, str(err)
                 )
 
         if method == "prompts/list":
-            _LOGGER.debug("Handled MCP prompts/list request %s", request_id)
+            _LOGGER.debug("Handled MCP prompts/list request %s", _s(request_id))
             return HTTPStatus.OK, {
                 "jsonrpc": "2.0",
                 "id": request_id,
@@ -230,7 +240,9 @@ class StatelessMCPTransport:
                 )
             try:
                 _LOGGER.debug(
-                    "Handled MCP prompts/get request %s for %s", request_id, prompt_name
+                    "Handled MCP prompts/get request %s for %s",
+                    _s(request_id),
+                    _s(prompt_name),
                 )
                 return HTTPStatus.OK, {
                     "jsonrpc": "2.0",
@@ -240,8 +252,8 @@ class StatelessMCPTransport:
             except KeyError as err:
                 _LOGGER.warning(
                     "Rejected MCP prompts/get request %s because prompt %s was unknown",
-                    request_id,
-                    prompt_name,
+                    _s(request_id),
+                    _s(prompt_name),
                 )
                 return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
                     request_id, -32602, str(err)
@@ -264,7 +276,7 @@ class StatelessMCPTransport:
                     -32602,
                     "completion/complete requires ref and argument objects",
                 )
-            _LOGGER.debug("Handled MCP completion/complete request %s", request_id)
+            _LOGGER.debug("Handled MCP completion/complete request %s", _s(request_id))
             return HTTPStatus.OK, {
                 "jsonrpc": "2.0",
                 "id": request_id,
@@ -279,14 +291,14 @@ class StatelessMCPTransport:
             if not isinstance(tool_name, str) or not isinstance(arguments, dict):
                 _LOGGER.warning(
                     "Rejected MCP tools/call request %s because name or arguments were invalid",
-                    request_id,
+                    _s(request_id),
                 )
                 return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
                     request_id, -32602, "tools/call requires name and arguments"
                 )
             try:
                 _LOGGER.debug(
-                    "Executing MCP tool %s for request %s", tool_name, request_id
+                    "Executing MCP tool %s for request %s", _s(tool_name), _s(request_id)
                 )
                 payload = self._registry.call(tool_name, arguments)
                 return HTTPStatus.OK, {
@@ -300,9 +312,9 @@ class StatelessMCPTransport:
             except (KeyError, LovelaceMCPError, ToolSchemaValidationError) as err:
                 _LOGGER.warning(
                     "MCP tool %s failed validation or execution for request %s: %s",
-                    tool_name,
-                    request_id,
-                    err,
+                    _s(tool_name),
+                    _s(request_id),
+                    _s(err),
                 )
                 return HTTPStatus.OK, {
                     "jsonrpc": "2.0",
@@ -315,15 +327,17 @@ class StatelessMCPTransport:
             except Exception:
                 _LOGGER.exception(
                     "Unexpected MCP transport failure for tool %s request %s",
-                    tool_name,
-                    request_id,
+                    _s(tool_name),
+                    _s(request_id),
                 )
                 return HTTPStatus.INTERNAL_SERVER_ERROR, self._jsonrpc_error(
                     request_id, -32603, "Internal server error"
                 )
 
         _LOGGER.warning(
-            "Rejected MCP request %s because method %s is unknown", request_id, method
+            "Rejected MCP request %s because method %s is unknown",
+            _s(request_id),
+            _s(method),
         )
         return HTTPStatus.NOT_FOUND, self._jsonrpc_error(
             request_id, -32601, f"Unknown method: {method}"
@@ -373,7 +387,7 @@ class StatelessMCPTransport:
 
         request_id = message.get("id")
         if request_id is None:
-            _LOGGER.debug("Accepted MCP notification for method %s", method)
+            _LOGGER.debug("Accepted MCP notification for method %s", _s(method))
             return HTTPStatus.ACCEPTED, None
 
         if method == "resources/read":
@@ -387,7 +401,9 @@ class StatelessMCPTransport:
                     request_id, -32602, "resources/read requires a string uri"
                 )
             try:
-                _LOGGER.debug("Reading MCP resource %s for request %s", uri, request_id)
+                _LOGGER.debug(
+                    "Reading MCP resource %s for request %s", _s(uri), _s(request_id)
+                )
                 return HTTPStatus.OK, {
                     "jsonrpc": "2.0",
                     "id": request_id,
@@ -396,9 +412,9 @@ class StatelessMCPTransport:
             except (KeyError, LovelaceMCPError) as err:
                 _LOGGER.debug(
                     "Rejected MCP resources/read request %s because resource %s was invalid or unknown: %s",
-                    request_id,
-                    uri,
-                    err,
+                    _s(request_id),
+                    _s(uri),
+                    _s(err),
                 )
                 return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
                     request_id, -32602, str(err)
@@ -419,7 +435,9 @@ class StatelessMCPTransport:
                 )
             try:
                 _LOGGER.debug(
-                    "Handled MCP prompts/get request %s for %s", request_id, prompt_name
+                    "Handled MCP prompts/get request %s for %s",
+                    _s(request_id),
+                    _s(prompt_name),
                 )
                 return HTTPStatus.OK, {
                     "jsonrpc": "2.0",
@@ -429,9 +447,9 @@ class StatelessMCPTransport:
             except (KeyError, LovelaceMCPError) as err:
                 _LOGGER.warning(
                     "Rejected MCP prompts/get request %s because prompt %s failed: %s",
-                    request_id,
-                    prompt_name,
-                    err,
+                    _s(request_id),
+                    _s(prompt_name),
+                    _s(err),
                 )
                 return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
                     request_id, -32602, str(err)
@@ -454,7 +472,7 @@ class StatelessMCPTransport:
                     -32602,
                     "completion/complete requires ref and argument objects",
                 )
-            _LOGGER.debug("Handled MCP completion/complete request %s", request_id)
+            _LOGGER.debug("Handled MCP completion/complete request %s", _s(request_id))
             return HTTPStatus.OK, {
                 "jsonrpc": "2.0",
                 "id": request_id,
@@ -471,14 +489,14 @@ class StatelessMCPTransport:
             if not isinstance(tool_name, str) or not isinstance(arguments, dict):
                 _LOGGER.warning(
                     "Rejected MCP tools/call request %s because name or arguments were invalid",
-                    request_id,
+                    _s(request_id),
                 )
                 return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
                     request_id, -32602, "tools/call requires name and arguments"
                 )
             try:
                 _LOGGER.debug(
-                    "Executing MCP tool %s for request %s", tool_name, request_id
+                    "Executing MCP tool %s for request %s", _s(tool_name), _s(request_id)
                 )
                 payload = await self._async_call_tool(tool_name, arguments)
                 return HTTPStatus.OK, {
@@ -492,9 +510,9 @@ class StatelessMCPTransport:
             except (KeyError, LovelaceMCPError, ToolSchemaValidationError) as err:
                 _LOGGER.warning(
                     "MCP tool %s failed validation or execution for request %s: %s",
-                    tool_name,
-                    request_id,
-                    err,
+                    _s(tool_name),
+                    _s(request_id),
+                    _s(err),
                 )
                 return HTTPStatus.OK, {
                     "jsonrpc": "2.0",
@@ -507,15 +525,17 @@ class StatelessMCPTransport:
             except Exception:
                 _LOGGER.exception(
                     "Unexpected MCP transport failure for tool %s request %s",
-                    tool_name,
-                    request_id,
+                    _s(tool_name),
+                    _s(request_id),
                 )
                 return HTTPStatus.INTERNAL_SERVER_ERROR, self._jsonrpc_error(
                     request_id, -32603, "Internal server error"
                 )
 
         _LOGGER.warning(
-            "Rejected MCP request %s because method %s is unknown", request_id, method
+            "Rejected MCP request %s because method %s is unknown",
+            _s(request_id),
+            _s(method),
         )
         return HTTPStatus.NOT_FOUND, self._jsonrpc_error(
             request_id, -32601, f"Unknown method: {method}"
