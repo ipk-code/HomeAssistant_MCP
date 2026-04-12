@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from itertools import count
 from typing import Any
+from uuid import uuid4
 
 from .errors import DashboardValidationError
 from .validation import (
@@ -20,7 +20,6 @@ from .validation import (
     validate_title,
 )
 
-_CARD_SEQUENCE = count(1)
 _SIMPLE_KINDS = {"heading", "markdown", "gauge", "tile", "entities", "glance"}
 _NESTED_KINDS = {"grid", "horizontal_stack", "vertical_stack"}
 _SUPPORTED_KINDS = _SIMPLE_KINDS | _NESTED_KINDS
@@ -30,7 +29,10 @@ MAX_CARD_NESTING_DEPTH = 5
 
 
 def _next_card_id() -> str:
-    return f"card:{next(_CARD_SEQUENCE)}"
+    # CWE-330: Use uuid4 so IDs are collision-free across process restarts.
+    # The sequential counter (count(1)) would restart at card:1 on every
+    # HA reload, potentially colliding with IDs already persisted on disk.
+    return f"card:{uuid4().hex[:12]}"
 
 
 def _normalize_tap_action(tap_action: dict[str, Any]) -> dict[str, Any]:
