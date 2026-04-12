@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.3.6
+
+Release focus:
+
+- merge the reviewed security hardening branch into the mainline release and document the new operational limits
+
+Added:
+
+- regression coverage for stricter Accept-header parsing, request-size prechecks, dashboard/view/card caps, patch-operation caps, UUID card IDs, and owner-only storage permissions
+
+Changed:
+
+- bumped the integration package version to `0.3.6`
+- tightened Accept header parsing so only real JSON-capable media types are accepted
+- rejected oversized requests before reading the body when `Content-Length` already exceeds the server limit
+- sanitized user-controlled values before writing them into MCP transport logs
+- capped card nesting depth, JSON patch operations, views per dashboard, and cards per view to reduce denial-of-service risk
+- switched generated card IDs from a process-local counter to `uuid4`-based identifiers to avoid collisions across restarts
+- applied owner-only permissions to the managed dashboard storage directories on supported filesystems
+
+Notes:
+
+- the MCP API version remains `1.0.0`
+- these changes harden the existing feature surface; they do not add new public MCP capabilities beyond the already documented `0.3.5` tools and resources
+
 ## 0.3.5
 
 Release focus:

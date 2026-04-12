@@ -26,6 +26,10 @@ There are no user-editable options in v1.
 - `discovery_default_limit`: `100`
 - `discovery_max_limit`: `200`
 - `completion_max_values`: `25`
+- `max_card_nesting_depth`: `5`
+- `max_patch_operations`: `50`
+- `max_views_per_dashboard`: `50`
+- `max_cards_per_view`: `200`
 - `single_config_entry`: `true`
 - `requires_home_assistant_auth`: `true`
 - `open_code_oauth_mode`: `false` recommended for the current token-based setup
@@ -60,6 +64,6 @@ There are no user-editable options in v1.
 
 ## Capability Status
 
-- stable in `0.3.5`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, correctly placed HACS/Home Assistant brand assets, and broader OpenCode-compatible tool catalog loading
-- experimental in `0.3.5`: native Home Assistant Lovelace dashboard access with storage-dashboard writes, Lovelace resource discovery, and read-only frontend panel discovery
+- stable in `0.3.6`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, correctly placed HACS/Home Assistant brand assets, broader OpenCode-compatible tool catalog loading, and merged security hardening limits
+- experimental in `0.3.6`: native Home Assistant Lovelace dashboard access with storage-dashboard writes, Lovelace resource discovery, and read-only frontend panel discovery
 - planned next: SSE transport and optional OAuth evaluation
