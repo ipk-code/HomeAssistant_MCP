@@ -6,6 +6,7 @@ from copy import deepcopy
 import json
 import os
 from pathlib import Path
+import stat
 from tempfile import NamedTemporaryFile
 from typing import Any
 
@@ -36,6 +37,19 @@ from .validation import (
 MAX_VIEWS_PER_DASHBOARD = 50
 MAX_CARDS_PER_VIEW = 200
 
+# CWE-732: Owner-only directory mode. Dashboard JSON files contain the
+# full Lovelace configuration; group/world read access is unnecessary.
+_DIR_MODE = stat.S_IRWXU  # 0o700
+
+
+def _restrict_directory(path: Path) -> None:
+    """Apply owner-only permissions to a storage directory (best-effort)."""
+    try:
+        path.chmod(_DIR_MODE)
+    except OSError:
+        # chmod may fail on some platforms or Docker volumes; do not abort.
+        pass
+
 
 class YamlDashboardRepository:
     """Manage canonical dashboard documents and rendered YAML dashboard files."""
@@ -46,6 +60,8 @@ class YamlDashboardRepository:
         self._rendered_path = self._root_path / "rendered"
         self._managed_path.mkdir(parents=True, exist_ok=True)
         self._rendered_path.mkdir(parents=True, exist_ok=True)
+        _restrict_directory(self._managed_path)
+        _restrict_directory(self._rendered_path)
 
     def list_dashboards(self) -> list[dict[str, Any]]:
         dashboards: list[dict[str, Any]] = []

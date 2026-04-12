@@ -221,3 +221,17 @@ class RepositoryTests(unittest.TestCase):
             self.repository.create_card(
                 "d2", "v1", {"kind": "tile", "entity_id": "light.overflow"}
             )
+
+    def test_storage_directories_have_owner_only_permissions(self) -> None:
+        """CWE-732: Storage directories must be created with owner-only permissions."""
+        import stat
+
+        managed = Path(self.tempdir.name) / "managed"
+        rendered = Path(self.tempdir.name) / "rendered"
+        for directory in (managed, rendered):
+            mode = directory.stat().st_mode & 0o777
+            self.assertEqual(
+                mode,
+                stat.S_IRWXU,
+                f"{directory.name} directory has mode {oct(mode)}, expected {oct(stat.S_IRWXU)}",
+            )
