@@ -27,6 +27,58 @@ from custom_components.homeassistant_mcp.mcp.transport import (
 )
 
 
+class _FakeFrontendPanels:
+    def list_panels(self, *, user=None, limit=200):
+        is_admin = bool(getattr(user, "is_admin", False))
+        panels = [
+            {
+                "component_name": "energy",
+                "default_visible": True,
+                "url_path": "energy",
+                "require_admin": False,
+                "source": "home_assistant_frontend",
+                "panel_kind": "built_in",
+            }
+        ]
+        if is_admin:
+            panels.append(
+                {
+                    "component_name": "config",
+                    "default_visible": True,
+                    "url_path": "config",
+                    "require_admin": True,
+                    "source": "home_assistant_frontend",
+                    "panel_kind": "built_in",
+                }
+            )
+        return {"panels": panels[:limit], "truncated": False}
+
+    def get_panel(self, url_path: str, *, user=None):
+        if url_path == "energy":
+            return {
+                "component_name": "energy",
+                "default_visible": True,
+                "url_path": "energy",
+                "require_admin": False,
+                "source": "home_assistant_frontend",
+                "panel_kind": "built_in",
+            }
+        if url_path == "config" and bool(getattr(user, "is_admin", False)):
+            return {
+                "component_name": "config",
+                "default_visible": True,
+                "url_path": "config",
+                "require_admin": True,
+                "source": "home_assistant_frontend",
+                "panel_kind": "built_in",
+            }
+        raise KeyError(f"unknown frontend panel: {url_path}")
+
+
+class _FakeAdminUser:
+    is_admin = True
+
+
 class TransportTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tempdir = TemporaryDirectory()
@@ -99,6 +151,7 @@ class TransportTests(unittest.TestCase):
             resources=resources,
             prompts=prompts,
             completions=completions,
+            frontend_panels=_FakeFrontendPanels(),
         )
 
     def test_initialize_request(self) -> None:
@@ -125,10 +178,44 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIsNotNone(response)
         assert response is not None
-        self.assertEqual(len(response["result"]["tools"]), 24)
+        self.assertEqual(len(response["result"]["tools"]), 26)
         self.assertEqual(
             response["result"]["tools"][0]["name"], "lovelace.list_dashboards"
         )
+
+    def test_frontend_panel_tools_respect_user_visibility(self) -> None:
+        status, response = self.transport.handle_jsonrpc_message(
+            {
+                "jsonrpc": "2.0",
+                "id": "4",
+                "method": "tools/call",
+                "params": {
+                    "name": "hass.list_frontend_panels",
+                    "arguments": {},
+                },
+            }
+        )
+        self.assertEqual(status, 200)
+        assert response is not None
+        payload = json.loads(response["result"]["content"][0]["text"])
+        self.assertEqual([item["url_path"] for item in payload["panels"]], ["energy"])
+
+        status, response = self.transport.handle_jsonrpc_message(
+            {
+                "jsonrpc": "2.0",
+                "id": "5",
+                "method": "tools/call",
+                "params": {
+                    "name": "hass.get_frontend_panel",
+                    "arguments": {"url_path": "config"},
+                },
+            },
+            user=_FakeAdminUser(),
+        )
+        self.assertEqual(status, 200)
+        assert response is not None
+        payload = json.loads(response["result"]["content"][0]["text"])
+        self.assertEqual(payload["panel"]["url_path"], "config")
 
     def test_resources_list_and_read_use_registry(self) -> None:
         status, response = self.transport.handle_jsonrpc_message(

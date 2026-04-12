@@ -53,18 +53,25 @@ class ToolRegistryTests(unittest.TestCase):
     def test_contract_loader_exposes_all_tools(self) -> None:
         payload, tools = load_api_contract()
         self.assertEqual(payload["api_version"], "1.0.0")
-        self.assertEqual(len(tools), 24)
+        self.assertEqual(len(tools), 26)
         self.assertEqual(tools[0].name, "lovelace.list_dashboards")
 
     def test_registry_lists_serialized_tools(self) -> None:
         tools = self.registry.list_tools()
-        self.assertEqual(len(tools), 24)
+        self.assertEqual(len(tools), 26)
         self.assertEqual(tools[0]["name"], "lovelace.list_dashboards")
         self.assertIn("inputSchema", tools[0])
         validate_tool = next(
             tool for tool in tools if tool["name"] == "lovelace.validate_dashboard"
         )
         self.assertEqual(validate_tool["inputSchema"]["type"], "object")
+        frontend_tool = next(
+            tool for tool in tools if tool["name"] == "hass.list_frontend_panels"
+        )
+        self.assertEqual(
+            frontend_tool["inputSchema"]["properties"]["limit"]["$ref"],
+            "#/$defs/result_limit",
+        )
 
     def test_registry_dispatches_hass_discovery_calls(self) -> None:
         entities = self.registry.call("hass.list_entities", {})

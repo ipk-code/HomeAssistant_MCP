@@ -63,17 +63,28 @@ class _FakeEntry:
 
 class _FakeRequest:
     def __init__(
-        self, hass, *, body: dict | str, accept: str = "application/json"
+        self,
+        hass,
+        *,
+        body: dict | str,
+        accept: str = "application/json",
+        user=None,
     ) -> None:
         self.app = {KEY_HASS: hass}
         self.headers = {"accept": accept}
         self.content_type = "application/json"
         self._body = body
+        self._user = user
 
     async def text(self) -> str:
         if isinstance(self._body, str):
             return self._body
         return json.dumps(self._body)
+
+    def get(self, key, default=None):
+        if key == "hass_user":
+            return self._user
+        return default
 
 
 def _response_json(response) -> dict:
@@ -122,6 +133,7 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
                 "hass://devices",
                 "hass://services",
                 "hass://lovelace/dashboards",
+                "hass://frontend/panels",
             ],
         )
         self.assertEqual(
@@ -137,6 +149,12 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
                     "uriTemplate": "hass://lovelace/dashboard/{url_path}",
                     "name": "Native Lovelace Dashboard",
                     "description": "A native Home Assistant Lovelace dashboard document by url_path.",
+                    "mimeType": "application/json",
+                },
+                {
+                    "uriTemplate": "hass://frontend/panel/{url_path}",
+                    "name": "Frontend Panel",
+                    "description": "One Home Assistant frontend panel by url_path, filtered by the authenticated user's permissions.",
                     "mimeType": "application/json",
                 },
             ],

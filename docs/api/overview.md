@@ -21,10 +21,12 @@
 | Auth | Stable in v1 | Standard Home Assistant authentication |
 | MCP methods | Stable in v1 | `initialize`, `ping`, `tools/list`, `tools/call` |
 | Read-only Home Assistant discovery tools | Stable in v1 | `hass.list_entities`, `hass.search_entities`, `hass.list_services`, `hass.list_areas`, `hass.list_devices` |
+| Frontend panel tools | Experimental in `0.3.3` | `hass.list_frontend_panels` and `hass.get_frontend_panel` expose Home Assistant sidebar panels read-only |
 | Lovelace dashboard tools | Stable in v1 | Dashboard, view, and card CRUD plus validation and patching |
-| Native Lovelace dashboard tools | Experimental in `0.3.2` | `hass.list_lovelace_dashboards` and `hass.get_lovelace_dashboard` expose standard Home Assistant dashboards read-only |
+| Native Lovelace dashboard tools | Experimental in `0.3.3` | `hass.list_lovelace_dashboards` and `hass.get_lovelace_dashboard` expose standard Home Assistant dashboards read-only |
 | Resources | Stable in v1 | `resources/list` and `resources/read` expose config, entities, areas, devices, services, and `hass://dashboard/{dashboard_id}` |
-| Native Lovelace dashboard resources | Experimental in `0.3.2` | `hass://lovelace/dashboards` and `hass://lovelace/dashboard/{url_path}` expose standard Home Assistant dashboards read-only |
+| Native Lovelace dashboard resources | Experimental in `0.3.3` | `hass://lovelace/dashboards` and `hass://lovelace/dashboard/{url_path}` expose standard Home Assistant dashboards read-only |
+| Frontend panel resources | Experimental in `0.3.3` | `hass://frontend/panels` and `hass://frontend/panel/{url_path}` expose sidebar panel metadata read-only |
 | Prompts | Stable in v1 | `prompts/list` and `prompts/get` expose `dashboard.builder`, `dashboard.review`, `dashboard.layout_consistency_review`, `dashboard.entity_card_mapping`, and `dashboard.cleanup_audit` |
 | Completions | Stable in v1 | `completion/complete` provides built-in suggestions for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon` |
 | OAuth client flow | Not shipped yet | Current remote setup uses bearer tokens |
@@ -36,9 +38,10 @@
 - Stateful transports such as SSE are deferred until the stateless transport is stable.
 - The server is currently dashboard-first, not a general-purpose Home Assistant admin surface.
 - Discovery tools are read-only and enforce bounded response sizes.
-- Resources are read-only and only expose bounded Home Assistant context plus managed dashboards by default.
+- Resources are read-only and expose bounded Home Assistant context plus managed dashboards, native Lovelace dashboards, and frontend panels where available.
 - Prompts are advisory only and guide clients toward the existing typed tools and resources instead of adding hidden write paths.
 - Native Home Assistant Lovelace dashboard access is intentionally separated from MCP-managed dashboards and remains read-only.
+- Frontend panel discovery remains read-only and preserves Home Assistant admin-only visibility rules.
 
 ## Runtime Model
 
@@ -51,8 +54,8 @@
 
 ## Capability Status
 
-- stable in `0.3.2`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, correctly placed HACS/Home Assistant brand assets, and broader OpenCode-compatible tool catalog loading
-- experimental in `0.3.2`: read-only native Home Assistant Lovelace dashboard access
+- stable in `0.3.3`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, correctly placed HACS/Home Assistant brand assets, and broader OpenCode-compatible tool catalog loading
+- experimental in `0.3.3`: read-only native Home Assistant Lovelace dashboard access and read-only frontend panel discovery
 - planned next: SSE transport and optional OAuth evaluation
 
 ## Main Layers

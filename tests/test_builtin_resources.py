@@ -73,6 +73,35 @@ class _FakeNativeLovelaceProvider:
         }
 
 
+class _FakeFrontendPanelsProvider:
+    def list_panels(self, *, user=None, limit: int = 200) -> dict:
+        return {
+            "panels": [
+                {
+                    "component_name": "energy",
+                    "default_visible": True,
+                    "url_path": "energy",
+                    "require_admin": False,
+                    "source": "home_assistant_frontend",
+                    "panel_kind": "built_in",
+                }
+            ],
+            "truncated": False,
+        }
+
+    def get_panel(self, url_path: str, *, user=None) -> dict:
+        if url_path != "energy":
+            raise KeyError(f"unknown frontend panel: {url_path}")
+        return {
+            "component_name": "energy",
+            "default_visible": True,
+            "url_path": "energy",
+            "require_admin": False,
+            "source": "home_assistant_frontend",
+            "panel_kind": "built_in",
+        }
+
+
 class BuiltinResourceTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tempdir = TemporaryDirectory()
@@ -157,15 +186,23 @@ class BuiltinAsyncResourceTests(unittest.IsolatedAsyncioTestCase):
             repository=self.repository,
             discovery=_FakeDiscoveryProvider(),
             native=_FakeNativeLovelaceProvider(),
+            frontend=_FakeFrontendPanelsProvider(),
         )
 
         payload = registry.list_payload()
         self.assertIn(
             "hass://lovelace/dashboards", [item["uri"] for item in payload["resources"]]
         )
+        self.assertIn(
+            "hass://frontend/panels", [item["uri"] for item in payload["resources"]]
+        )
         self.assertEqual(
             payload["resourceTemplates"][1]["uriTemplate"],
             "hass://lovelace/dashboard/{url_path}",
+        )
+        self.assertEqual(
+            payload["resourceTemplates"][2]["uriTemplate"],
+            "hass://frontend/panel/{url_path}",
         )
 
         native_dashboards = json.loads(
@@ -179,3 +216,13 @@ class BuiltinAsyncResourceTests(unittest.IsolatedAsyncioTestCase):
             ]
         )
         self.assertEqual(native_dashboard["metadata"]["url_path"], "pv-energy")
+
+        frontend_panels = json.loads(
+            (await registry.async_read("hass://frontend/panels"))[0]["text"]
+        )
+        self.assertEqual(frontend_panels["panels"][0]["url_path"], "energy")
+
+        frontend_panel = json.loads(
+            (await registry.async_read("hass://frontend/panel/energy"))[0]["text"]
+        )
+        self.assertEqual(frontend_panel["url_path"], "energy")

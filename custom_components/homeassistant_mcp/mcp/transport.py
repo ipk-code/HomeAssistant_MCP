@@ -8,6 +8,7 @@ import logging
 from typing import Any
 
 from ..const import API_VERSION, MAX_REQUEST_BYTES, TITLE
+from ..frontend_panels import FrontendPanelProvider
 from ..managed import ManagedDashboardExecutor
 from ..lovelace.errors import LovelaceMCPError
 from ..native_lovelace import NativeLovelaceProvider
@@ -33,6 +34,7 @@ class StatelessMCPTransport:
         completions: CompletionRegistry | None = None,
         managed: ManagedDashboardExecutor | None = None,
         native_lovelace: NativeLovelaceProvider | None = None,
+        frontend_panels: FrontendPanelProvider | None = None,
     ) -> None:
         self._registry = registry
         self._resources = resources or ResourceRegistry()
@@ -40,9 +42,10 @@ class StatelessMCPTransport:
         self._completions = completions or CompletionRegistry()
         self._managed = managed
         self._native_lovelace = native_lovelace
+        self._frontend_panels = frontend_panels
 
     def handle_http_request(
-        self, *, accept: str, content_type: str, body: str
+        self, *, accept: str, content_type: str, body: str, user: Any | None = None
     ) -> tuple[int, dict[str, Any] | None]:
         """Validate an HTTP request and dispatch a JSON-RPC message."""
         if CONTENT_TYPE_JSON not in accept:
@@ -69,10 +72,15 @@ class StatelessMCPTransport:
             return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
                 None, -32700, "Request body must be valid JSON"
             )
-        return self.handle_jsonrpc_message(message)
+        return self.handle_jsonrpc_message(message, user=user)
 
     async def handle_http_request_async(
-        self, *, accept: str, content_type: str, body: str
+        self,
+        *,
+        accept: str,
+        content_type: str,
+        body: str,
+        user: Any | None = None,
     ) -> tuple[int, dict[str, Any] | None]:
         """Async HTTP request handling for request paths that may use executors."""
         if CONTENT_TYPE_JSON not in accept:
@@ -99,10 +107,10 @@ class StatelessMCPTransport:
             return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
                 None, -32700, "Request body must be valid JSON"
             )
-        return await self.handle_jsonrpc_message_async(message)
+        return await self.handle_jsonrpc_message_async(message, user=user)
 
     def handle_jsonrpc_message(
-        self, message: dict[str, Any]
+        self, message: dict[str, Any], user: Any | None = None
     ) -> tuple[int, dict[str, Any] | None]:
         """Handle a single JSON-RPC request in stateless mode."""
         if not isinstance(message, dict):
@@ -194,7 +202,9 @@ class StatelessMCPTransport:
                 return HTTPStatus.OK, {
                     "jsonrpc": "2.0",
                     "id": request_id,
-                    "result": {"contents": self._resources.read(uri)},
+                    "result": {
+                        "contents": self._resources.read_for_user(uri, user=user)
+                    },
                 }
             except KeyError as err:
                 _LOGGER.debug(
@@ -288,7 +298,7 @@ class StatelessMCPTransport:
                 _LOGGER.debug(
                     "Executing MCP tool %s for request %s", tool_name, request_id
                 )
-                payload = self._registry.call(tool_name, arguments)
+                payload = self._call_tool(tool_name, arguments, user=user)
                 return HTTPStatus.OK, {
                     "jsonrpc": "2.0",
                     "id": request_id,
@@ -330,7 +340,7 @@ class StatelessMCPTransport:
         )
 
     async def handle_jsonrpc_message_async(
-        self, message: dict[str, Any]
+        self, message: dict[str, Any], user: Any | None = None
     ) -> tuple[int, dict[str, Any] | None]:
         """Handle a single JSON-RPC request with async support for blocking paths."""
         if not isinstance(message, dict):
@@ -369,7 +379,7 @@ class StatelessMCPTransport:
             "resources/list",
             "prompts/list",
         }:
-            return self.handle_jsonrpc_message(message)
+            return self.handle_jsonrpc_message(message, user=user)
 
         request_id = message.get("id")
         if request_id is None:
@@ -391,7 +401,11 @@ class StatelessMCPTransport:
                 return HTTPStatus.OK, {
                     "jsonrpc": "2.0",
                     "id": request_id,
-                    "result": {"contents": await self._resources.async_read(uri)},
+                    "result": {
+                        "contents": await self._resources.async_read_for_user(
+                            uri, user=user
+                        )
+                    },
                 }
             except (KeyError, LovelaceMCPError) as err:
                 _LOGGER.debug(
@@ -480,7 +494,7 @@ class StatelessMCPTransport:
                 _LOGGER.debug(
                     "Executing MCP tool %s for request %s", tool_name, request_id
                 )
-                payload = await self._async_call_tool(tool_name, arguments)
+                payload = await self._async_call_tool(tool_name, arguments, user=user)
                 return HTTPStatus.OK, {
                     "jsonrpc": "2.0",
                     "id": request_id,
@@ -521,9 +535,31 @@ class StatelessMCPTransport:
             request_id, -32601, f"Unknown method: {method}"
         )
 
-    async def _async_call_tool(
-        self, tool_name: str, arguments: dict[str, Any]
+    def _call_tool(
+        self, tool_name: str, arguments: dict[str, Any], *, user: Any | None = None
     ) -> dict[str, Any]:
+        if tool_name == "hass.list_frontend_panels":
+            self._registry.validate_arguments(tool_name, arguments)
+            if self._frontend_panels is None:
+                raise KeyError("frontend panel provider is unavailable")
+            limit = arguments.get("limit", 100)
+            return self._frontend_panels.list_panels(user=user, limit=limit)
+        if tool_name == "hass.get_frontend_panel":
+            self._registry.validate_arguments(tool_name, arguments)
+            if self._frontend_panels is None:
+                raise KeyError("frontend panel provider is unavailable")
+            return {
+                "panel": self._frontend_panels.get_panel(
+                    arguments["url_path"], user=user
+                )
+            }
+        return self._registry.call(tool_name, arguments)
+
+    async def _async_call_tool(
+        self, tool_name: str, arguments: dict[str, Any], *, user: Any | None = None
+    ) -> dict[str, Any]:
+        if tool_name in {"hass.list_frontend_panels", "hass.get_frontend_panel"}:
+            return self._call_tool(tool_name, arguments, user=user)
         if tool_name == "hass.list_lovelace_dashboards":
             self._registry.validate_arguments(tool_name, arguments)
             if self._native_lovelace is None:

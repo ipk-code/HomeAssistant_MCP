@@ -44,14 +44,15 @@ This directory contains the user and contributor documentation for `HomeAssistan
 - stateless Streamable HTTP transport first
 - standard Home Assistant auth with bearer tokens for remote access
 - read-only `hass.*` discovery tools with bounded result sets
+- read-only native Home Assistant Lovelace and frontend panel inspection
 - built-in completions for common Home Assistant and Lovelace identifiers
-- built-in read-only MCP resources for Home Assistant context and managed dashboards
+- built-in read-only MCP resources for Home Assistant context, managed dashboards, native Lovelace dashboards, and frontend panels
 - built-in dashboard-focused MCP prompts
 - typed card helpers only
 - RFC 6902 JSON Patch for dashboard patch operations
 
 ## Capability Status
 
-- stable in `0.3.2`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, correctly placed HACS/Home Assistant brand assets, and broader OpenCode-compatible tool catalog loading
-- experimental in `0.3.2`: read-only native Home Assistant Lovelace dashboard access
+- stable in `0.3.3`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, correctly placed HACS/Home Assistant brand assets, and broader OpenCode-compatible tool catalog loading
+- experimental in `0.3.3`: read-only native Home Assistant Lovelace dashboard access and read-only Home Assistant frontend panel discovery
 - planned next: SSE transport and optional OAuth evaluation

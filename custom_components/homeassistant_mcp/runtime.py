@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .discovery import HomeAssistantDiscoveryProvider
+from .frontend_panels import FrontendPanelProvider
 from .managed import ManagedDashboardExecutor
 from .lovelace.repository import YamlDashboardRepository
 from .mcp.completions import CompletionRegistry, register_builtin_completions
@@ -28,6 +29,7 @@ class IntegrationRuntime:
     repository: YamlDashboardRepository
     managed: ManagedDashboardExecutor
     native_lovelace: NativeLovelaceProvider
+    frontend_panels: FrontendPanelProvider
     discovery: HomeAssistantDiscoveryProvider
     registry: ToolRegistry
     resources: ResourceRegistry
@@ -42,6 +44,7 @@ def create_runtime(hass: Any, root_path: Path) -> IntegrationRuntime:
     repository = YamlDashboardRepository(root_path)
     managed = ManagedDashboardExecutor(hass, repository)
     native_lovelace = NativeLovelaceProvider(hass)
+    frontend_panels = FrontendPanelProvider(hass)
     discovery = HomeAssistantDiscoveryProvider(hass)
     registry = ToolRegistry(repository, discovery=discovery)
     resources = ResourceRegistry()
@@ -51,6 +54,7 @@ def create_runtime(hass: Any, root_path: Path) -> IntegrationRuntime:
         discovery=discovery,
         managed=managed,
         native=native_lovelace,
+        frontend=frontend_panels,
     )
     prompts = PromptRegistry()
     register_builtin_prompts(
@@ -73,12 +77,14 @@ def create_runtime(hass: Any, root_path: Path) -> IntegrationRuntime:
         completions=completions,
         managed=managed,
         native_lovelace=native_lovelace,
+        frontend_panels=frontend_panels,
     )
     return IntegrationRuntime(
         root_path=root_path,
         repository=repository,
         managed=managed,
         native_lovelace=native_lovelace,
+        frontend_panels=frontend_panels,
         discovery=discovery,
         registry=registry,
         resources=resources,

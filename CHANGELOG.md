@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.3.3
+
+Release focus:
+
+- add read-only frontend panel discovery so MCP clients can inspect sidebar panels without confusing them with Lovelace dashboards
+
+Added:
+
+- read-only frontend panel tools:
+  - `hass.list_frontend_panels`
+  - `hass.get_frontend_panel`
+- read-only frontend panel resources:
+  - `hass://frontend/panels`
+  - `hass://frontend/panel/{url_path}`
+- regression coverage for authenticated frontend panel discovery, resource access, schema validation, and admin-only visibility filtering
+
+Changed:
+
+- bumped the integration package version to `0.3.3`
+- threaded authenticated Home Assistant user context through MCP transport and resource reads so admin-only frontend panels are never exposed to non-admin users
+- sanitized frontend panel config payloads to avoid surfacing obvious secret-like keys in custom panel metadata
+- updated product and API docs to explain the difference between frontend panels, native Lovelace dashboards, and MCP-managed dashboards
+
+Notes:
+
+- the MCP API version remains `1.0.0`
+- built-in frontend panels may expose metadata only; this release does not reverse-engineer internal frontend layouts or add any write capability
+
 ## 0.3.2
 
 Release focus:

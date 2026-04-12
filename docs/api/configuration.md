@@ -39,6 +39,7 @@ There are no user-editable options in v1.
 - Pass current tool arguments in the MCP completion `ref.arguments` payload when completing dependent identifiers like `view_id` or `card_id`.
 - Use `resources/read` for large, read-only context like entity inventories or a managed dashboard document.
 - Use `hass.get_lovelace_dashboard` or `hass://lovelace/dashboard/{url_path}` when you need read-only access to a standard Home Assistant dashboard that is not MCP-managed.
+- Use `hass.get_frontend_panel` or `hass://frontend/panel/{url_path}` when a Home Assistant sidebar item is not a Lovelace dashboard and you need its exposed panel metadata or config.
 - Use `prompts/get` when you want an MCP-native workflow scaffold before calling `lovelace.*` tools.
 - Use HTTPS for remote access.
 - Pass the Home Assistant token through the MCP client configuration instead of hardcoding it.
@@ -47,6 +48,8 @@ There are no user-editable options in v1.
 
 - YAML dashboards only
 - MCP-managed dashboard mutations only; native Home Assistant Lovelace dashboard access is read-only
+- Frontend panel discovery is read-only and follows the caller's Home Assistant admin visibility
+- Built-in frontend panels may expose metadata only; internal frontend layouts are not generally available through Home Assistant APIs
 - No SSE transport yet
 - No user-facing options flow yet
 - Storage directory and request-size limit are internal constants, not UI-configurable
@@ -54,6 +57,6 @@ There are no user-editable options in v1.
 
 ## Capability Status
 
-- stable in `0.3.2`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, correctly placed HACS/Home Assistant brand assets, and broader OpenCode-compatible tool catalog loading
-- experimental in `0.3.2`: read-only native Home Assistant Lovelace dashboard access
+- stable in `0.3.3`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, correctly placed HACS/Home Assistant brand assets, and broader OpenCode-compatible tool catalog loading
+- experimental in `0.3.3`: read-only native Home Assistant Lovelace dashboard access and read-only frontend panel discovery
 - planned next: SSE transport and optional OAuth evaluation

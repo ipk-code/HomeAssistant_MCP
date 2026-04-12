@@ -21,18 +21,19 @@ from ..discovery import (
     HomeAssistantDiscoveryProvider,
     MAX_DISCOVERY_LIMIT,
 )
+from ..frontend_panels import FrontendPanelProvider
 from ..managed import ManagedDashboardExecutor
 from ..native_lovelace import NativeLovelaceProvider
 from ..lovelace.errors import DashboardNotFoundError
 from ..lovelace.repository import YamlDashboardRepository
 from .completions import MAX_COMPLETION_VALUES
 
-ResourceReader = Callable[[], list[dict[str, Any]]]
+ResourceReader = Callable[..., list[dict[str, Any]]]
 AsyncResourceReader = Callable[
-    [], list[dict[str, Any]] | Awaitable[list[dict[str, Any]]]
+    ..., list[dict[str, Any]] | Awaitable[list[dict[str, Any]]]
 ]
 ResourceTemplateReader = Callable[
-    [dict[str, str], str], list[dict[str, Any]] | Awaitable[list[dict[str, Any]]]
+    ..., list[dict[str, Any]] | Awaitable[list[dict[str, Any]]]
 ]
 
 
@@ -125,25 +126,39 @@ class ResourceRegistry:
 
     def read(self, uri: str) -> list[dict[str, Any]]:
         """Read one concrete resource by URI."""
+        return self.read_for_user(uri)
+
+    def read_for_user(
+        self, uri: str, *, user: Any | None = None
+    ) -> list[dict[str, Any]]:
+        """Read one concrete resource by URI for the authenticated user."""
         resource = self._resources.get(uri)
         if resource is not None:
             _definition, reader = resource
-            return reader()
+            return self._invoke_resource_reader(reader, user=user)
 
         for binding in self._templates.values():
             match = binding.pattern.fullmatch(uri)
             if match is None or binding.reader is None:
                 continue
-            return binding.reader(match.groupdict(), uri)
+            return self._invoke_template_reader(
+                binding.reader, match.groupdict(), uri, user=user
+            )
 
         raise KeyError(f"unknown resource: {uri}")
 
     async def async_read(self, uri: str) -> list[dict[str, Any]]:
         """Read one resource by URI, awaiting async readers when needed."""
+        return await self.async_read_for_user(uri)
+
+    async def async_read_for_user(
+        self, uri: str, *, user: Any | None = None
+    ) -> list[dict[str, Any]]:
+        """Read one resource by URI for the authenticated user."""
         resource = self._resources.get(uri)
         if resource is not None:
             _definition, reader = resource
-            result = reader()
+            result = self._invoke_resource_reader(reader, user=user)
             if inspect.isawaitable(result):
                 result = await result
             return result
@@ -152,12 +167,49 @@ class ResourceRegistry:
             match = binding.pattern.fullmatch(uri)
             if match is None or binding.reader is None:
                 continue
-            result = binding.reader(match.groupdict(), uri)
+            result = self._invoke_template_reader(
+                binding.reader, match.groupdict(), uri, user=user
+            )
             if inspect.isawaitable(result):
                 result = await result
             return result
 
         raise KeyError(f"unknown resource: {uri}")
+
+    def _invoke_resource_reader(
+        self, reader: AsyncResourceReader, *, user: Any | None = None
+    ) -> list[dict[str, Any]] | Awaitable[list[dict[str, Any]]]:
+        signature = inspect.signature(reader)
+        accepts_user = (
+            any(
+                parameter.kind == inspect.Parameter.VAR_POSITIONAL
+                for parameter in signature.parameters.values()
+            )
+            or len(signature.parameters) >= 1
+        )
+        if accepts_user:
+            return reader(user)
+        return reader()
+
+    def _invoke_template_reader(
+        self,
+        reader: ResourceTemplateReader,
+        params: dict[str, str],
+        uri: str,
+        *,
+        user: Any | None = None,
+    ) -> list[dict[str, Any]] | Awaitable[list[dict[str, Any]]]:
+        signature = inspect.signature(reader)
+        accepts_user = (
+            any(
+                parameter.kind == inspect.Parameter.VAR_POSITIONAL
+                for parameter in signature.parameters.values()
+            )
+            or len(signature.parameters) >= 3
+        )
+        if accepts_user:
+            return reader(params, uri, user)
+        return reader(params, uri)
 
 
 def register_builtin_resources(
@@ -167,6 +219,7 @@ def register_builtin_resources(
     discovery: HomeAssistantDiscoveryProvider,
     managed: ManagedDashboardExecutor | None = None,
     native: NativeLovelaceProvider | None = None,
+    frontend: FrontendPanelProvider | None = None,
 ) -> None:
     """Register the built-in Home Assistant MCP resources."""
     registry.register(
@@ -278,6 +331,30 @@ def register_builtin_resources(
             ),
             lambda params, uri: _native_dashboard_resource(native, params, uri),
         )
+    if frontend is not None:
+        registry.register(
+            ResourceDefinition(
+                uri="hass://frontend/panels",
+                name="Frontend Panels",
+                description="Read-only Home Assistant frontend panels visible to the authenticated user.",
+                mime_type=_RESOURCE_MIME_TYPE,
+            ),
+            lambda user: _json_resource(
+                "hass://frontend/panels",
+                frontend.list_panels(user=user, limit=MAX_DISCOVERY_LIMIT),
+            ),
+        )
+        registry.register_template(
+            ResourceTemplateDefinition(
+                uri_template="hass://frontend/panel/{url_path}",
+                name="Frontend Panel",
+                description="One Home Assistant frontend panel by url_path, filtered by the authenticated user's permissions.",
+                mime_type=_RESOURCE_MIME_TYPE,
+            ),
+            lambda params, uri, user: _frontend_panel_resource(
+                frontend, params, uri, user=user
+            ),
+        )
 
 
 def _dashboard_resource(
@@ -329,6 +406,23 @@ async def _native_dashboard_resource(
         raise KeyError(f"unknown resource: {uri}")
     try:
         payload = await native.get_dashboard(url_path)
+    except KeyError as err:
+        raise KeyError(f"unknown resource: {uri}") from err
+    return _json_resource(uri, payload)
+
+
+def _frontend_panel_resource(
+    frontend: FrontendPanelProvider,
+    params: dict[str, str],
+    uri: str,
+    *,
+    user: Any | None = None,
+) -> list[dict[str, Any]]:
+    url_path = params.get("url_path")
+    if not url_path:
+        raise KeyError(f"unknown resource: {uri}")
+    try:
+        payload = frontend.get_panel(url_path, user=user)
     except KeyError as err:
         raise KeyError(f"unknown resource: {uri}") from err
     return _json_resource(uri, payload)

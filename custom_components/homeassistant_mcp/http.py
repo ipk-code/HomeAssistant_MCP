@@ -11,9 +11,10 @@ from typing import Any
 
 try:
     from aiohttp import web
-    from homeassistant.components.http import KEY_HASS, HomeAssistantView
+    from homeassistant.components.http import KEY_HASS, KEY_HASS_USER, HomeAssistantView
 except ModuleNotFoundError:  # pragma: no cover - exercised in unit tests only
     KEY_HASS = "hass"
+    KEY_HASS_USER = "hass_user"
 
     @dataclass
     class _FallbackResponse:
@@ -113,6 +114,7 @@ class HomeAssistantMCPStreamableView(HomeAssistantView):
             accept=request.headers.get("accept", ""),
             content_type=request.content_type,
             body=await request.text(),
+            user=request.get(KEY_HASS_USER),
         )
         _LOGGER.debug("Home Assistant MCP request completed with status %s", status)
         if payload is None:

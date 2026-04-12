@@ -1184,6 +1184,93 @@
           "type": "object"
         }
       }
+    },
+    "frontend_panel_url_path": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]{0,127}$",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "frontend_panel_kind": {
+      "type": "string",
+      "enum": [
+        "lovelace",
+        "built_in",
+        "custom_panel"
+      ]
+    },
+    "frontend_panel_config": {
+      "type": [
+        "object",
+        "array",
+        "string",
+        "number",
+        "boolean",
+        "null"
+      ]
+    },
+    "frontend_panel_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component_name",
+        "default_visible",
+        "panel_kind",
+        "require_admin",
+        "source",
+        "url_path"
+      ],
+      "properties": {
+        "component_name": {
+          "$ref": "#/$defs/title"
+        },
+        "icon": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "default_visible": {
+          "type": "boolean"
+        },
+        "show_in_sidebar": {
+          "type": "boolean"
+        },
+        "config": {
+          "$ref": "#/$defs/frontend_panel_config"
+        },
+        "url_path": {
+          "$ref": "#/$defs/frontend_panel_url_path"
+        },
+        "require_admin": {
+          "type": "boolean"
+        },
+        "config_panel_domain": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "source": {
+          "type": "string",
+          "const": "home_assistant_frontend"
+        },
+        "panel_kind": {
+          "$ref": "#/$defs/frontend_panel_kind"
+        }
+      }
+    },
+    "frontend_panel_document": {
+      "$ref": "#/$defs/frontend_panel_summary"
     }
   },
   "tools": [
@@ -2181,6 +2268,40 @@
       }
     },
     {
+      "name": "hass.list_frontend_panels",
+      "mutation": false,
+      "description": "List Home Assistant frontend panels visible to the authenticated user, including built-in, custom, and Lovelace-backed panels.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "$ref": "#/$defs/result_limit"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "panels",
+          "truncated"
+        ],
+        "properties": {
+          "panels": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/$defs/frontend_panel_summary"
+            }
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
       "name": "hass.get_lovelace_dashboard",
       "mutation": false,
       "description": "Return one native Home Assistant Lovelace dashboard by url_path.",
@@ -2205,6 +2326,35 @@
         "properties": {
           "dashboard": {
             "$ref": "#/$defs/native_lovelace_dashboard_document"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.get_frontend_panel",
+      "mutation": false,
+      "description": "Return one Home Assistant frontend panel visible to the authenticated user by url_path.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "url_path"
+        ],
+        "properties": {
+          "url_path": {
+            "$ref": "#/$defs/frontend_panel_url_path"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "panel"
+        ],
+        "properties": {
+          "panel": {
+            "$ref": "#/$defs/frontend_panel_document"
           }
         }
       }

@@ -199,6 +199,7 @@ async def test_streamable_http_supports_phase2_capability_methods(
         "hass://devices",
         "hass://services",
         "hass://lovelace/dashboards",
+        "hass://frontend/panels",
     ]
     assert resources_payload["result"]["resourceTemplates"] == [
         {
@@ -211,6 +212,12 @@ async def test_streamable_http_supports_phase2_capability_methods(
             "uriTemplate": "hass://lovelace/dashboard/{url_path}",
             "name": "Native Lovelace Dashboard",
             "description": "A native Home Assistant Lovelace dashboard document by url_path.",
+            "mimeType": "application/json",
+        },
+        {
+            "uriTemplate": "hass://frontend/panel/{url_path}",
+            "name": "Frontend Panel",
+            "description": "One Home Assistant frontend panel by url_path, filtered by the authenticated user's permissions.",
             "mimeType": "application/json",
         },
     ]
@@ -591,6 +598,123 @@ async def test_streamable_http_native_lovelace_dashboards_are_available_read_onl
         dashboard_resource_payload["result"]["contents"][0]["text"]
     )
     assert dashboard_resource_result["metadata"]["url_path"] == "pv-energy"
+
+
+async def test_streamable_http_frontend_panels_are_available_read_only(
+    hass, hass_client
+) -> None:
+    """Test read-only access to Home Assistant frontend panels."""
+    from homeassistant.components.frontend import DATA_PANELS
+
+    class _FrontendPanelFixture:
+        component_name = "energy"
+        sidebar_icon = "mdi:lightning-bolt"
+        sidebar_title = "energy"
+        sidebar_default_visible = True
+        frontend_url_path = "energy"
+        config = None
+        require_admin = False
+        config_panel_domain = None
+
+        def to_response(self):
+            return {
+                "component_name": self.component_name,
+                "icon": self.sidebar_icon,
+                "title": self.sidebar_title,
+                "default_visible": self.sidebar_default_visible,
+                "config": self.config,
+                "url_path": self.frontend_url_path,
+                "require_admin": self.require_admin,
+                "config_panel_domain": self.config_panel_domain,
+                "show_in_sidebar": True,
+            }
+
+    hass.data[DATA_PANELS] = {"energy": _FrontendPanelFixture()}
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "transport": DEFAULT_TRANSPORT,
+            "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+        },
+        title="Home Assistant MCP",
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    client = await hass_client()
+
+    list_tool_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "1",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.list_frontend_panels",
+                "arguments": {},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert list_tool_response.status == 200
+    list_tool_payload = await list_tool_response.json()
+    list_tool_result = _decode_tool_result(list_tool_payload)
+    _VALIDATOR.validate_tool_result("hass.list_frontend_panels", list_tool_result)
+    assert list_tool_result["panels"]
+    panel_url_path = list_tool_result["panels"][0]["url_path"]
+
+    get_tool_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "2",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.get_frontend_panel",
+                "arguments": {"url_path": panel_url_path},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert get_tool_response.status == 200
+    get_tool_payload = await get_tool_response.json()
+    get_tool_result = _decode_tool_result(get_tool_payload)
+    _VALIDATOR.validate_tool_result("hass.get_frontend_panel", get_tool_result)
+    assert get_tool_result["panel"]["url_path"] == panel_url_path
+
+    resource_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "3",
+            "method": "resources/read",
+            "params": {"uri": "hass://frontend/panels"},
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert resource_response.status == 200
+    resource_payload = await resource_response.json()
+    resource_result = json.loads(resource_payload["result"]["contents"][0]["text"])
+    assert resource_result["panels"]
+
+    panel_resource_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "4",
+            "method": "resources/read",
+            "params": {"uri": f"hass://frontend/panel/{panel_url_path}"},
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert panel_resource_response.status == 200
+    panel_resource_payload = await panel_resource_response.json()
+    panel_resource_result = json.loads(
+        panel_resource_payload["result"]["contents"][0]["text"]
+    )
+    assert panel_resource_result["url_path"] == panel_url_path
 
 
 async def test_streamable_http_builtin_completions_return_contextual_results(

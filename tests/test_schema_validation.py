@@ -110,6 +110,14 @@ class SchemaValidationTests(unittest.TestCase):
             "hass.get_lovelace_dashboard",
             {"url_path": "pv-energy"},
         )
+        self.validator.validate_tool_arguments(
+            "hass.list_frontend_panels",
+            {"limit": 10},
+        )
+        self.validator.validate_tool_arguments(
+            "hass.get_frontend_panel",
+            {"url_path": "energy"},
+        )
 
     def test_rejects_invalid_hass_discovery_payloads(self) -> None:
         with self.assertRaises(ToolSchemaValidationError):
@@ -117,6 +125,11 @@ class SchemaValidationTests(unittest.TestCase):
 
         with self.assertRaises(ToolSchemaValidationError):
             self.validator.validate_tool_arguments("hass.list_devices", {"limit": 201})
+
+        with self.assertRaises(ToolSchemaValidationError):
+            self.validator.validate_tool_arguments(
+                "hass.get_frontend_panel", {"url_path": "bad path"}
+            )
 
         with self.assertRaises(ToolSchemaValidationError):
             self.validator.validate_tool_arguments(

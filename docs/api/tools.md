@@ -19,6 +19,13 @@ The stable v1 tool surface currently spans the read-only `hass.*` namespace and 
 | `hass.list_lovelace_dashboards` | no | List standard Home Assistant Lovelace dashboards outside the MCP-managed repository |
 | `hass.get_lovelace_dashboard` | no | Return one native Home Assistant Lovelace dashboard by `url_path` |
 
+## Frontend Panel Tools
+
+| Tool | Mutation | Purpose |
+|---|---|---|
+| `hass.list_frontend_panels` | no | List Home Assistant frontend panels visible to the authenticated user |
+| `hass.get_frontend_panel` | no | Return one frontend panel by `url_path` with the exposed panel metadata and config |
+
 ## Dashboard Tools
 
 | Tool | Mutation | Purpose |
@@ -55,9 +62,10 @@ The stable v1 tool surface currently spans the read-only `hass.*` namespace and 
 
 - The `lovelace.*` tool family and the read-only `hass.*` discovery tools are stable in the current dashboard-first MCP surface.
 - Built-in completions are available for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon`.
-- Built-in resources are available for config, entities, areas, devices, services, and managed dashboards.
+- Built-in resources are available for config, entities, areas, devices, services, managed dashboards, native Lovelace dashboards, and frontend panels.
 - Built-in prompts are available for dashboard building, review, layout consistency, entity-card mapping, and cleanup audits.
-- Native Home Assistant Lovelace dashboard tools are experimental in `0.3.2` and remain read-only.
+- Native Home Assistant Lovelace dashboard tools are experimental in `0.3.3` and remain read-only.
+- Frontend panel tools are experimental in `0.3.3` and remain read-only.
 
 ## Source Of Truth
 

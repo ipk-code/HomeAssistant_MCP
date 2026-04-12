@@ -53,6 +53,8 @@ class ToolContractSchemaTests(unittest.TestCase):
             "hass.list_devices",
             "hass.list_lovelace_dashboards",
             "hass.get_lovelace_dashboard",
+            "hass.list_frontend_panels",
+            "hass.get_frontend_panel",
         }
         self.assertEqual(set(self.tools), expected)
 
@@ -134,6 +136,8 @@ class ToolContractSchemaTests(unittest.TestCase):
             "hass.list_devices",
             "hass.list_lovelace_dashboards",
             "hass.get_lovelace_dashboard",
+            "hass.list_frontend_panels",
+            "hass.get_frontend_panel",
         ):
             self.assertFalse(self.tools[name]["mutation"], name)
 
@@ -144,6 +148,7 @@ class ToolContractSchemaTests(unittest.TestCase):
             "hass.list_areas",
             "hass.list_devices",
             "hass.list_lovelace_dashboards",
+            "hass.list_frontend_panels",
         ):
             properties = self.tools[name]["output_schema"]["properties"]
             self.assertIn("truncated", properties)
@@ -166,6 +171,20 @@ class ToolContractSchemaTests(unittest.TestCase):
         self.assertIn(
             "url_path",
             self.tools["hass.get_lovelace_dashboard"]["input_schema"]["required"],
+        )
+        self.assertIn(
+            "url_path",
+            self.tools["hass.get_frontend_panel"]["input_schema"]["required"],
+        )
+
+    def test_frontend_panel_tools_expose_read_only_panel_documents(self) -> None:
+        panel_summary = self.spec["$defs"]["frontend_panel_summary"]
+        self.assertEqual(
+            panel_summary["properties"]["source"]["const"], "home_assistant_frontend"
+        )
+        self.assertEqual(
+            panel_summary["properties"]["panel_kind"]["$ref"],
+            "#/$defs/frontend_panel_kind",
         )
 
 
