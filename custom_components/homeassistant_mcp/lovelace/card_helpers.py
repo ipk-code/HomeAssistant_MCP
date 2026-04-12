@@ -25,6 +25,9 @@ _SIMPLE_KINDS = {"heading", "markdown", "gauge", "tile", "entities", "glance"}
 _NESTED_KINDS = {"grid", "horizontal_stack", "vertical_stack"}
 _SUPPORTED_KINDS = _SIMPLE_KINDS | _NESTED_KINDS
 
+# CWE-400: Limit nesting to prevent stack overflow from adversarial input
+MAX_CARD_NESTING_DEPTH = 5
+
 
 def _next_card_id() -> str:
     return f"card:{next(_CARD_SEQUENCE)}"
@@ -63,8 +66,14 @@ def _normalize_entity_row(row: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
-def normalize_card_helper(card: dict[str, Any], *, card_id: str | None = None) -> dict[str, Any]:
+def normalize_card_helper(
+    card: dict[str, Any], *, card_id: str | None = None, _depth: int = 0
+) -> dict[str, Any]:
     """Normalize a typed card helper input into canonical form."""
+    if _depth > MAX_CARD_NESTING_DEPTH:
+        raise DashboardValidationError(
+            f"card nesting exceeds maximum depth of {MAX_CARD_NESTING_DEPTH}"
+        )
     if not isinstance(card, dict):
         raise DashboardValidationError("card must be an object")
     kind = card.get("kind")
@@ -161,7 +170,9 @@ def normalize_card_helper(card: dict[str, Any], *, card_id: str | None = None) -
     cards = card.get("cards")
     if not isinstance(cards, list) or not cards:
         raise DashboardValidationError(f"{kind} cards require nested cards")
-    normalized["cards"] = [normalize_card_helper(item) for item in cards]
+    normalized["cards"] = [
+        normalize_card_helper(item, _depth=_depth + 1) for item in cards
+    ]
     if kind == "grid":
         columns = card.get("columns")
         if isinstance(columns, bool) or not isinstance(columns, int) or not 1 <= columns <= 6:
