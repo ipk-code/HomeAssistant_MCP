@@ -65,6 +65,17 @@ class CardHelperTests(unittest.TestCase):
                 }
             )
 
+    def test_protocol_relative_url_is_rejected(self) -> None:
+        """CWE-601: Protocol-relative URLs (//evil.com) enable open redirects."""
+        with self.assertRaises(DashboardValidationError):
+            normalize_card_helper(
+                {
+                    "kind": "tile",
+                    "entity_id": "light.kitchen",
+                    "tap_action": {"action": "url", "url": "//evil.com/phish"},
+                }
+            )
+
     def test_entities_card_requires_entities(self) -> None:
         with self.assertRaises(DashboardValidationError):
             normalize_card_helper({"kind": "entities", "entities": []})

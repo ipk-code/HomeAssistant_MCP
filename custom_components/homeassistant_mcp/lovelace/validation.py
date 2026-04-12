@@ -14,7 +14,11 @@ _CARD_ID_RE = re.compile(r"^[A-Za-z0-9_:-]{1,64}$")
 _URL_PATH_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
 _ICON_RE = re.compile(r"^[A-Za-z0-9:_-]{1,64}$")
 _ENTITY_ID_RE = re.compile(r"^[a-z0-9_]+\.[a-z0-9_]+$")
-_SAFE_URL_RE = re.compile(r"^(https?://[^\s]+|/[^\s]*)$")
+# CWE-601: The local-path branch must reject protocol-relative URLs
+# (//evil.com) that browsers resolve to the current page's protocol,
+# enabling open-redirect attacks.  Require "/" followed by a non-"/"
+# character (or end-of-string for the bare "/" root path).
+_SAFE_URL_RE = re.compile(r"^(https?://[^\s]+|/([^\s/][^\s]*)?)$")
 
 
 def _require_string(value: Any, field: str, *, max_length: int) -> str:
