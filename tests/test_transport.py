@@ -441,3 +441,30 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(status, 200)
         for line in captured.output:
             self.assertNotIn("\n", line, "Raw newline leaked into log output")
+
+    def test_accept_header_substring_false_positive_is_rejected(self) -> None:
+        """Accept: application/json-patch+json must NOT satisfy the json check."""
+        status, response = self.transport.handle_http_request(
+            accept="application/json-patch+json",
+            content_type="application/json",
+            body='{"jsonrpc":"2.0","id":"1","method":"ping","params":{}}',
+        )
+        self.assertEqual(status, 400)
+
+    def test_accept_wildcard_is_accepted(self) -> None:
+        """Accept: */* must be treated as accepting application/json."""
+        status, response = self.transport.handle_http_request(
+            accept="*/*",
+            content_type="application/json",
+            body='{"jsonrpc":"2.0","id":"1","method":"ping","params":{}}',
+        )
+        self.assertEqual(status, 200)
+
+    def test_accept_application_wildcard_is_accepted(self) -> None:
+        """Accept: application/* must be treated as accepting application/json."""
+        status, response = self.transport.handle_http_request(
+            accept="application/*",
+            content_type="application/json",
+            body='{"jsonrpc":"2.0","id":"1","method":"ping","params":{}}',
+        )
+        self.assertEqual(status, 200)

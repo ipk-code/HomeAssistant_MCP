@@ -29,6 +29,21 @@ def _s(value: Any) -> str:
     return str(value).replace("\r", "\\r").replace("\n", "\\n")
 
 
+def _accepts_json(accept: str) -> bool:
+    """Return True if the Accept header includes application/json or */*.
+
+    Uses exact media-type token comparison after splitting on commas and
+    stripping quality parameters. A naive ``in`` substring check would
+    accept ``application/json-patch+json`` as a match for
+    ``application/json``, producing a false positive.
+    """
+    for part in accept.split(","):
+        media_type = part.split(";", 1)[0].strip().lower()
+        if media_type in {CONTENT_TYPE_JSON, "*/*", "application/*"}:
+            return True
+    return False
+
+
 class StatelessMCPTransport:
     """Minimal stateless MCP transport facade over the tool registry."""
 
@@ -53,7 +68,7 @@ class StatelessMCPTransport:
         self, *, accept: str, content_type: str, body: str
     ) -> tuple[int, dict[str, Any] | None]:
         """Validate an HTTP request and dispatch a JSON-RPC message."""
-        if CONTENT_TYPE_JSON not in accept:
+        if not _accepts_json(accept):
             _LOGGER.warning("Rejected MCP request because Accept header is invalid")
             return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
                 None, -32600, f"Client must accept {CONTENT_TYPE_JSON}"
@@ -83,7 +98,7 @@ class StatelessMCPTransport:
         self, *, accept: str, content_type: str, body: str
     ) -> tuple[int, dict[str, Any] | None]:
         """Async HTTP request handling for request paths that may use executors."""
-        if CONTENT_TYPE_JSON not in accept:
+        if not _accepts_json(accept):
             _LOGGER.warning("Rejected MCP request because Accept header is invalid")
             return HTTPStatus.BAD_REQUEST, self._jsonrpc_error(
                 None, -32600, f"Client must accept {CONTENT_TYPE_JSON}"
