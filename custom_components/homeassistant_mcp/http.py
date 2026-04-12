@@ -44,7 +44,7 @@ except ModuleNotFoundError:  # pragma: no cover - exercised in unit tests only
         requires_auth = True
 
 
-from .const import DOMAIN, INTEGRATION_VERSION, STREAMABLE_HTTP_API
+from .const import DOMAIN, INTEGRATION_VERSION, MAX_REQUEST_BYTES, STREAMABLE_HTTP_API
 from .runtime import IntegrationRuntime
 
 _LOGGER = logging.getLogger(__name__)
@@ -97,6 +97,26 @@ class HomeAssistantMCPStreamableView(HomeAssistantView):
     async def post(self, request: Any) -> Any:
         hass = request.app[KEY_HASS]
         _LOGGER.debug("Processing Home Assistant MCP POST request")
+
+        # CWE-400: Reject oversized requests before reading the body into memory.
+        # getattr is used so the unit-test fake-request (no content_length attr)
+        # falls through to the transport-layer check rather than crashing.
+        content_length = getattr(request, "content_length", None)
+        if content_length is not None and content_length > MAX_REQUEST_BYTES:
+            _LOGGER.warning(
+                "Rejected MCP request before reading body: Content-Length %s exceeds %s bytes",
+                content_length,
+                MAX_REQUEST_BYTES,
+            )
+            return web.json_response(
+                status=HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
+                data={
+                    "jsonrpc": "2.0",
+                    "id": None,
+                    "error": {"code": -32013, "message": "Request body exceeds maximum size"},
+                },
+            )
+
         try:
             runtime = get_runtime(hass)
         except RuntimeError as err:

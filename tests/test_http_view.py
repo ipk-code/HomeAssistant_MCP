@@ -240,3 +240,23 @@ class HttpViewTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(response.status, 404)
         self.assertEqual(_response_json(response)["error"]["code"], -32004)
+
+    async def test_post_rejects_oversized_content_length(self) -> None:
+        """CWE-400: A Content-Length exceeding MAX_REQUEST_BYTES must be rejected before reading."""
+        from custom_components.homeassistant_mcp.const import MAX_REQUEST_BYTES
+
+        await async_setup(self.hass, {})
+        await async_setup_entry(self.hass, self.entry)
+        view = HomeAssistantMCPStreamableView()
+
+        class _LargeRequest(_FakeRequest):
+            content_length = MAX_REQUEST_BYTES + 1
+
+        response = await view.post(
+            _LargeRequest(
+                self.hass,
+                body={"jsonrpc": "2.0", "id": "1", "method": "ping", "params": {}},
+            )
+        )
+        self.assertEqual(response.status, 413)
+        self.assertEqual(_response_json(response)["error"]["code"], -32013)
