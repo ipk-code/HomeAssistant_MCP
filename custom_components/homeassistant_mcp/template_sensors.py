@@ -267,7 +267,14 @@ class TemplateSensorProvider:
         return payload
 
     def _sanitize_json(self, value: Any) -> Any:
-        if value is None or isinstance(value, (str, int, float, bool)):
+        if value is None or isinstance(value, (str, int, bool)):
+            return value
+        # CWE-20: Non-finite floats (NaN, Infinity, -Infinity) produce
+        # non-standard JSON tokens that break strict parsers and corrupt
+        # MCP responses.  Convert them to None so they serialize safely.
+        if isinstance(value, float):
+            if value != value or value in (float("inf"), float("-inf")):
+                return None
             return value
         if isinstance(value, dict):
             return {str(key): self._sanitize_json(item) for key, item in value.items()}
