@@ -21,24 +21,24 @@ If `Enable admin MCP functions` is disabled, these tools are hidden from `tools/
 
 ## Home Assistant Discovery Tools
 
-| Tool | Mutation | Purpose |
-|---|---|---|
-| `hass.list_entities` | no | List entities with optional domain and area filters |
-| `hass.search_entities` | no | Search entities by query with optional domain, area, and device-class filters |
-| `hass.list_services` | no | List registered Home Assistant services |
-| `hass.list_areas` | no | List configured Home Assistant areas |
-| `hass.list_devices` | no | List devices with an optional area filter |
+| Tool | Mutation | Admin Gated | Purpose |
+|---|---|---|---|
+| `hass.list_entities` | no | no | List entities with optional domain and area filters |
+| `hass.search_entities` | no | no | Search entities by query with optional domain, area, and device-class filters |
+| `hass.list_services` | no | no | List registered Home Assistant services |
+| `hass.list_areas` | no | no | List configured Home Assistant areas |
+| `hass.list_devices` | no | no | List devices with an optional area filter |
 
 ## Native Home Assistant Dashboard Tools
 
-| Tool | Mutation | Purpose |
-|---|---|---|
-| `hass.list_lovelace_dashboards` | no | List standard Home Assistant Lovelace dashboards outside the MCP-managed repository |
-| `hass.get_lovelace_dashboard` | no | Return one native Home Assistant Lovelace dashboard by `url_path` |
-| `hass.create_lovelace_dashboard` | yes | Create a new storage-mode Home Assistant Lovelace dashboard |
-| `hass.update_lovelace_dashboard_metadata` | yes | Update metadata for one storage-mode Home Assistant Lovelace dashboard |
-| `hass.save_lovelace_dashboard_config` | yes | Replace the config for one storage-mode Home Assistant Lovelace dashboard |
-| `hass.delete_lovelace_dashboard` | yes | Delete one storage-mode Home Assistant Lovelace dashboard |
+| Tool | Mutation | Admin Gated | Purpose |
+|---|---|---|---|
+| `hass.list_lovelace_dashboards` | no | no | List standard Home Assistant Lovelace dashboards outside the MCP-managed repository |
+| `hass.get_lovelace_dashboard` | no | no | Return one native Home Assistant Lovelace dashboard by `url_path` |
+| `hass.create_lovelace_dashboard` | yes | yes | Create a new storage-mode Home Assistant Lovelace dashboard |
+| `hass.update_lovelace_dashboard_metadata` | yes | yes | Update metadata for one storage-mode Home Assistant Lovelace dashboard |
+| `hass.save_lovelace_dashboard_config` | yes | yes | Replace the config for one storage-mode Home Assistant Lovelace dashboard |
+| `hass.delete_lovelace_dashboard` | yes | yes | Delete one storage-mode Home Assistant Lovelace dashboard |
 
 Admin-only note:
 
@@ -47,14 +47,14 @@ Admin-only note:
 
 ## Template Sensor Tools
 
-| Tool | Mutation | Purpose |
-|---|---|---|
-| `hass.list_template_sensors` | no | List Home Assistant template sensor helpers |
-| `hass.get_template_sensor` | no | Return one template sensor helper by config entry id |
-| `hass.preview_template_sensor` | no | Preview a template sensor helper definition before saving it |
-| `hass.create_template_sensor` | yes | Create a new Home Assistant template sensor helper |
-| `hass.update_template_sensor` | yes | Update an existing Home Assistant template sensor helper |
-| `hass.delete_template_sensor` | yes | Delete a Home Assistant template sensor helper |
+| Tool | Mutation | Admin Gated | Purpose |
+|---|---|---|---|
+| `hass.list_template_sensors` | no | yes | List Home Assistant template sensor helpers |
+| `hass.get_template_sensor` | no | yes | Return one template sensor helper by config entry id |
+| `hass.preview_template_sensor` | no | yes | Preview a template sensor helper definition before saving it |
+| `hass.create_template_sensor` | yes | yes | Create a new Home Assistant template sensor helper |
+| `hass.update_template_sensor` | yes | yes | Update an existing Home Assistant template sensor helper |
+| `hass.delete_template_sensor` | yes | yes | Delete a Home Assistant template sensor helper |
 
 Admin-only note:
 
@@ -63,49 +63,49 @@ Admin-only note:
 
 ## Lovelace Resource Tools
 
-| Tool | Mutation | Purpose |
-|---|---|---|
-| `hass.list_lovelace_resources` | no | List installed Home Assistant Lovelace frontend resources |
-| `hass.get_lovelace_resource` | no | Return one Lovelace frontend resource by MCP resource identifier |
+| Tool | Mutation | Admin Gated | Purpose |
+|---|---|---|---|
+| `hass.list_lovelace_resources` | no | no | List installed Home Assistant Lovelace frontend resources |
+| `hass.get_lovelace_resource` | no | no | Return one Lovelace frontend resource by MCP resource identifier |
 
 ## Frontend Panel Tools
 
-| Tool | Mutation | Purpose |
-|---|---|---|
-| `hass.list_frontend_panels` | no | List Home Assistant frontend panels visible to the authenticated user |
-| `hass.get_frontend_panel` | no | Return one frontend panel by `url_path` with the exposed panel metadata and config |
+| Tool | Mutation | Admin Gated | Purpose |
+|---|---|---|---|
+| `hass.list_frontend_panels` | no | no | List Home Assistant frontend panels visible to the authenticated user |
+| `hass.get_frontend_panel` | no | no | Return one frontend panel by `url_path` with the exposed panel metadata and config |
 
 ## Dashboard Tools
 
-| Tool | Mutation | Purpose |
-|---|---|---|
-| `lovelace.list_dashboards` | no | List MCP-managed YAML dashboards |
-| `lovelace.get_dashboard` | no | Return a canonical dashboard document |
-| `lovelace.create_dashboard` | yes | Create a new YAML dashboard |
-| `lovelace.update_dashboard_metadata` | yes | Update dashboard metadata only |
-| `lovelace.delete_dashboard` | yes | Delete a dashboard |
-| `lovelace.patch_dashboard` | yes | Apply restricted RFC 6902 JSON Patch operations |
-| `lovelace.validate_dashboard` | no | Validate a dashboard document or patch request |
+| Tool | Mutation | Admin Gated | Purpose |
+|---|---|---|---|
+| `lovelace.list_dashboards` | no | no | List MCP-managed YAML dashboards |
+| `lovelace.get_dashboard` | no | no | Return a canonical dashboard document |
+| `lovelace.create_dashboard` | yes | no | Create a new YAML dashboard |
+| `lovelace.update_dashboard_metadata` | yes | no | Update dashboard metadata only |
+| `lovelace.delete_dashboard` | yes | no | Delete a dashboard |
+| `lovelace.patch_dashboard` | yes | no | Apply restricted RFC 6902 JSON Patch operations |
+| `lovelace.validate_dashboard` | no | no | Validate a dashboard document or patch request |
 
 ## View Tools
 
-| Tool | Mutation | Purpose |
-|---|---|---|
-| `lovelace.list_views` | no | List views for a dashboard |
-| `lovelace.get_view` | no | Return a single view document |
-| `lovelace.create_view` | yes | Create a new view |
-| `lovelace.update_view` | yes | Update an existing view |
-| `lovelace.delete_view` | yes | Delete a view |
+| Tool | Mutation | Admin Gated | Purpose |
+|---|---|---|---|
+| `lovelace.list_views` | no | no | List views for a dashboard |
+| `lovelace.get_view` | no | no | Return a single view document |
+| `lovelace.create_view` | yes | no | Create a new view |
+| `lovelace.update_view` | yes | no | Update an existing view |
+| `lovelace.delete_view` | yes | no | Delete a view |
 
 ## Card Tools
 
-| Tool | Mutation | Purpose |
-|---|---|---|
-| `lovelace.list_cards` | no | List cards for a view |
-| `lovelace.get_card` | no | Return a single typed card |
-| `lovelace.create_card` | yes | Insert a new typed card |
-| `lovelace.update_card` | yes | Replace an existing typed card |
-| `lovelace.delete_card` | yes | Delete a card |
+| Tool | Mutation | Admin Gated | Purpose |
+|---|---|---|---|
+| `lovelace.list_cards` | no | no | List cards for a view |
+| `lovelace.get_card` | no | no | Return a single typed card |
+| `lovelace.create_card` | yes | no | Insert a new typed card |
+| `lovelace.update_card` | yes | no | Replace an existing typed card |
+| `lovelace.delete_card` | yes | no | Delete a card |
 
 ## Stability
 
