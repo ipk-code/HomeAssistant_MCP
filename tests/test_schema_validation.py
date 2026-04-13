@@ -131,6 +131,33 @@ class SchemaValidationTests(unittest.TestCase):
             {"url_path": "pv-preview"},
         )
         self.validator.validate_tool_arguments(
+            "hass.list_template_sensors",
+            {"limit": 10},
+        )
+        self.validator.validate_tool_arguments(
+            "hass.get_template_sensor",
+            {"config_entry_id": "0123456789abcdef0123456789abcdef"},
+        )
+        self.validator.validate_tool_arguments(
+            "hass.preview_template_sensor",
+            {"name": "Grid Import", "state": "{{ 1 }}", "device_class": "power"},
+        )
+        self.validator.validate_tool_arguments(
+            "hass.create_template_sensor",
+            {"name": "Grid Import", "state": "{{ 1 }}", "device_class": "power"},
+        )
+        self.validator.validate_tool_arguments(
+            "hass.update_template_sensor",
+            {
+                "config_entry_id": "0123456789abcdef0123456789abcdef",
+                "unit_of_measurement": "W",
+            },
+        )
+        self.validator.validate_tool_arguments(
+            "hass.delete_template_sensor",
+            {"config_entry_id": "0123456789abcdef0123456789abcdef"},
+        )
+        self.validator.validate_tool_arguments(
             "hass.list_lovelace_resources",
             {"limit": 10},
         )
@@ -158,6 +185,12 @@ class SchemaValidationTests(unittest.TestCase):
             self.validator.validate_tool_arguments(
                 "hass.create_lovelace_dashboard",
                 {"title": "Default Clone", "url_path": "default"},
+            )
+
+        with self.assertRaises(ToolSchemaValidationError):
+            self.validator.validate_tool_arguments(
+                "hass.update_template_sensor",
+                {"config_entry_id": "0123456789abcdef0123456789abcdef"},
             )
 
         with self.assertRaises(ToolSchemaValidationError):

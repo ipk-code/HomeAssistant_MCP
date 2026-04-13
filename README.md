@@ -2,7 +2,7 @@
 
 Home Assistant custom integration for MCP-driven Lovelace dashboard authoring.
 
-Current integration version: `0.3.8`
+Current integration version: `0.3.9`
 
 ## What It Does
 
@@ -10,6 +10,7 @@ Current integration version: `0.3.8`
 - Exposes typed Lovelace dashboard, view, and card tools.
 - Exposes read-only `hass.*` discovery tools for entities, services, areas, and devices.
 - Exposes experimental access to native Home Assistant Lovelace dashboards, including admin-gated storage-dashboard writes.
+- Exposes experimental access to Home Assistant template sensor helpers, including preview and lifecycle management behind the admin-function toggle.
 - Exposes experimental read-only discovery for Home Assistant Lovelace frontend resources.
 - Exposes experimental read-only access to Home Assistant frontend panels, including built-in, custom, and Lovelace-backed sidebar panels.
 - Uses stateless Streamable HTTP at `/api/homeassistant_mcp`.
@@ -49,7 +50,7 @@ HACS flow:
 3. Search for `Home Assistant MCP`.
 4. Complete the config flow.
 
-After setup, the integration logs `Loaded Home Assistant MCP version 0.3.8 entry ...` and `Home Assistant MCP server version 0.3.8 started successfully ...` when the config entry is active.
+After setup, the integration logs `Loaded Home Assistant MCP version 0.3.9 entry ...` and `Home Assistant MCP server version 0.3.9 started successfully ...` when the config entry is active.
 
 Repository icon assets:
 
@@ -60,13 +61,13 @@ Repository icon assets:
 
 ## Release Notes
 
-Latest release: `0.3.8`
+Latest release: `0.3.9`
 
-Highlights in `0.3.8` compared with `0.3.7`:
+Highlights in `0.3.9` compared with `0.3.8`:
 
-- added a secure-default `enable_admin_functions` toggle to the integration setup and options flow
-- hid admin-only MCP tools unless the integration owner explicitly enables them
-- made direct calls to disabled admin-only tools fail with a clear MCP error instead of partially exposing privileged operations
+- added admin-gated template sensor helper tools for preview, create, update, delete, and inspection
+- kept template sensor creation on Home Assistant config entries instead of raw YAML writes
+- extended the admin-function toggle to cover all privileged MCP helper-management functions
 
 Full release notes: `CHANGELOG.md`
 
@@ -104,23 +105,24 @@ Detailed OpenCode registration guidance: `docs/guides/opencode-integration.md`
 |---|---|---|
 | `initialize`, `ping`, `tools/list`, `tools/call` | Stable in v1 | Current dashboard authoring MCP method surface |
 | Read-only `hass.*` discovery tools | Stable in v1 | Includes `hass.list_entities`, `hass.search_entities`, `hass.list_services`, `hass.list_areas`, `hass.list_devices` |
-| Frontend panel tools | Experimental in `0.3.8` | Includes `hass.list_frontend_panels` and `hass.get_frontend_panel` for read-only inspection of Home Assistant sidebar panels |
+| Frontend panel tools | Experimental in `0.3.9` | Includes `hass.list_frontend_panels` and `hass.get_frontend_panel` for read-only inspection of Home Assistant sidebar panels |
 | Dashboard tools | Stable in v1 | Includes `lovelace.list_dashboards`, `lovelace.get_dashboard`, `lovelace.create_dashboard`, `lovelace.update_dashboard_metadata`, `lovelace.delete_dashboard`, `lovelace.patch_dashboard`, `lovelace.validate_dashboard` |
-| Native Lovelace dashboard tools | Experimental in `0.3.8` | Includes read-only listing/get plus storage-dashboard writes through `hass.create_lovelace_dashboard`, `hass.update_lovelace_dashboard_metadata`, `hass.save_lovelace_dashboard_config`, and `hass.delete_lovelace_dashboard` |
-| Lovelace resource tools | Experimental in `0.3.8` | Includes `hass.list_lovelace_resources` and `hass.get_lovelace_resource` for installed frontend resource discovery |
+| Native Lovelace dashboard tools | Experimental in `0.3.9` | Includes read-only listing/get plus storage-dashboard writes through `hass.create_lovelace_dashboard`, `hass.update_lovelace_dashboard_metadata`, `hass.save_lovelace_dashboard_config`, and `hass.delete_lovelace_dashboard` |
+| Template sensor tools | Experimental in `0.3.9` | Includes `hass.list_template_sensors`, `hass.get_template_sensor`, `hass.preview_template_sensor`, `hass.create_template_sensor`, `hass.update_template_sensor`, and `hass.delete_template_sensor` |
+| Lovelace resource tools | Experimental in `0.3.9` | Includes `hass.list_lovelace_resources` and `hass.get_lovelace_resource` for installed frontend resource discovery |
 | View tools | Stable in v1 | Includes `lovelace.list_views`, `lovelace.get_view`, `lovelace.create_view`, `lovelace.update_view`, `lovelace.delete_view` |
 | Card tools | Stable in v1 | Includes `lovelace.list_cards`, `lovelace.get_card`, `lovelace.create_card`, `lovelace.update_card`, `lovelace.delete_card` |
 | `completion/complete` | Stable in v1 | Built-in completions are available for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon` |
 | `resources/list`, `resources/read` | Stable in v1 | Built-in resources are available for config, entities, areas, devices, services, and managed dashboards |
-| Native Lovelace dashboard resources | Experimental in `0.3.8` | Includes `hass://lovelace/dashboards` and `hass://lovelace/dashboard/{url_path}` for standard-dashboard inspection |
-| Lovelace resource resources | Experimental in `0.3.8` | Includes `hass://lovelace/resources` and `hass://lovelace/resource/{resource_id}` for installed Lovelace frontend resource inspection |
-| Frontend panel resources | Experimental in `0.3.8` | Includes `hass://frontend/panels` and `hass://frontend/panel/{url_path}` for read-only frontend panel inspection |
+| Native Lovelace dashboard resources | Experimental in `0.3.9` | Includes `hass://lovelace/dashboards` and `hass://lovelace/dashboard/{url_path}` for standard-dashboard inspection |
+| Lovelace resource resources | Experimental in `0.3.9` | Includes `hass://lovelace/resources` and `hass://lovelace/resource/{resource_id}` for installed Lovelace frontend resource inspection |
+| Frontend panel resources | Experimental in `0.3.9` | Includes `hass://frontend/panels` and `hass://frontend/panel/{url_path}` for read-only frontend panel inspection |
 | `prompts/list`, `prompts/get` | Stable in v1 | Built-in prompts include `dashboard.builder`, `dashboard.review`, `dashboard.layout_consistency_review`, `dashboard.entity_card_mapping`, and `dashboard.cleanup_audit` |
 | OAuth browser-client flow | Not shipped yet | Current deployment uses Home Assistant token auth |
 
 ## Capability Status
 
-Stable in `0.3.8`:
+Stable in `0.3.9`:
 
 - typed Lovelace dashboard, view, and card operations
 - read-only `hass.*` discovery tools with bounded result sizes
@@ -131,9 +133,10 @@ Stable in `0.3.8`:
 - stateless Streamable HTTP transport
 - Home Assistant-authenticated remote access
 
-Experimental in `0.3.8`:
+Experimental in `0.3.9`:
 
 - native Home Assistant Lovelace dashboard access via `hass.list_lovelace_dashboards`, `hass.get_lovelace_dashboard`, `hass.create_lovelace_dashboard`, `hass.update_lovelace_dashboard_metadata`, `hass.save_lovelace_dashboard_config`, `hass.delete_lovelace_dashboard`, `hass://lovelace/dashboards`, and `hass://lovelace/dashboard/{url_path}`
+- template sensor helper management via `hass.list_template_sensors`, `hass.get_template_sensor`, `hass.preview_template_sensor`, `hass.create_template_sensor`, `hass.update_template_sensor`, and `hass.delete_template_sensor`
 - Lovelace frontend resource discovery via `hass.list_lovelace_resources`, `hass.get_lovelace_resource`, `hass://lovelace/resources`, and `hass://lovelace/resource/{resource_id}`
 - read-only frontend panel discovery via `hass.list_frontend_panels`, `hass.get_frontend_panel`, `hass://frontend/panels`, and `hass://frontend/panel/{url_path}`
 
@@ -163,7 +166,7 @@ The MCP endpoint uses standard Home Assistant authentication. Remote clients typ
 
 **How do admin-only MCP functions work?**
 
-Admin-only MCP functions are disabled by default. The Home Assistant integration owner must explicitly enable `Enable admin MCP functions` in the integration setup or options flow before those tools appear in `tools/list` or accept calls. Current admin-only tools are `hass.create_lovelace_dashboard`, `hass.update_lovelace_dashboard_metadata`, `hass.save_lovelace_dashboard_config`, and `hass.delete_lovelace_dashboard`.
+Admin-only MCP functions are disabled by default. The Home Assistant integration owner must explicitly enable `Enable admin MCP functions` in the integration setup or options flow before those tools appear in `tools/list` or accept calls. Current admin-only tools are `hass.create_lovelace_dashboard`, `hass.update_lovelace_dashboard_metadata`, `hass.save_lovelace_dashboard_config`, `hass.delete_lovelace_dashboard`, `hass.list_template_sensors`, `hass.get_template_sensor`, `hass.preview_template_sensor`, `hass.create_template_sensor`, `hass.update_template_sensor`, and `hass.delete_template_sensor`.
 
 **Does it support OAuth today?**
 
@@ -178,7 +181,7 @@ No. The recommended OpenCode setup keeps `oauth: false` and sends a Home Assista
 ## Troubleshooting
 
 - Enable `custom_components.homeassistant_mcp: debug` in the Home Assistant logger when diagnosing setup or request issues.
-- Verify the active build in Home Assistant logs with `Loaded Home Assistant MCP version 0.3.8 entry ...` and `Home Assistant MCP server version 0.3.8 started successfully ...`.
+- Verify the active build in Home Assistant logs with `Loaded Home Assistant MCP version 0.3.9 entry ...` and `Home Assistant MCP server version 0.3.9 started successfully ...`.
 - Confirm clients use `POST` requests to `/api/homeassistant_mcp`.
 - Confirm remote clients send a valid Home Assistant bearer token.
 - If `opencode mcp list` shows `Failed to get tools`, verify the Home Assistant instance is running a build that emits object-rooted MCP tool input schemas.

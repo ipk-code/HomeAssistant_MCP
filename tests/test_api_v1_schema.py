@@ -57,6 +57,12 @@ class ToolContractSchemaTests(unittest.TestCase):
             "hass.update_lovelace_dashboard_metadata",
             "hass.save_lovelace_dashboard_config",
             "hass.delete_lovelace_dashboard",
+            "hass.list_template_sensors",
+            "hass.get_template_sensor",
+            "hass.preview_template_sensor",
+            "hass.create_template_sensor",
+            "hass.update_template_sensor",
+            "hass.delete_template_sensor",
             "hass.list_lovelace_resources",
             "hass.get_lovelace_resource",
             "hass.list_frontend_panels",
@@ -80,6 +86,9 @@ class ToolContractSchemaTests(unittest.TestCase):
             "hass.update_lovelace_dashboard_metadata",
             "hass.save_lovelace_dashboard_config",
             "hass.delete_lovelace_dashboard",
+            "hass.create_template_sensor",
+            "hass.update_template_sensor",
+            "hass.delete_template_sensor",
         ):
             self.assertTrue(self.tools[name]["mutation"], name)
 
@@ -146,6 +155,9 @@ class ToolContractSchemaTests(unittest.TestCase):
             "hass.list_devices",
             "hass.list_lovelace_dashboards",
             "hass.get_lovelace_dashboard",
+            "hass.list_template_sensors",
+            "hass.get_template_sensor",
+            "hass.preview_template_sensor",
             "hass.list_frontend_panels",
             "hass.get_frontend_panel",
         ):
@@ -158,6 +170,7 @@ class ToolContractSchemaTests(unittest.TestCase):
             "hass.list_areas",
             "hass.list_devices",
             "hass.list_lovelace_dashboards",
+            "hass.list_template_sensors",
             "hass.list_lovelace_resources",
             "hass.list_frontend_panels",
         ):
@@ -190,6 +203,10 @@ class ToolContractSchemaTests(unittest.TestCase):
         self.assertIn(
             "resource_id",
             self.tools["hass.get_lovelace_resource"]["input_schema"]["required"],
+        )
+        self.assertIn(
+            "config_entry_id",
+            self.tools["hass.get_template_sensor"]["input_schema"]["required"],
         )
 
     def test_frontend_panel_tools_expose_read_only_panel_documents(self) -> None:
@@ -229,6 +246,17 @@ class ToolContractSchemaTests(unittest.TestCase):
                 "resource_mode"
             ]["$ref"],
             "#/$defs/lovelace_resource_mode",
+        )
+
+    def test_template_sensor_tools_expose_preview_and_documents(self) -> None:
+        template_doc = self.spec["$defs"]["template_sensor_document"]
+        self.assertEqual(
+            template_doc["properties"]["source"]["const"],
+            "home_assistant_template_helper",
+        )
+        self.assertIn(
+            "preview",
+            self.tools["hass.preview_template_sensor"]["output_schema"]["required"],
         )
 
 

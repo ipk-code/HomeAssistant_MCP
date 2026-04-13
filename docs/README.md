@@ -53,6 +53,6 @@ This directory contains the user and contributor documentation for `HomeAssistan
 
 ## Capability Status
 
-- stable in `0.3.8`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, correctly placed HACS/Home Assistant brand assets, broader OpenCode-compatible tool catalog loading, merged security hardening limits, and secure-default admin tool gating
-- experimental in `0.3.8`: native Home Assistant Lovelace dashboard access with storage-dashboard writes, Lovelace resource discovery, and read-only Home Assistant frontend panel discovery
+- stable in `0.3.9`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, correctly placed HACS/Home Assistant brand assets, broader OpenCode-compatible tool catalog loading, merged security hardening limits, and secure-default admin tool gating
+- experimental in `0.3.9`: native Home Assistant Lovelace dashboard access with storage-dashboard writes, template sensor helper management, Lovelace resource discovery, and read-only Home Assistant frontend panel discovery
 - planned next: SSE transport and optional OAuth evaluation

@@ -53,12 +53,12 @@ class ToolRegistryTests(unittest.TestCase):
     def test_contract_loader_exposes_all_tools(self) -> None:
         payload, tools = load_api_contract()
         self.assertEqual(payload["api_version"], "1.0.0")
-        self.assertEqual(len(tools), 32)
+        self.assertEqual(len(tools), 38)
         self.assertEqual(tools[0].name, "lovelace.list_dashboards")
 
     def test_registry_lists_serialized_tools(self) -> None:
         tools = self.registry.list_tools()
-        self.assertEqual(len(tools), 32)
+        self.assertEqual(len(tools), 38)
         self.assertEqual(tools[0]["name"], "lovelace.list_dashboards")
         self.assertIn("inputSchema", tools[0])
         validate_tool = next(
@@ -78,6 +78,13 @@ class ToolRegistryTests(unittest.TestCase):
         self.assertEqual(
             native_create_tool["inputSchema"]["properties"]["url_path"]["$ref"],
             "#/$defs/native_lovelace_storage_url_path",
+        )
+        template_create_tool = next(
+            tool for tool in tools if tool["name"] == "hass.create_template_sensor"
+        )
+        self.assertEqual(
+            template_create_tool["inputSchema"]["required"],
+            ["name", "state"],
         )
 
     def test_registry_dispatches_hass_discovery_calls(self) -> None:

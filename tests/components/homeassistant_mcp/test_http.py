@@ -13,7 +13,9 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.homeassistant_mcp.const import (
+    CONF_ENABLE_ADMIN_FUNCTIONS,
     DEFAULT_DASHBOARD_MODE,
+    DEFAULT_ENABLE_ADMIN_FUNCTIONS,
     DEFAULT_TRANSPORT,
     DOMAIN,
     STREAMABLE_HTTP_API,
@@ -51,6 +53,7 @@ async def test_streamable_http_tool_round_trip(hass, hass_client) -> None:
         data={
             "transport": DEFAULT_TRANSPORT,
             "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+            CONF_ENABLE_ADMIN_FUNCTIONS: DEFAULT_ENABLE_ADMIN_FUNCTIONS,
         },
         title="Home Assistant MCP",
     )
@@ -111,6 +114,7 @@ async def test_streamable_http_validates_view_response_shape(hass, hass_client) 
         data={
             "transport": DEFAULT_TRANSPORT,
             "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+            CONF_ENABLE_ADMIN_FUNCTIONS: DEFAULT_ENABLE_ADMIN_FUNCTIONS,
         },
         title="Home Assistant MCP",
     )
@@ -176,6 +180,7 @@ async def test_streamable_http_supports_phase2_capability_methods(
         data={
             "transport": DEFAULT_TRANSPORT,
             "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+            CONF_ENABLE_ADMIN_FUNCTIONS: DEFAULT_ENABLE_ADMIN_FUNCTIONS,
         },
         title="Home Assistant MCP",
     )
@@ -273,6 +278,7 @@ async def test_streamable_http_builtin_prompts_return_contextual_results(
         data={
             "transport": DEFAULT_TRANSPORT,
             "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+            CONF_ENABLE_ADMIN_FUNCTIONS: True,
         },
         title="Home Assistant MCP",
     )
@@ -382,6 +388,7 @@ async def test_streamable_http_builtin_resources_return_json_payloads(
         data={
             "transport": DEFAULT_TRANSPORT,
             "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+            CONF_ENABLE_ADMIN_FUNCTIONS: DEFAULT_ENABLE_ADMIN_FUNCTIONS,
         },
         title="Home Assistant MCP",
     )
@@ -523,6 +530,7 @@ async def test_streamable_http_native_lovelace_dashboards_are_available_read_onl
         data={
             "transport": DEFAULT_TRANSPORT,
             "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+            CONF_ENABLE_ADMIN_FUNCTIONS: DEFAULT_ENABLE_ADMIN_FUNCTIONS,
         },
         title="Home Assistant MCP",
     )
@@ -621,6 +629,7 @@ async def test_streamable_http_native_lovelace_write_tools_manage_storage_dashbo
         data={
             "transport": DEFAULT_TRANSPORT,
             "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+            CONF_ENABLE_ADMIN_FUNCTIONS: True,
         },
         title="Home Assistant MCP",
     )
@@ -996,6 +1005,155 @@ async def test_streamable_http_lovelace_resources_are_available_read_only(
     item_payload = await item_response.json()
     item_result = json.loads(item_payload["result"]["contents"][0]["text"])
     assert item_result["resource_id"] == "abc123"
+
+
+async def test_streamable_http_template_sensor_tools_manage_helpers(
+    hass, hass_client
+) -> None:
+    """Test admin-gated template sensor helper lifecycle."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "transport": DEFAULT_TRANSPORT,
+            "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+            CONF_ENABLE_ADMIN_FUNCTIONS: True,
+        },
+        title="Home Assistant MCP",
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    client = await hass_client()
+
+    preview_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "1",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.preview_template_sensor",
+                "arguments": {
+                    "name": "Grid Import Power Total",
+                    "state": '{{ states("sensor.sun_azimuth") | float(0) | round(0) }}',
+                    "unit_of_measurement": "W",
+                    "device_class": "power",
+                    "state_class": "measurement",
+                },
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert preview_response.status == 200
+    preview_payload = await preview_response.json()
+    preview_result = _decode_tool_result(preview_payload)
+    _VALIDATOR.validate_tool_result("hass.preview_template_sensor", preview_result)
+    assert preview_result["preview"]["error"] is None
+
+    create_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "2",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.create_template_sensor",
+                "arguments": {
+                    "name": "Grid Import Power Total",
+                    "state": "{{ 321 }}",
+                    "unit_of_measurement": "W",
+                    "device_class": "power",
+                    "state_class": "measurement",
+                },
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert create_response.status == 200
+    create_payload = await create_response.json()
+    create_result = _decode_tool_result(create_payload)
+    _VALIDATOR.validate_tool_result("hass.create_template_sensor", create_result)
+    config_entry_id = create_result["sensor"]["config_entry_id"]
+
+    list_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "3",
+            "method": "tools/call",
+            "params": {"name": "hass.list_template_sensors", "arguments": {}},
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert list_response.status == 200
+    list_payload = await list_response.json()
+    list_result = _decode_tool_result(list_payload)
+    _VALIDATOR.validate_tool_result("hass.list_template_sensors", list_result)
+    assert any(
+        item["config_entry_id"] == config_entry_id for item in list_result["sensors"]
+    )
+
+    get_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "4",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.get_template_sensor",
+                "arguments": {"config_entry_id": config_entry_id},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert get_response.status == 200
+    get_payload = await get_response.json()
+    get_result = _decode_tool_result(get_payload)
+    _VALIDATOR.validate_tool_result("hass.get_template_sensor", get_result)
+    assert get_result["sensor"]["name"] == "Grid Import Power Total"
+
+    update_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "5",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.update_template_sensor",
+                "arguments": {
+                    "config_entry_id": config_entry_id,
+                    "state": "{{ 654 }}",
+                    "availability": "{{ true }}",
+                },
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert update_response.status == 200
+    update_payload = await update_response.json()
+    update_result = _decode_tool_result(update_payload)
+    _VALIDATOR.validate_tool_result("hass.update_template_sensor", update_result)
+    assert update_result["sensor"]["state"] == "{{ 654 }}"
+
+    delete_response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={
+            "jsonrpc": "2.0",
+            "id": "6",
+            "method": "tools/call",
+            "params": {
+                "name": "hass.delete_template_sensor",
+                "arguments": {"config_entry_id": config_entry_id},
+            },
+        },
+        headers={"Accept": "application/json"},
+    )
+    assert delete_response.status == 200
+    delete_payload = await delete_response.json()
+    delete_result = _decode_tool_result(delete_payload)
+    _VALIDATOR.validate_tool_result("hass.delete_template_sensor", delete_result)
+    assert delete_result["deleted"] is True
 
 
 async def test_streamable_http_builtin_completions_return_contextual_results(

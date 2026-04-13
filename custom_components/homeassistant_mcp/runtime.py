@@ -19,6 +19,7 @@ from .mcp.resources import ResourceRegistry, register_builtin_resources
 from .mcp.server import ToolRegistry
 from .mcp.transport import StatelessMCPTransport
 from .native_lovelace import NativeLovelaceProvider
+from .template_sensors import TemplateSensorProvider
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,6 +34,7 @@ class IntegrationRuntime:
     native_lovelace: NativeLovelaceProvider
     lovelace_resources: LovelaceResourceProvider
     frontend_panels: FrontendPanelProvider
+    template_sensors: TemplateSensorProvider
     discovery: HomeAssistantDiscoveryProvider
     registry: ToolRegistry
     resources: ResourceRegistry
@@ -51,6 +53,7 @@ def create_runtime(
     native_lovelace = NativeLovelaceProvider(hass)
     lovelace_resources = LovelaceResourceProvider(hass)
     frontend_panels = FrontendPanelProvider(hass)
+    template_sensors = TemplateSensorProvider(hass)
     discovery = HomeAssistantDiscoveryProvider(hass)
     registry = ToolRegistry(repository, discovery=discovery)
     resources = ResourceRegistry()
@@ -86,6 +89,7 @@ def create_runtime(
         native_lovelace=native_lovelace,
         lovelace_resources=lovelace_resources,
         frontend_panels=frontend_panels,
+        template_sensors=template_sensors,
         admin_functions_enabled=admin_functions_enabled,
         admin_required_tools=ADMIN_REQUIRED_TOOLS,
     )
@@ -96,6 +100,7 @@ def create_runtime(
         native_lovelace=native_lovelace,
         lovelace_resources=lovelace_resources,
         frontend_panels=frontend_panels,
+        template_sensors=template_sensors,
         discovery=discovery,
         registry=registry,
         resources=resources,

@@ -1271,6 +1271,140 @@
         }
       }
     },
+    "template_sensor_config_entry_id": {
+      "type": "string",
+      "pattern": "^(?:[A-Z0-9]{26}|[a-f0-9]{32})$",
+      "minLength": 26,
+      "maxLength": 32
+    },
+    "template_sensor_document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "config_entry_id",
+        "name",
+        "state",
+        "source"
+      ],
+      "properties": {
+        "config_entry_id": {
+          "$ref": "#/$defs/template_sensor_config_entry_id"
+        },
+        "entity_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "name": {
+          "$ref": "#/$defs/title"
+        },
+        "state": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "unit_of_measurement": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 32
+        },
+        "device_class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "state_class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "device_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "availability": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 4096
+        },
+        "source": {
+          "type": "string",
+          "const": "home_assistant_template_helper"
+        }
+      }
+    },
+    "template_sensor_preview_listeners": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 255
+            }
+          }
+        ]
+      }
+    },
+    "template_sensor_preview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "attributes",
+        "listeners",
+        "error"
+      ],
+      "properties": {
+        "state": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 4096
+        },
+        "attributes": {
+          "type": [
+            "object",
+            "array",
+            "string",
+            "number",
+            "boolean",
+            "null"
+          ]
+        },
+        "listeners": {
+          "$ref": "#/$defs/template_sensor_preview_listeners"
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 4096
+        }
+      }
+    },
     "frontend_panel_url_path": {
       "type": "string",
       "pattern": "^[A-Za-z0-9_][A-Za-z0-9_-]{0,127}$",
@@ -2609,6 +2743,285 @@
           },
           "truncated": {
             "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.list_template_sensors",
+      "mutation": false,
+      "description": "List Home Assistant template sensor helpers. This tool is admin-only and can be disabled by integration configuration.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "$ref": "#/$defs/result_limit"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sensors",
+          "truncated"
+        ],
+        "properties": {
+          "sensors": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/$defs/template_sensor_document"
+            }
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.get_template_sensor",
+      "mutation": false,
+      "description": "Return one Home Assistant template sensor helper by config entry id. This tool is admin-only and can be disabled by integration configuration.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "config_entry_id"
+        ],
+        "properties": {
+          "config_entry_id": {
+            "$ref": "#/$defs/template_sensor_config_entry_id"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sensor"
+        ],
+        "properties": {
+          "sensor": {
+            "$ref": "#/$defs/template_sensor_document"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.preview_template_sensor",
+      "mutation": false,
+      "description": "Preview a Home Assistant template sensor helper definition without saving it. This tool is admin-only and can be disabled by integration configuration.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "state"
+        ],
+        "properties": {
+          "name": {
+            "$ref": "#/$defs/title"
+          },
+          "state": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "unit_of_measurement": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "device_class": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "state_class": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "device_id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "availability": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "preview"
+        ],
+        "properties": {
+          "preview": {
+            "$ref": "#/$defs/template_sensor_preview"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.create_template_sensor",
+      "mutation": true,
+      "description": "Create a new Home Assistant template sensor helper. This tool is admin-only and can be disabled by integration configuration.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "state"
+        ],
+        "properties": {
+          "name": {
+            "$ref": "#/$defs/title"
+          },
+          "state": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "unit_of_measurement": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "device_class": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "state_class": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "device_id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "availability": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sensor"
+        ],
+        "properties": {
+          "sensor": {
+            "$ref": "#/$defs/template_sensor_document"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.update_template_sensor",
+      "mutation": true,
+      "description": "Update an existing Home Assistant template sensor helper. This tool is admin-only and can be disabled by integration configuration.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 2,
+        "required": [
+          "config_entry_id"
+        ],
+        "properties": {
+          "config_entry_id": {
+            "$ref": "#/$defs/template_sensor_config_entry_id"
+          },
+          "name": {
+            "$ref": "#/$defs/title"
+          },
+          "state": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "unit_of_measurement": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 32
+          },
+          "device_class": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 64
+          },
+          "state_class": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 64
+          },
+          "device_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 64
+          },
+          "availability": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 4096
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sensor"
+        ],
+        "properties": {
+          "sensor": {
+            "$ref": "#/$defs/template_sensor_document"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass.delete_template_sensor",
+      "mutation": true,
+      "description": "Delete a Home Assistant template sensor helper by config entry id. This tool is admin-only and can be disabled by integration configuration.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "config_entry_id"
+        ],
+        "properties": {
+          "config_entry_id": {
+            "$ref": "#/$defs/template_sensor_config_entry_id"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "deleted",
+          "sensor"
+        ],
+        "properties": {
+          "deleted": {
+            "type": "boolean"
+          },
+          "sensor": {
+            "$ref": "#/$defs/template_sensor_document"
           }
         }
       }

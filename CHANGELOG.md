@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.3.9
+
+Release focus:
+
+- add admin-gated Home Assistant template sensor helper management on top of the secure-default admin function toggle
+
+Added:
+
+- template sensor helper tools:
+  - `hass.list_template_sensors`
+  - `hass.get_template_sensor`
+  - `hass.preview_template_sensor`
+  - `hass.create_template_sensor`
+  - `hass.update_template_sensor`
+  - `hass.delete_template_sensor`
+- regression coverage for template sensor preview, create, list, get, update, delete, transport gating, and HTTP lifecycle behavior
+
+Changed:
+
+- bumped the integration package version to `0.3.9`
+- extended the admin-function toggle to cover template sensor helper tools in addition to native Lovelace write tools
+- used Home Assistant template-helper config entries instead of YAML writes for template sensor management
+
+Notes:
+
+- the MCP API version remains `1.0.0`
+- admin-only MCP tools stay disabled by default until `enable_admin_functions` is enabled in the integration configuration
+
 ## 0.3.8
 
 Release focus:

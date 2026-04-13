@@ -106,6 +106,64 @@ class _FakeLovelaceResources:
         }
 
 
+class _FakeTemplateSensors:
+    async def list_sensors(self, *, user=None, limit=200):
+        return {
+            "sensors": [
+                {
+                    "config_entry_id": "0123456789abcdef0123456789abcdef",
+                    "entity_id": "sensor.grid_import_power_total",
+                    "name": "Grid Import Power Total",
+                    "state": "{{ 1 }}",
+                    "unit_of_measurement": "W",
+                    "device_class": "power",
+                    "state_class": "measurement",
+                    "device_id": None,
+                    "availability": None,
+                    "source": "home_assistant_template_helper",
+                }
+            ],
+            "truncated": False,
+        }
+
+    async def get_sensor(self, config_entry_id: str, *, user=None):
+        if config_entry_id != "0123456789abcdef0123456789abcdef":
+            raise KeyError(f"Unknown template sensor config entry: {config_entry_id}")
+        return {
+            "config_entry_id": config_entry_id,
+            "entity_id": "sensor.grid_import_power_total",
+            "name": "Grid Import Power Total",
+            "state": "{{ 1 }}",
+            "unit_of_measurement": "W",
+            "device_class": "power",
+            "state_class": "measurement",
+            "device_id": None,
+            "availability": None,
+            "source": "home_assistant_template_helper",
+        }
+
+    async def preview_sensor(self, definition: dict, *, user=None):
+        return {
+            "state": "1",
+            "attributes": {},
+            "listeners": {"all": True},
+            "error": None,
+        }
+
+    async def create_sensor(self, definition: dict, *, user=None):
+        return await self.get_sensor("0123456789abcdef0123456789abcdef", user=user)
+
+    async def update_sensor(self, config_entry_id: str, patch: dict, *, user=None):
+        sensor = await self.get_sensor(config_entry_id, user=user)
+        return sensor | patch
+
+    async def delete_sensor(self, config_entry_id: str, *, user=None):
+        return {
+            "deleted": True,
+            "sensor": await self.get_sensor(config_entry_id, user=user),
+        }
+
+
 class _FakeAdminUser:
     is_admin = True
 
@@ -184,6 +242,7 @@ class TransportTests(unittest.TestCase):
             completions=self.completions,
             lovelace_resources=_FakeLovelaceResources(),
             frontend_panels=_FakeFrontendPanels(),
+            template_sensors=_FakeTemplateSensors(),
             admin_functions_enabled=False,
             admin_required_tools=ADMIN_REQUIRED_TOOLS,
         )
@@ -248,11 +307,66 @@ class TransportTests(unittest.TestCase):
             completions=self.completions,
             lovelace_resources=_FakeLovelaceResources(),
             frontend_panels=_FakeFrontendPanels(),
+            template_sensors=_FakeTemplateSensors(),
             admin_functions_enabled=True,
             admin_required_tools=ADMIN_REQUIRED_TOOLS,
         )
         listed = [tool["name"] for tool in transport.list_tools()]
         self.assertIn("hass.create_lovelace_dashboard", listed)
+        self.assertIn("hass.create_template_sensor", listed)
+
+    def test_async_template_sensor_tools_return_provider_payloads(self) -> None:
+        async def _run() -> None:
+            transport = StatelessMCPTransport(
+                self.registry,
+                resources=self.resources,
+                prompts=self.prompts,
+                completions=self.completions,
+                lovelace_resources=_FakeLovelaceResources(),
+                frontend_panels=_FakeFrontendPanels(),
+                template_sensors=_FakeTemplateSensors(),
+                admin_functions_enabled=True,
+                admin_required_tools=ADMIN_REQUIRED_TOOLS,
+            )
+            status, response = await transport.handle_jsonrpc_message_async(
+                {
+                    "jsonrpc": "2.0",
+                    "id": "8",
+                    "method": "tools/call",
+                    "params": {
+                        "name": "hass.list_template_sensors",
+                        "arguments": {},
+                    },
+                },
+                user=_FakeAdminUser(),
+            )
+            self.assertEqual(status, 200)
+            assert response is not None
+            payload = json.loads(response["result"]["content"][0]["text"])
+            self.assertEqual(
+                payload["sensors"][0]["entity_id"], "sensor.grid_import_power_total"
+            )
+
+            status, response = await transport.handle_jsonrpc_message_async(
+                {
+                    "jsonrpc": "2.0",
+                    "id": "9",
+                    "method": "tools/call",
+                    "params": {
+                        "name": "hass.preview_template_sensor",
+                        "arguments": {"name": "Grid Import", "state": "{{ 1 }}"},
+                    },
+                },
+                user=_FakeAdminUser(),
+            )
+            self.assertEqual(status, 200)
+            assert response is not None
+            payload = json.loads(response["result"]["content"][0]["text"])
+            self.assertEqual(payload["preview"]["state"], "1")
+
+        import asyncio
+
+        asyncio.run(_run())
 
     def test_async_lovelace_resource_tools_return_provider_payloads(self) -> None:
         async def _run() -> None:

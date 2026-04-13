@@ -53,10 +53,12 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
     async_register(hass)
     await hass.async_add_executor_job(load_api_contract)
     runtime_root = _runtime_root(hass) / entry.entry_id
+    entry_options = getattr(entry, "options", {}) or {}
+    entry_data = getattr(entry, "data", {}) or {}
     admin_functions_enabled = bool(
-        entry.options.get(
+        entry_options.get(
             CONF_ENABLE_ADMIN_FUNCTIONS,
-            entry.data.get(CONF_ENABLE_ADMIN_FUNCTIONS, DEFAULT_ENABLE_ADMIN_FUNCTIONS),
+            entry_data.get(CONF_ENABLE_ADMIN_FUNCTIONS, DEFAULT_ENABLE_ADMIN_FUNCTIONS),
         )
     )
     runtime = create_runtime(

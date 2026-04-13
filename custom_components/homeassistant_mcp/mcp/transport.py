@@ -13,6 +13,7 @@ from ..lovelace_resources import LovelaceResourceProvider
 from ..managed import ManagedDashboardExecutor
 from ..lovelace.errors import LovelaceMCPError
 from ..native_lovelace import NativeLovelaceProvider
+from ..template_sensors import TemplateSensorProvider
 from .completions import CompletionRegistry
 from .prompts import PromptRegistry
 from .resources import ResourceRegistry
@@ -67,6 +68,7 @@ class StatelessMCPTransport:
         native_lovelace: NativeLovelaceProvider | None = None,
         lovelace_resources: LovelaceResourceProvider | None = None,
         frontend_panels: FrontendPanelProvider | None = None,
+        template_sensors: TemplateSensorProvider | None = None,
         admin_functions_enabled: bool = False,
         admin_required_tools: set[str] | None = None,
     ) -> None:
@@ -78,6 +80,7 @@ class StatelessMCPTransport:
         self._native_lovelace = native_lovelace
         self._lovelace_resources = lovelace_resources
         self._frontend_panels = frontend_panels
+        self._template_sensors = template_sensors
         self._admin_functions_enabled = admin_functions_enabled
         self._admin_required_tools = admin_required_tools or set()
 
@@ -691,6 +694,56 @@ class StatelessMCPTransport:
                 raise KeyError("native lovelace provider is unavailable")
             return await self._native_lovelace.delete_dashboard(
                 arguments["url_path"], user=user
+            )
+        if tool_name == "hass.list_template_sensors":
+            self._registry.validate_arguments(tool_name, arguments)
+            if self._template_sensors is None:
+                raise KeyError("template sensor provider is unavailable")
+            limit = arguments.get("limit", 100)
+            return await self._template_sensors.list_sensors(user=user, limit=limit)
+        if tool_name == "hass.get_template_sensor":
+            self._registry.validate_arguments(tool_name, arguments)
+            if self._template_sensors is None:
+                raise KeyError("template sensor provider is unavailable")
+            return {
+                "sensor": await self._template_sensors.get_sensor(
+                    arguments["config_entry_id"], user=user
+                )
+            }
+        if tool_name == "hass.preview_template_sensor":
+            self._registry.validate_arguments(tool_name, arguments)
+            if self._template_sensors is None:
+                raise KeyError("template sensor provider is unavailable")
+            return {
+                "preview": await self._template_sensors.preview_sensor(
+                    arguments, user=user
+                )
+            }
+        if tool_name == "hass.create_template_sensor":
+            self._registry.validate_arguments(tool_name, arguments)
+            if self._template_sensors is None:
+                raise KeyError("template sensor provider is unavailable")
+            return {
+                "sensor": await self._template_sensors.create_sensor(
+                    arguments, user=user
+                )
+            }
+        if tool_name == "hass.update_template_sensor":
+            self._registry.validate_arguments(tool_name, arguments)
+            if self._template_sensors is None:
+                raise KeyError("template sensor provider is unavailable")
+            patch = {k: v for k, v in arguments.items() if k != "config_entry_id"}
+            return {
+                "sensor": await self._template_sensors.update_sensor(
+                    arguments["config_entry_id"], patch, user=user
+                )
+            }
+        if tool_name == "hass.delete_template_sensor":
+            self._registry.validate_arguments(tool_name, arguments)
+            if self._template_sensors is None:
+                raise KeyError("template sensor provider is unavailable")
+            return await self._template_sensors.delete_sensor(
+                arguments["config_entry_id"], user=user
             )
         if tool_name == "hass.list_lovelace_resources":
             self._registry.validate_arguments(tool_name, arguments)

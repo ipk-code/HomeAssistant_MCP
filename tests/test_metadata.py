@@ -118,6 +118,8 @@ class MetadataTests(unittest.TestCase):
             "hass.list_lovelace_dashboards",
             "hass.list_lovelace_resources",
             "hass.create_lovelace_dashboard",
+            "hass.create_template_sensor",
+            "hass.preview_template_sensor",
             "lovelace.list_dashboards",
             "lovelace.create_dashboard",
             "lovelace.patch_dashboard",
@@ -140,6 +142,8 @@ class MetadataTests(unittest.TestCase):
         self.assertIn("hass.get_lovelace_resource", readme)
         self.assertIn("hass.get_frontend_panel", readme)
         self.assertIn("hass.create_lovelace_dashboard", readme)
+        self.assertIn("hass.get_template_sensor", readme)
+        self.assertIn("hass.create_template_sensor", readme)
 
     def test_release_notes_and_status_docs_reflect_current_release(self) -> None:
         readme = README_PATH.read_text(encoding="utf-8")
@@ -150,9 +154,9 @@ class MetadataTests(unittest.TestCase):
         changelog = CHANGELOG_PATH.read_text(encoding="utf-8")
 
         self.assertIn(f"Latest release: `{INTEGRATION_VERSION}`", readme)
-        self.assertIn("Highlights in `0.3.8` compared with `0.3.7`", readme)
+        self.assertIn("Highlights in `0.3.9` compared with `0.3.8`", readme)
         self.assertIn(
-            "experimental in `0.3.8`: native Home Assistant Lovelace dashboard access with storage-dashboard writes, Lovelace resource discovery, and read-only Home Assistant frontend panel discovery",
+            "experimental in `0.3.9`: native Home Assistant Lovelace dashboard access with storage-dashboard writes, template sensor helper management, Lovelace resource discovery, and read-only Home Assistant frontend panel discovery",
             docs_index,
         )
         self.assertIn(
