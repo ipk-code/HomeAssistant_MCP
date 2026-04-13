@@ -804,3 +804,36 @@ class TransportTests(unittest.TestCase):
         # Printable ASCII and non-ASCII (unicode) pass through unchanged
         self.assertEqual(_s("hello world"), "hello world")
         self.assertEqual(_s("café"), "café")
+
+    def test_tool_result_rejects_nan_in_json_serialization(self) -> None:
+        """CWE-20: Tool results containing NaN must not produce invalid JSON."""
+        # Register a tool that returns NaN in its result. The transport must
+        # catch this at the json.dumps boundary rather than emitting a
+        # non-standard NaN token that breaks strict JSON parsers.
+        import types
+
+        original_call = self.transport._registry.call
+
+        def patched_call(name, arguments):
+            if name == "lovelace.list_dashboards":
+                return {"dashboards": [], "bad": float("nan")}
+            return original_call(name, arguments)
+
+        self.transport._registry.call = patched_call
+        try:
+            status, response = self.transport.handle_jsonrpc_message(
+                {
+                    "jsonrpc": "2.0",
+                    "id": "1",
+                    "method": "tools/call",
+                    "params": {"name": "lovelace.list_dashboards", "arguments": {}},
+                }
+            )
+            # Must either return a structured error or an HTTP 500, but never
+            # produce a response body containing the NaN token.
+            if status == 200 and response is not None:
+                result = response.get("result", {})
+                if not result.get("isError"):
+                    self.fail("NaN in tool result should not produce a success response")
+        finally:
+            self.transport._registry.call = original_call

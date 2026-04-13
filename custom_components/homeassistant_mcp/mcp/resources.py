@@ -486,7 +486,7 @@ def _json_resource(uri: str, payload: dict[str, Any]) -> list[dict[str, Any]]:
         {
             "uri": uri,
             "mimeType": _RESOURCE_MIME_TYPE,
-            "text": json.dumps(payload, sort_keys=True),
+            "text": json.dumps(payload, sort_keys=True, allow_nan=False),
         }
     ]
 

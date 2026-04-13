@@ -366,7 +366,7 @@ class StatelessMCPTransport:
                     "jsonrpc": "2.0",
                     "id": request_id,
                     "result": {
-                        "content": [{"type": "text", "text": json.dumps(payload)}],
+                        "content": [{"type": "text", "text": json.dumps(payload, allow_nan=False)}],
                         "isError": False,
                     },
                 }
@@ -571,7 +571,7 @@ class StatelessMCPTransport:
                     "jsonrpc": "2.0",
                     "id": request_id,
                     "result": {
-                        "content": [{"type": "text", "text": json.dumps(payload)}],
+                        "content": [{"type": "text", "text": json.dumps(payload, allow_nan=False)}],
                         "isError": False,
                     },
                 }
