@@ -67,6 +67,8 @@ class StatelessMCPTransport:
         native_lovelace: NativeLovelaceProvider | None = None,
         lovelace_resources: LovelaceResourceProvider | None = None,
         frontend_panels: FrontendPanelProvider | None = None,
+        admin_functions_enabled: bool = False,
+        admin_required_tools: set[str] | None = None,
     ) -> None:
         self._registry = registry
         self._resources = resources or ResourceRegistry()
@@ -76,6 +78,24 @@ class StatelessMCPTransport:
         self._native_lovelace = native_lovelace
         self._lovelace_resources = lovelace_resources
         self._frontend_panels = frontend_panels
+        self._admin_functions_enabled = admin_functions_enabled
+        self._admin_required_tools = admin_required_tools or set()
+
+    def list_tools(self) -> list[dict[str, Any]]:
+        """Return tools visible under the current feature flags."""
+        return self._registry.list_tools(excluded_names=self._disabled_tool_names())
+
+    def _disabled_tool_names(self) -> set[str]:
+        if self._admin_functions_enabled:
+            return set()
+        return set(self._admin_required_tools)
+
+    def _ensure_tool_enabled(self, tool_name: str) -> None:
+        if tool_name not in self._disabled_tool_names():
+            return
+        raise LovelaceMCPError(
+            "Admin MCP functions are disabled by integration configuration"
+        )
 
     def handle_http_request(
         self, *, accept: str, content_type: str, body: str, user: Any | None = None
@@ -209,7 +229,7 @@ class StatelessMCPTransport:
             return HTTPStatus.OK, {
                 "jsonrpc": "2.0",
                 "id": request_id,
-                "result": {"tools": self._registry.list_tools()},
+                "result": {"tools": self.list_tools()},
             }
 
         if method == "resources/list":
@@ -333,8 +353,11 @@ class StatelessMCPTransport:
                 )
             try:
                 _LOGGER.debug(
-                    "Executing MCP tool %s for request %s", _s(tool_name), _s(request_id)
+                    "Executing MCP tool %s for request %s",
+                    _s(tool_name),
+                    _s(request_id),
                 )
+                self._ensure_tool_enabled(tool_name)
                 payload = self._call_tool(tool_name, arguments, user=user)
                 return HTTPStatus.OK, {
                     "jsonrpc": "2.0",
@@ -535,8 +558,11 @@ class StatelessMCPTransport:
                 )
             try:
                 _LOGGER.debug(
-                    "Executing MCP tool %s for request %s", _s(tool_name), _s(request_id)
+                    "Executing MCP tool %s for request %s",
+                    _s(tool_name),
+                    _s(request_id),
                 )
+                self._ensure_tool_enabled(tool_name)
                 payload = await self._async_call_tool(tool_name, arguments, user=user)
                 return HTTPStatus.OK, {
                     "jsonrpc": "2.0",

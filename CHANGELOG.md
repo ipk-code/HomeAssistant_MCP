@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.3.8
+
+Release focus:
+
+- add a secure-default integration toggle that disables admin-only MCP functions unless the Home Assistant owner explicitly enables them
+
+Added:
+
+- config-entry and options-flow setting: `enable_admin_functions`
+- regression coverage for the secure default, options flow updates, hidden admin tools, and direct-call rejection when disabled
+
+Changed:
+
+- bumped the integration package version to `0.3.8`
+- disabled admin-only MCP functions by default in new config entries
+- hid admin-only MCP tools from `tools/list` when the integration toggle is off
+- rejected direct calls to disabled admin-only tools with a controlled MCP error instead of exposing them implicitly
+
+Notes:
+
+- the MCP API version remains `1.0.0`
+- current admin-only tools covered by the toggle are:
+  - `hass.create_lovelace_dashboard`
+  - `hass.update_lovelace_dashboard_metadata`
+  - `hass.save_lovelace_dashboard_config`
+  - `hass.delete_lovelace_dashboard`
+
 ## 0.3.7
 
 Release focus:

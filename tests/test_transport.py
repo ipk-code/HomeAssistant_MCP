@@ -25,6 +25,7 @@ from custom_components.homeassistant_mcp.mcp.transport import (
     CONTENT_TYPE_JSON,
     StatelessMCPTransport,
 )
+from custom_components.homeassistant_mcp.const import ADMIN_REQUIRED_TOOLS
 
 
 class _FakeFrontendPanels:
@@ -113,11 +114,11 @@ class TransportTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tempdir = TemporaryDirectory()
         self.addCleanup(self.tempdir.cleanup)
-        registry = ToolRegistry(YamlDashboardRepository(self.tempdir.name))
-        resources = ResourceRegistry()
-        prompts = PromptRegistry()
-        completions = CompletionRegistry()
-        resources.register(
+        self.registry = ToolRegistry(YamlDashboardRepository(self.tempdir.name))
+        self.resources = ResourceRegistry()
+        self.prompts = PromptRegistry()
+        self.completions = CompletionRegistry()
+        self.resources.register(
             ResourceDefinition(
                 uri="hass://test",
                 name="Test Resource",
@@ -128,7 +129,7 @@ class TransportTests(unittest.TestCase):
                 {"uri": "hass://test", "mimeType": "application/json", "text": "{}"}
             ],
         )
-        resources.register_template(
+        self.resources.register_template(
             ResourceTemplateDefinition(
                 uri_template="hass://dashboard/{dashboard_id}",
                 name="Dashboard",
@@ -143,7 +144,7 @@ class TransportTests(unittest.TestCase):
                 }
             ],
         )
-        prompts.register(
+        self.prompts.register(
             PromptDefinition(
                 name="dashboard.review",
                 description="Review one dashboard",
@@ -168,7 +169,7 @@ class TransportTests(unittest.TestCase):
                 ],
             },
         )
-        completions.register(
+        self.completions.register(
             argument_name="dashboard_id",
             provider=lambda ref, argument: {
                 "values": ["main"] if argument.get("value", "") in {"", "m"} else [],
@@ -177,12 +178,14 @@ class TransportTests(unittest.TestCase):
             ref_name="dashboard.review",
         )
         self.transport = StatelessMCPTransport(
-            registry,
-            resources=resources,
-            prompts=prompts,
-            completions=completions,
+            self.registry,
+            resources=self.resources,
+            prompts=self.prompts,
+            completions=self.completions,
             lovelace_resources=_FakeLovelaceResources(),
             frontend_panels=_FakeFrontendPanels(),
+            admin_functions_enabled=False,
+            admin_required_tools=ADMIN_REQUIRED_TOOLS,
         )
 
     def test_initialize_request(self) -> None:
@@ -209,10 +212,47 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIsNotNone(response)
         assert response is not None
-        self.assertEqual(len(response["result"]["tools"]), 32)
+        self.assertEqual(len(response["result"]["tools"]), 28)
         self.assertEqual(
             response["result"]["tools"][0]["name"], "lovelace.list_dashboards"
         )
+
+    def test_admin_tools_are_hidden_and_rejected_when_disabled(self) -> None:
+        listed = [tool["name"] for tool in self.transport.list_tools()]
+        self.assertNotIn("hass.create_lovelace_dashboard", listed)
+
+        status, response = self.transport.handle_jsonrpc_message(
+            {
+                "jsonrpc": "2.0",
+                "id": "8",
+                "method": "tools/call",
+                "params": {
+                    "name": "hass.create_lovelace_dashboard",
+                    "arguments": {"title": "Temp", "url_path": "temp"},
+                },
+            }
+        )
+        self.assertEqual(status, 200)
+        assert response is not None
+        self.assertTrue(response["result"]["isError"])
+        self.assertIn(
+            "disabled by integration configuration",
+            response["result"]["content"][0]["text"],
+        )
+
+    def test_admin_tools_can_be_listed_when_enabled(self) -> None:
+        transport = StatelessMCPTransport(
+            self.registry,
+            resources=self.resources,
+            prompts=self.prompts,
+            completions=self.completions,
+            lovelace_resources=_FakeLovelaceResources(),
+            frontend_panels=_FakeFrontendPanels(),
+            admin_functions_enabled=True,
+            admin_required_tools=ADMIN_REQUIRED_TOOLS,
+        )
+        listed = [tool["name"] for tool in transport.list_tools()]
+        self.assertIn("hass.create_lovelace_dashboard", listed)
 
     def test_async_lovelace_resource_tools_return_provider_payloads(self) -> None:
         async def _run() -> None:

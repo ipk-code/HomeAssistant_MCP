@@ -14,7 +14,13 @@ except ModuleNotFoundError:  # pragma: no cover - exercised only outside HA runt
     ConfigEntry = Any  # type: ignore[misc,assignment]
     HomeAssistant = Any  # type: ignore[misc,assignment]
 
-from .const import DOMAIN, INTEGRATION_VERSION, STREAMABLE_HTTP_API
+from .const import (
+    CONF_ENABLE_ADMIN_FUNCTIONS,
+    DEFAULT_ENABLE_ADMIN_FUNCTIONS,
+    DOMAIN,
+    INTEGRATION_VERSION,
+    STREAMABLE_HTTP_API,
+)
 from .http import async_register
 from .mcp.server import load_api_contract
 from .runtime import create_runtime
@@ -47,7 +53,17 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
     async_register(hass)
     await hass.async_add_executor_job(load_api_contract)
     runtime_root = _runtime_root(hass) / entry.entry_id
-    runtime = create_runtime(hass, runtime_root)
+    admin_functions_enabled = bool(
+        entry.options.get(
+            CONF_ENABLE_ADMIN_FUNCTIONS,
+            entry.data.get(CONF_ENABLE_ADMIN_FUNCTIONS, DEFAULT_ENABLE_ADMIN_FUNCTIONS),
+        )
+    )
+    runtime = create_runtime(
+        hass,
+        runtime_root,
+        admin_functions_enabled=admin_functions_enabled,
+    )
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = runtime
     _LOGGER.info(
         "Loaded Home Assistant MCP version %s entry %s",
@@ -56,15 +72,16 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
     )
     resource_payload = runtime.resources.list_payload()
     _LOGGER.info(
-        "Home Assistant MCP server version %s started successfully for entry %s on %s with %s tools, %s resources, %s resource templates, %s prompts, and %s completion providers",
+        "Home Assistant MCP server version %s started successfully for entry %s on %s with %s tools, %s resources, %s resource templates, %s prompts, %s completion providers, admin_functions_enabled=%s",
         INTEGRATION_VERSION,
         entry.entry_id,
         STREAMABLE_HTTP_API,
-        len(runtime.registry.list_tools()),
+        len(runtime.transport.list_tools()),
         len(resource_payload["resources"]),
         len(resource_payload["resourceTemplates"]),
         len(runtime.prompts.list_prompts()),
         runtime.completions.provider_count(),
+        admin_functions_enabled,
     )
     _LOGGER.debug("Home Assistant MCP storage path: %s", runtime_root)
     return True

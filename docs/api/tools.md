@@ -23,6 +23,11 @@ The stable v1 tool surface currently spans the read-only `hass.*` namespace and 
 | `hass.save_lovelace_dashboard_config` | yes | Replace the config for one storage-mode Home Assistant Lovelace dashboard |
 | `hass.delete_lovelace_dashboard` | yes | Delete one storage-mode Home Assistant Lovelace dashboard |
 
+Admin-only note:
+
+- these native Home Assistant write tools require an admin-authenticated Home Assistant user
+- these tools are disabled by default until the integration setting `Enable admin MCP functions` is turned on
+
 ## Lovelace Resource Tools
 
 | Tool | Mutation | Purpose |
@@ -76,9 +81,9 @@ The stable v1 tool surface currently spans the read-only `hass.*` namespace and 
 - Built-in resources are available for config, entities, areas, devices, services, managed dashboards, native Lovelace dashboards, and frontend panels.
 - Built-in resources are available for config, entities, areas, devices, services, managed dashboards, native Lovelace dashboards, Lovelace frontend resources, and frontend panels.
 - Built-in prompts are available for dashboard building, review, layout consistency, entity-card mapping, and cleanup audits.
-- Native Home Assistant Lovelace dashboard tools are experimental in `0.3.7`; writes are limited to storage dashboards and require an admin-authenticated Home Assistant user.
-- Lovelace resource tools are experimental in `0.3.7` and remain read-only.
-- Frontend panel tools are experimental in `0.3.7` and remain read-only.
+- Native Home Assistant Lovelace dashboard tools are experimental in `0.3.8`; writes are limited to storage dashboards, require an admin-authenticated Home Assistant user, and are disabled by default until the admin-functions toggle is enabled.
+- Lovelace resource tools are experimental in `0.3.8` and remain read-only.
+- Frontend panel tools are experimental in `0.3.8` and remain read-only.
 
 ## Source Of Truth
 

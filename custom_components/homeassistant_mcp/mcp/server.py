@@ -76,8 +76,11 @@ class ToolRegistry:
         self._contracts = contracts
         self._validator = ToolSchemaValidator(spec)
 
-    def list_tools(self) -> list[dict[str, Any]]:
+    def list_tools(
+        self, *, excluded_names: set[str] | None = None
+    ) -> list[dict[str, Any]]:
         """Return serialized MCP tool definitions."""
+        excluded_names = excluded_names or set()
         return [
             {
                 "name": contract.name,
@@ -85,6 +88,7 @@ class ToolRegistry:
                 "inputSchema": contract.input_schema,
             }
             for contract in self._contracts
+            if contract.name not in excluded_names
         ]
 
     def validate_arguments(self, name: str, arguments: dict[str, Any]) -> None:

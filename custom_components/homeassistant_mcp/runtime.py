@@ -7,6 +7,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from .const import ADMIN_REQUIRED_TOOLS
 from .discovery import HomeAssistantDiscoveryProvider
 from .frontend_panels import FrontendPanelProvider
 from .managed import ManagedDashboardExecutor
@@ -40,7 +41,9 @@ class IntegrationRuntime:
     transport: StatelessMCPTransport
 
 
-def create_runtime(hass: Any, root_path: Path) -> IntegrationRuntime:
+def create_runtime(
+    hass: Any, root_path: Path, *, admin_functions_enabled: bool = False
+) -> IntegrationRuntime:
     """Build repository and transport objects for one config entry."""
     _LOGGER.debug("Creating Home Assistant MCP runtime at %s", root_path)
     repository = YamlDashboardRepository(root_path)
@@ -83,6 +86,8 @@ def create_runtime(hass: Any, root_path: Path) -> IntegrationRuntime:
         native_lovelace=native_lovelace,
         lovelace_resources=lovelace_resources,
         frontend_panels=frontend_panels,
+        admin_functions_enabled=admin_functions_enabled,
+        admin_required_tools=ADMIN_REQUIRED_TOOLS,
     )
     return IntegrationRuntime(
         root_path=root_path,

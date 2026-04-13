@@ -5,7 +5,20 @@
     },
     "step": {
       "user": {
-        "description": "Creates a default Home Assistant MCP integration entry for YAML dashboard authoring."
+        "description": "Creates a default Home Assistant MCP integration entry for YAML dashboard authoring.",
+        "data": {
+          "enable_admin_functions": "Enable admin MCP functions"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Control whether admin-only MCP functions are exposed to clients.",
+        "data": {
+          "enable_admin_functions": "Enable admin MCP functions"
+        }
       }
     }
   }
