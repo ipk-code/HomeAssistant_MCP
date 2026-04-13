@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.3.7
+
+Release focus:
+
+- merge the follow-up `security_review_1204` hardening branch and publish the additional request-validation improvements
+
+Added:
+
+- regression coverage for protocol-relative URL rejection, finite-number validation, and control-character escaping in log sanitization
+
+Changed:
+
+- bumped the integration package version to `0.3.7`
+- rejected protocol-relative URLs such as `//example.com` in URL validation to prevent open-redirect style misuse
+- rejected `NaN`, `Infinity`, and `-Infinity` values in numeric validation so persisted documents stay JSON-safe and portable
+- sanitized all ASCII control characters in logged user input using hex escapes instead of only escaping CR/LF
+
+Notes:
+
+- the MCP API version remains `1.0.0`
+- these changes further harden the existing feature surface and do not add new MCP capabilities
+
 ## 0.3.6
 
 Release focus:

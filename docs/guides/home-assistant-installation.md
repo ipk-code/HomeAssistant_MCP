@@ -7,7 +7,7 @@
 
 ## Install With HACS
 
-Current integration version in this repository: `0.3.6`
+Current integration version in this repository: `0.3.7`
 
 1. Open HACS in Home Assistant.
 2. Go to **Integrations**.
@@ -32,8 +32,8 @@ Expected Home Assistant behavior after setup:
 
 - the endpoint `/api/homeassistant_mcp` exists
 - `POST` requests require Home Assistant authentication
-- the logs show `Loaded Home Assistant MCP version 0.3.6 entry ...`
-- the logs show `Home Assistant MCP server version 0.3.6 started successfully ...`
+- the logs show `Loaded Home Assistant MCP version 0.3.7 entry ...`
+- the logs show `Home Assistant MCP server version 0.3.7 started successfully ...`
 
 Quick checks:
 
@@ -48,8 +48,8 @@ Quick checks:
 - Dashboard files are managed internally under `.storage/homeassistant_mcp/<config_entry_id>`.
 - The published v1 MCP contract is bundled inside the integration at `custom_components/homeassistant_mcp/lovelace_mcp_api_v1.json`.
 - The integration currently supports one config entry with the default stateless transport and YAML dashboard mode.
-- Stable in `0.3.6`: discovery tools, completions, managed-dashboard resources, prompts, typed dashboard authoring tools, correctly placed HACS/Home Assistant brand assets, broader OpenCode-compatible tool catalog loading, and merged security hardening limits.
-- Experimental in `0.3.6`: native Home Assistant Lovelace dashboard access through dedicated `hass.*` tools and `hass://lovelace/...` resources, including admin-gated storage-dashboard writes, read-only Lovelace resource discovery through `hass.list_lovelace_resources`, `hass.get_lovelace_resource`, and `hass://lovelace/resource/...`, plus read-only frontend panel discovery through `hass.list_frontend_panels`, `hass.get_frontend_panel`, and `hass://frontend/...` resources.
+- Stable in `0.3.7`: discovery tools, completions, managed-dashboard resources, prompts, typed dashboard authoring tools, correctly placed HACS/Home Assistant brand assets, broader OpenCode-compatible tool catalog loading, and merged security hardening limits.
+- Experimental in `0.3.7`: native Home Assistant Lovelace dashboard access through dedicated `hass.*` tools and `hass://lovelace/...` resources, including admin-gated storage-dashboard writes, read-only Lovelace resource discovery through `hass.list_lovelace_resources`, `hass.get_lovelace_resource`, and `hass://lovelace/resource/...`, plus read-only frontend panel discovery through `hass.list_frontend_panels`, `hass.get_frontend_panel`, and `hass://frontend/...` resources.
 
 ## Recommended Home Assistant Logger Configuration
 

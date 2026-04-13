@@ -64,6 +64,6 @@ There are no user-editable options in v1.
 
 ## Capability Status
 
-- stable in `0.3.6`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, correctly placed HACS/Home Assistant brand assets, broader OpenCode-compatible tool catalog loading, and merged security hardening limits
-- experimental in `0.3.6`: native Home Assistant Lovelace dashboard access with storage-dashboard writes, Lovelace resource discovery, and read-only frontend panel discovery
+- stable in `0.3.7`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, correctly placed HACS/Home Assistant brand assets, broader OpenCode-compatible tool catalog loading, and merged security hardening limits
+- experimental in `0.3.7`: native Home Assistant Lovelace dashboard access with storage-dashboard writes, Lovelace resource discovery, and read-only frontend panel discovery
 - planned next: SSE transport and optional OAuth evaluation

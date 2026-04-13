@@ -76,9 +76,9 @@ The stable v1 tool surface currently spans the read-only `hass.*` namespace and 
 - Built-in resources are available for config, entities, areas, devices, services, managed dashboards, native Lovelace dashboards, and frontend panels.
 - Built-in resources are available for config, entities, areas, devices, services, managed dashboards, native Lovelace dashboards, Lovelace frontend resources, and frontend panels.
 - Built-in prompts are available for dashboard building, review, layout consistency, entity-card mapping, and cleanup audits.
-- Native Home Assistant Lovelace dashboard tools are experimental in `0.3.6`; writes are limited to storage dashboards and require an admin-authenticated Home Assistant user.
-- Lovelace resource tools are experimental in `0.3.6` and remain read-only.
-- Frontend panel tools are experimental in `0.3.6` and remain read-only.
+- Native Home Assistant Lovelace dashboard tools are experimental in `0.3.7`; writes are limited to storage dashboards and require an admin-authenticated Home Assistant user.
+- Lovelace resource tools are experimental in `0.3.7` and remain read-only.
+- Frontend panel tools are experimental in `0.3.7` and remain read-only.
 
 ## Source Of Truth
 
