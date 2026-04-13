@@ -6,7 +6,11 @@ from __future__ import annotations
 
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
+from homeassistant.config_entries import (
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlowWithReload,
+)
 from homeassistant.helpers import selector
 
 from .const import (
@@ -62,7 +66,7 @@ class HomeAssistantMCPConfigFlow(ConfigFlow, domain=DOMAIN):
         return HomeAssistantMCPOptionsFlow(config_entry)
 
 
-class HomeAssistantMCPOptionsFlow(OptionsFlow):
+class HomeAssistantMCPOptionsFlow(OptionsFlowWithReload):
     """Handle options for Home Assistant MCP."""
 
     def __init__(self, config_entry) -> None:

@@ -8,6 +8,7 @@ User-facing setting:
 
 - `enable_admin_functions`: `false` by default
   - controls all admin-only MCP tools, including native Lovelace writes and template sensor helper management
+  - changing this setting through the options flow reloads the integration automatically
 
 ## Endpoint And Auth Model
 
@@ -71,6 +72,6 @@ User-facing setting:
 
 ## Capability Status
 
-- stable in `0.3.9`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, correctly placed HACS/Home Assistant brand assets, broader OpenCode-compatible tool catalog loading, merged security hardening limits, and secure-default admin tool gating
-- experimental in `0.3.9`: native Home Assistant Lovelace dashboard access with storage-dashboard writes, template sensor helper management, Lovelace resource discovery, and read-only frontend panel discovery
+- stable in `0.3.10`: discovery tools, typed Lovelace tools, completions, managed-dashboard resources, prompts, stateless HTTP transport, correctly placed HACS/Home Assistant brand assets, broader OpenCode-compatible tool catalog loading, merged security hardening limits, and secure-default admin tool gating
+- experimental in `0.3.10`: native Home Assistant Lovelace dashboard access with storage-dashboard writes, template sensor helper management, Lovelace resource discovery, and read-only frontend panel discovery
 - planned next: SSE transport and optional OAuth evaluation

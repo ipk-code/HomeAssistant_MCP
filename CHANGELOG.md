@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.10
+
+Release focus:
+
+- make the admin-function toggle take effect immediately after changing integration options and tighten the docs around admin-gated tool visibility
+
+Changed:
+
+- bumped the integration package version to `0.3.10`
+- switched the integration options flow to `OptionsFlowWithReload` so changing `Enable admin MCP functions` reloads the integration automatically
+- expanded the tool catalog and FAQ/troubleshooting docs to explicitly list every admin-gated tool and explain what to check when those tools are not visible
+
+Notes:
+
+- the MCP API version remains `1.0.0`
+- the admin-function toggle still defaults to `false`
+
 ## 0.3.9
 
 Release focus:

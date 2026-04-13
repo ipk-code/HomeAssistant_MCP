@@ -2,6 +2,23 @@
 
 The stable v1 tool surface currently spans the read-only `hass.*` namespace and the mutating `lovelace.*` namespace.
 
+## Admin-Gated Tools
+
+These tools are controlled by the integration setting `Enable admin MCP functions`.
+
+- `hass.create_lovelace_dashboard`
+- `hass.update_lovelace_dashboard_metadata`
+- `hass.save_lovelace_dashboard_config`
+- `hass.delete_lovelace_dashboard`
+- `hass.list_template_sensors`
+- `hass.get_template_sensor`
+- `hass.preview_template_sensor`
+- `hass.create_template_sensor`
+- `hass.update_template_sensor`
+- `hass.delete_template_sensor`
+
+If `Enable admin MCP functions` is disabled, these tools are hidden from `tools/list` and direct calls return a controlled MCP error.
+
 ## Home Assistant Discovery Tools
 
 | Tool | Mutation | Purpose |
@@ -97,10 +114,10 @@ Admin-only note:
 - Built-in resources are available for config, entities, areas, devices, services, managed dashboards, native Lovelace dashboards, and frontend panels.
 - Built-in resources are available for config, entities, areas, devices, services, managed dashboards, native Lovelace dashboards, Lovelace frontend resources, and frontend panels.
 - Built-in prompts are available for dashboard building, review, layout consistency, entity-card mapping, and cleanup audits.
-- Native Home Assistant Lovelace dashboard tools are experimental in `0.3.9`; writes are limited to storage dashboards, require an admin-authenticated Home Assistant user, and are disabled by default until the admin-functions toggle is enabled.
-- Template sensor tools are experimental in `0.3.9`; they require an admin-authenticated Home Assistant user and are disabled by default until the admin-functions toggle is enabled.
-- Lovelace resource tools are experimental in `0.3.9` and remain read-only.
-- Frontend panel tools are experimental in `0.3.9` and remain read-only.
+- Native Home Assistant Lovelace dashboard tools are experimental in `0.3.10`; writes are limited to storage dashboards, require an admin-authenticated Home Assistant user, and are disabled by default until the admin-functions toggle is enabled.
+- Template sensor tools are experimental in `0.3.10`; they require an admin-authenticated Home Assistant user and are disabled by default until the admin-functions toggle is enabled.
+- Lovelace resource tools are experimental in `0.3.10` and remain read-only.
+- Frontend panel tools are experimental in `0.3.10` and remain read-only.
 
 ## Source Of Truth
 

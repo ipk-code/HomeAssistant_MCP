@@ -2,7 +2,7 @@
 
 Home Assistant custom integration for MCP-driven Lovelace dashboard authoring.
 
-Current integration version: `0.3.9`
+Current integration version: `0.3.10`
 
 ## What It Does
 
@@ -50,7 +50,7 @@ HACS flow:
 3. Search for `Home Assistant MCP`.
 4. Complete the config flow.
 
-After setup, the integration logs `Loaded Home Assistant MCP version 0.3.9 entry ...` and `Home Assistant MCP server version 0.3.9 started successfully ...` when the config entry is active.
+After setup, the integration logs `Loaded Home Assistant MCP version 0.3.10 entry ...` and `Home Assistant MCP server version 0.3.10 started successfully ...` when the config entry is active.
 
 Repository icon assets:
 
@@ -61,13 +61,13 @@ Repository icon assets:
 
 ## Release Notes
 
-Latest release: `0.3.9`
+Latest release: `0.3.10`
 
-Highlights in `0.3.9` compared with `0.3.8`:
+Highlights in `0.3.10` compared with `0.3.9`:
 
-- added admin-gated template sensor helper tools for preview, create, update, delete, and inspection
-- kept template sensor creation on Home Assistant config entries instead of raw YAML writes
-- extended the admin-function toggle to cover all privileged MCP helper-management functions
+- made the admin-function toggle take effect immediately after saving integration options
+- expanded the docs to enumerate all admin-gated tools directly in the tool catalog
+- added FAQ and troubleshooting guidance for the common case where admin tools are missing because the toggle is disabled
 
 Full release notes: `CHANGELOG.md`
 
@@ -122,7 +122,7 @@ Detailed OpenCode registration guidance: `docs/guides/opencode-integration.md`
 
 ## Capability Status
 
-Stable in `0.3.9`:
+Stable in `0.3.10`:
 
 - typed Lovelace dashboard, view, and card operations
 - read-only `hass.*` discovery tools with bounded result sizes
@@ -133,7 +133,7 @@ Stable in `0.3.9`:
 - stateless Streamable HTTP transport
 - Home Assistant-authenticated remote access
 
-Experimental in `0.3.9`:
+Experimental in `0.3.10`:
 
 - native Home Assistant Lovelace dashboard access via `hass.list_lovelace_dashboards`, `hass.get_lovelace_dashboard`, `hass.create_lovelace_dashboard`, `hass.update_lovelace_dashboard_metadata`, `hass.save_lovelace_dashboard_config`, `hass.delete_lovelace_dashboard`, `hass://lovelace/dashboards`, and `hass://lovelace/dashboard/{url_path}`
 - template sensor helper management via `hass.list_template_sensors`, `hass.get_template_sensor`, `hass.preview_template_sensor`, `hass.create_template_sensor`, `hass.update_template_sensor`, and `hass.delete_template_sensor`
@@ -168,6 +168,10 @@ The MCP endpoint uses standard Home Assistant authentication. Remote clients typ
 
 Admin-only MCP functions are disabled by default. The Home Assistant integration owner must explicitly enable `Enable admin MCP functions` in the integration setup or options flow before those tools appear in `tools/list` or accept calls. Current admin-only tools are `hass.create_lovelace_dashboard`, `hass.update_lovelace_dashboard_metadata`, `hass.save_lovelace_dashboard_config`, `hass.delete_lovelace_dashboard`, `hass.list_template_sensors`, `hass.get_template_sensor`, `hass.preview_template_sensor`, `hass.create_template_sensor`, `hass.update_template_sensor`, and `hass.delete_template_sensor`.
 
+**Why can't I see admin functions in my MCP client?**
+
+Check the Home Assistant integration setting `Enable admin MCP functions`. When it is disabled, all admin-gated MCP tools are intentionally hidden from `tools/list`, even for admin users. If you expect template sensor helper tools or native Lovelace write tools and they are missing, first verify that this toggle is enabled. Saving the options now reloads the integration automatically, but reconnecting the MCP client can still help if the client cached an older tool list.
+
 **Does it support OAuth today?**
 
 No. The recommended OpenCode setup keeps `oauth: false` and sends a Home Assistant bearer token.
@@ -181,7 +185,7 @@ No. The recommended OpenCode setup keeps `oauth: false` and sends a Home Assista
 ## Troubleshooting
 
 - Enable `custom_components.homeassistant_mcp: debug` in the Home Assistant logger when diagnosing setup or request issues.
-- Verify the active build in Home Assistant logs with `Loaded Home Assistant MCP version 0.3.9 entry ...` and `Home Assistant MCP server version 0.3.9 started successfully ...`.
+- Verify the active build in Home Assistant logs with `Loaded Home Assistant MCP version 0.3.10 entry ...` and `Home Assistant MCP server version 0.3.10 started successfully ...`.
 - Confirm clients use `POST` requests to `/api/homeassistant_mcp`.
 - Confirm remote clients send a valid Home Assistant bearer token.
 - If `opencode mcp list` shows `Failed to get tools`, verify the Home Assistant instance is running a build that emits object-rooted MCP tool input schemas.
