@@ -35,6 +35,12 @@ Changed:
 - switched the integration options flow to `OptionsFlowWithReload` so changing `Enable admin MCP functions` reloads the integration automatically
 - expanded the tool catalog and FAQ/troubleshooting docs to explicitly list every admin-gated tool and explain what to check when those tools are not visible
 
+Security fixes:
+
+- **CWE-20 (NaN/Infinity in template sensors):** split float from the primitive type check in `TemplateSensorProvider._sanitize_json()` so `NaN`, `Infinity`, and `-Infinity` are converted to `None` instead of passing through to MCP responses
+- **CWE-20 (allow_nan=False at serialization boundaries):** added `allow_nan=False` to all wire-protocol `json.dumps` calls in `transport.py` (tool result and error serialization) and `resources.py` (resource read serialization) so non-finite floats cause a controlled serialization error rather than producing non-standard JSON tokens
+- added regression tests for both fixes in `tests/test_template_sensors.py` and `tests/test_transport.py`
+
 Notes:
 
 - the MCP API version remains `1.0.0`

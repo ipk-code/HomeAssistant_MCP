@@ -219,8 +219,17 @@ pytest
 
 ## Security Notes
 
-- The API rejects unknown input fields.
-- The API does not accept client-provided file system paths.
-- JSON Patch is limited to safe dashboard document scopes.
+- Admin-only MCP functions are disabled by default and require an explicit integration toggle to enable.
+- The API rejects unknown input fields and validates MCP tool arguments against the published v1 schema before dispatch.
+- The API does not accept client-provided file system paths; managed dashboard directories use owner-only permissions.
+- `NaN`, `Infinity`, and `-Infinity` are rejected at input validation boundaries and blocked at all wire-protocol serialization points via `allow_nan=False`.
+- Protocol-relative URLs (`//example.com`) and dangerous schemes (`javascript:`, `data:`) are rejected.
+- User-controlled values are sanitized before logging; all ASCII control characters are hex-escaped to prevent log injection.
+- JSON Patch is limited to safe dashboard document scopes with bounded operation counts.
+- Card nesting depth, views per dashboard, cards per view, and request body size are all bounded to reduce denial-of-service risk.
 - Repository writes are atomic to reduce the risk of partial state corruption.
-- MCP tool arguments are validated against the published v1 schema before dispatch.
+- Generated card IDs use `uuid4` to avoid collisions across restarts.
+- Native Lovelace dashboard writes are limited to storage dashboards and require admin authentication.
+- Template sensor tools enforce admin gating at both the transport and provider layers.
+
+For the full security model, see `docs/guides/security-model.md`.
