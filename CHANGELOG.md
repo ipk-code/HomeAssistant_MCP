@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.3.11
+
+Release focus:
+
+- restore full OpenCode tool-catalog compatibility without changing the `lovelace.validate_dashboard` runtime API
+
+Added:
+
+- regression coverage for OpenAI-compatible top-level tool schemas in the bundled contract, registry serialization, transport responses, and real Home Assistant HTTP `tools/list` output
+- regression coverage for invalid `lovelace.validate_dashboard` argument combinations so document validation and patch validation stay mutually exclusive
+
+Changed:
+
+- bumped the integration package version to `0.3.11`
+- updated `lovelace.validate_dashboard` to publish a top-level object schema without top-level `oneOf`, `anyOf`, `allOf`, `enum`, or `not`
+- moved the exact `lovelace.validate_dashboard` argument-variant enforcement into server-side validation so both supported request shapes remain available to MCP clients
+- refreshed the README, install guide, API docs, and OpenCode guide to explain the OpenAI-function-compatible schema requirement and troubleshooting flow
+
+Notes:
+
+- the MCP API version remains `1.0.0`
+- the functional MCP capability surface is unchanged aside from improved remote-client compatibility for `tools/list`
+
 ## 0.3.10
 
 Release focus:

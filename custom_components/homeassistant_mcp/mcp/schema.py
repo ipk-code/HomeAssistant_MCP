@@ -22,10 +22,14 @@ class ToolSchemaValidator:
             tool["name"]: tool["output_schema"] for tool in spec.get("tools", [])
         }
 
-    def validate_tool_arguments(self, tool_name: str, arguments: dict[str, Any]) -> None:
+    def validate_tool_arguments(
+        self, tool_name: str, arguments: dict[str, Any]
+    ) -> None:
         if tool_name not in self._input_schemas:
             raise KeyError(f"unknown tool: {tool_name}")
         self.validate_schema(self._input_schemas[tool_name], arguments)
+        if tool_name == "lovelace.validate_dashboard":
+            self._validate_validate_dashboard_variant(arguments)
 
     def validate_tool_result(self, tool_name: str, result: Any) -> None:
         """Validate a tool result against the published output schema."""
@@ -55,7 +59,9 @@ class ToolSchemaValidator:
                 except ToolSchemaValidationError as err:
                     errors.append(str(err))
             joined = "; ".join(errors)
-            raise ToolSchemaValidationError(f"{path} does not match any allowed schema: {joined}")
+            raise ToolSchemaValidationError(
+                f"{path} does not match any allowed schema: {joined}"
+            )
 
         self._validate_common_constraints(schema, value, path=path)
 
@@ -74,13 +80,17 @@ class ToolSchemaValidator:
             if not isinstance(value, bool):
                 raise ToolSchemaValidationError(f"{path} must be a boolean")
 
-    def _validate_common_constraints(self, schema: dict[str, Any], value: Any, *, path: str) -> None:
+    def _validate_common_constraints(
+        self, schema: dict[str, Any], value: Any, *, path: str
+    ) -> None:
         if "const" in schema and value != schema["const"]:
             raise ToolSchemaValidationError(f"{path} must equal {schema['const']!r}")
         if "enum" in schema and value not in schema["enum"]:
             raise ToolSchemaValidationError(f"{path} must be one of {schema['enum']!r}")
 
-    def _validate_object(self, schema: dict[str, Any], value: Any, *, path: str) -> None:
+    def _validate_object(
+        self, schema: dict[str, Any], value: Any, *, path: str
+    ) -> None:
         if not isinstance(value, dict):
             raise ToolSchemaValidationError(f"{path} must be an object")
         required = schema.get("required", [])
@@ -109,28 +119,40 @@ class ToolSchemaValidator:
             raise ToolSchemaValidationError(f"{path} must be an array")
         min_items = schema.get("minItems")
         if min_items is not None and len(value) < min_items:
-            raise ToolSchemaValidationError(f"{path} must contain at least {min_items} items")
+            raise ToolSchemaValidationError(
+                f"{path} must contain at least {min_items} items"
+            )
         max_items = schema.get("maxItems")
         if max_items is not None and len(value) > max_items:
-            raise ToolSchemaValidationError(f"{path} must contain at most {max_items} items")
+            raise ToolSchemaValidationError(
+                f"{path} must contain at most {max_items} items"
+            )
         if "items" in schema:
             for index, item in enumerate(value):
                 self._validate(schema["items"], item, path=f"{path}[{index}]")
 
-    def _validate_string(self, schema: dict[str, Any], value: Any, *, path: str) -> None:
+    def _validate_string(
+        self, schema: dict[str, Any], value: Any, *, path: str
+    ) -> None:
         if not isinstance(value, str):
             raise ToolSchemaValidationError(f"{path} must be a string")
         min_length = schema.get("minLength")
         if min_length is not None and len(value) < min_length:
-            raise ToolSchemaValidationError(f"{path} must be at least {min_length} characters")
+            raise ToolSchemaValidationError(
+                f"{path} must be at least {min_length} characters"
+            )
         max_length = schema.get("maxLength")
         if max_length is not None and len(value) > max_length:
-            raise ToolSchemaValidationError(f"{path} must be at most {max_length} characters")
+            raise ToolSchemaValidationError(
+                f"{path} must be at most {max_length} characters"
+            )
         pattern = schema.get("pattern")
         if pattern is not None and re.fullmatch(pattern, value) is None:
             raise ToolSchemaValidationError(f"{path} has an invalid format")
 
-    def _validate_integer(self, schema: dict[str, Any], value: Any, *, path: str) -> None:
+    def _validate_integer(
+        self, schema: dict[str, Any], value: Any, *, path: str
+    ) -> None:
         if isinstance(value, bool) or not isinstance(value, int):
             raise ToolSchemaValidationError(f"{path} must be an integer")
         minimum = schema.get("minimum")
@@ -140,7 +162,9 @@ class ToolSchemaValidator:
         if maximum is not None and value > maximum:
             raise ToolSchemaValidationError(f"{path} must be <= {maximum}")
 
-    def _validate_number(self, schema: dict[str, Any], value: Any, *, path: str) -> None:
+    def _validate_number(
+        self, schema: dict[str, Any], value: Any, *, path: str
+    ) -> None:
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             raise ToolSchemaValidationError(f"{path} must be numeric")
         minimum = schema.get("minimum")
@@ -157,3 +181,17 @@ class ToolSchemaValidator:
         if name not in self._defs:
             raise ToolSchemaValidationError(f"unknown schema definition: {name}")
         return self._defs[name]
+
+    def _validate_validate_dashboard_variant(self, arguments: dict[str, Any]) -> None:
+        has_dashboard = "dashboard" in arguments
+        has_dashboard_id = "dashboard_id" in arguments
+        has_operations = "operations" in arguments
+
+        if has_dashboard and not has_dashboard_id and not has_operations:
+            return
+        if not has_dashboard and has_dashboard_id and has_operations:
+            return
+        raise ToolSchemaValidationError(
+            "lovelace.validate_dashboard expects either {'dashboard': ...} or "
+            "{'dashboard_id': ..., 'operations': [...]}"
+        )

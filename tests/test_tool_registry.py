@@ -8,6 +8,7 @@ import unittest
 from custom_components.homeassistant_mcp.lovelace.repository import (
     YamlDashboardRepository,
 )
+from custom_components.homeassistant_mcp.mcp.schema import ToolSchemaValidationError
 from custom_components.homeassistant_mcp.mcp.server import (
     ToolRegistry,
     load_api_contract,
@@ -65,6 +66,7 @@ class ToolRegistryTests(unittest.TestCase):
             tool for tool in tools if tool["name"] == "lovelace.validate_dashboard"
         )
         self.assertEqual(validate_tool["inputSchema"]["type"], "object")
+        self.assertNotIn("oneOf", validate_tool["inputSchema"])
         frontend_tool = next(
             tool for tool in tools if tool["name"] == "hass.list_frontend_panels"
         )
@@ -154,3 +156,34 @@ class ToolRegistryTests(unittest.TestCase):
         self.assertEqual(
             normalized["normalized_dashboard"]["metadata"]["dashboard_id"], "main"
         )
+
+    def test_validate_dashboard_rejects_mixed_argument_variants(self) -> None:
+        with self.assertRaisesRegex(
+            ToolSchemaValidationError,
+            "expects either",
+        ):
+            self.registry.call(
+                "lovelace.validate_dashboard",
+                {
+                    "dashboard": {
+                        "metadata": {
+                            "dashboard_id": "main",
+                            "title": "Main",
+                            "url_path": "main",
+                            "mode": "yaml",
+                            "show_in_sidebar": True,
+                            "require_admin": False,
+                        },
+                        "views": [],
+                        "dashboard_version": 0,
+                    },
+                    "dashboard_id": "main",
+                    "operations": [
+                        {
+                            "op": "replace",
+                            "path": "/metadata/title",
+                            "value": "Renamed Main",
+                        }
+                    ],
+                },
+            )

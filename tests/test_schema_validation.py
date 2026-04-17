@@ -93,6 +93,44 @@ class SchemaValidationTests(unittest.TestCase):
             },
         )
 
+    def test_validate_dashboard_rejects_empty_payload(self) -> None:
+        with self.assertRaises(ToolSchemaValidationError):
+            self.validator.validate_tool_arguments("lovelace.validate_dashboard", {})
+
+    def test_validate_dashboard_rejects_mixed_document_and_patch_fields(self) -> None:
+        with self.assertRaises(ToolSchemaValidationError):
+            self.validator.validate_tool_arguments(
+                "lovelace.validate_dashboard",
+                {
+                    "dashboard": {
+                        "metadata": {
+                            "dashboard_id": "main",
+                            "title": "Main",
+                            "url_path": "main",
+                            "mode": "yaml",
+                            "show_in_sidebar": True,
+                            "require_admin": False,
+                        },
+                        "views": [],
+                        "dashboard_version": 0,
+                    },
+                    "operations": [
+                        {
+                            "op": "replace",
+                            "path": "/metadata/title",
+                            "value": "Renamed Main",
+                        }
+                    ],
+                },
+            )
+
+    def test_validate_dashboard_rejects_incomplete_patch_variant(self) -> None:
+        with self.assertRaises(ToolSchemaValidationError):
+            self.validator.validate_tool_arguments(
+                "lovelace.validate_dashboard",
+                {"dashboard_id": "main"},
+            )
+
     def test_accepts_valid_hass_discovery_payloads(self) -> None:
         self.validator.validate_tool_arguments(
             "hass.list_entities",

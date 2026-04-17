@@ -107,6 +107,40 @@ async def test_streamable_http_tool_round_trip(hass, hass_client) -> None:
     assert dashboards["dashboards"][0]["dashboard_id"] == "main"
 
 
+async def test_streamable_http_lists_openai_compatible_tool_schemas(
+    hass, hass_client
+) -> None:
+    """Test real HTTP tools/list output uses client-safe top-level schemas."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "transport": DEFAULT_TRANSPORT,
+            "dashboard_mode": DEFAULT_DASHBOARD_MODE,
+            CONF_ENABLE_ADMIN_FUNCTIONS: DEFAULT_ENABLE_ADMIN_FUNCTIONS,
+        },
+        title="Home Assistant MCP",
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    client = await hass_client()
+    response = await client.post(
+        STREAMABLE_HTTP_API,
+        json={"jsonrpc": "2.0", "id": "1", "method": "tools/list", "params": {}},
+        headers={"Accept": "application/json"},
+    )
+
+    assert response.status == 200
+    payload = await response.json()
+    tools = payload["result"]["tools"]
+    disallowed_top_level_keys = {"oneOf", "anyOf", "allOf", "enum", "not"}
+    for tool in tools:
+        schema = tool["inputSchema"]
+        assert schema["type"] == "object"
+        assert disallowed_top_level_keys.isdisjoint(schema)
+
+
 async def test_streamable_http_validates_view_response_shape(hass, hass_client) -> None:
     """Test real HTTP tool results match the published output schema."""
     entry = MockConfigEntry(

@@ -144,7 +144,20 @@ class ToolContractSchemaTests(unittest.TestCase):
     def test_validate_dashboard_supports_document_or_patch_validation(self) -> None:
         validate_schema = self.tools["lovelace.validate_dashboard"]["input_schema"]
         self.assertEqual(validate_schema["type"], "object")
-        self.assertEqual(len(validate_schema["oneOf"]), 2)
+        self.assertEqual(validate_schema["minProperties"], 1)
+        self.assertFalse(validate_schema["additionalProperties"])
+        self.assertEqual(
+            set(validate_schema["properties"]),
+            {"dashboard", "dashboard_id", "operations"},
+        )
+
+    def test_all_published_tool_input_schemas_use_openai_compatible_roots(self) -> None:
+        disallowed_top_level_keys = {"oneOf", "anyOf", "allOf", "enum", "not"}
+
+        for tool_name, tool in self.tools.items():
+            schema = tool["input_schema"]
+            self.assertEqual(schema.get("type"), "object", tool_name)
+            self.assertTrue(disallowed_top_level_keys.isdisjoint(schema), tool_name)
 
     def test_hass_discovery_tools_are_read_only_and_bounded(self) -> None:
         for name in (

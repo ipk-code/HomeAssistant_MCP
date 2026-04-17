@@ -275,6 +275,13 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(
             response["result"]["tools"][0]["name"], "lovelace.list_dashboards"
         )
+        validate_tool = next(
+            tool
+            for tool in response["result"]["tools"]
+            if tool["name"] == "lovelace.validate_dashboard"
+        )
+        self.assertEqual(validate_tool["inputSchema"]["type"], "object")
+        self.assertNotIn("oneOf", validate_tool["inputSchema"])
 
     def test_admin_tools_are_hidden_and_rejected_when_disabled(self) -> None:
         listed = [tool["name"] for tool in self.transport.list_tools()]
@@ -834,6 +841,8 @@ class TransportTests(unittest.TestCase):
             if status == 200 and response is not None:
                 result = response.get("result", {})
                 if not result.get("isError"):
-                    self.fail("NaN in tool result should not produce a success response")
+                    self.fail(
+                        "NaN in tool result should not produce a success response"
+                    )
         finally:
             self.transport._registry.call = original_call

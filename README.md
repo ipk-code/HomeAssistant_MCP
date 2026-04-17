@@ -2,7 +2,7 @@
 
 Home Assistant custom integration for MCP-driven Lovelace dashboard authoring.
 
-Current integration version: `0.3.10`
+Current integration version: `0.3.11`
 
 ## What It Does
 
@@ -50,7 +50,7 @@ HACS flow:
 3. Search for `Home Assistant MCP`.
 4. Complete the config flow.
 
-After setup, the integration logs `Loaded Home Assistant MCP version 0.3.10 entry ...` and `Home Assistant MCP server version 0.3.10 started successfully ...` when the config entry is active.
+After setup, the integration logs `Loaded Home Assistant MCP version 0.3.11 entry ...` and `Home Assistant MCP server version 0.3.11 started successfully ...` when the config entry is active.
 
 Repository icon assets:
 
@@ -61,13 +61,13 @@ Repository icon assets:
 
 ## Release Notes
 
-Latest release: `0.3.10`
+Latest release: `0.3.11`
 
-Highlights in `0.3.10` compared with `0.3.9`:
+Highlights in `0.3.11` compared with `0.3.10`:
 
-- made the admin-function toggle take effect immediately after saving integration options
-- expanded the docs to enumerate all admin-gated tools directly in the tool catalog
-- added FAQ and troubleshooting guidance for the common case where admin tools are missing because the toggle is disabled
+- changed `lovelace.validate_dashboard` to publish an OpenAI-function-compatible top-level object schema
+- kept both dashboard-document and patch-validation request shapes through explicit server-side argument validation
+- added transport and HTTP regression coverage for MCP clients that load tools through `tools/list`
 
 Full release notes: `CHANGELOG.md`
 
@@ -75,7 +75,7 @@ Full release notes: `CHANGELOG.md`
 
 OpenCode can connect as a remote MCP client with a Home Assistant long-lived access token.
 
-The remote tool catalog is emitted with object-rooted input schemas so OpenCode and other MCP clients that expect `inputSchema.type == "object"` can load the full server capability set, including `lovelace.validate_dashboard`.
+The remote tool catalog is emitted with OpenAI-function-compatible top-level object schemas so OpenCode and other MCP clients that map MCP tools into OpenAI function tools can load the full server capability set, including `lovelace.validate_dashboard`.
 
 For a reusable personal setup, register the server globally in `~/.config/opencode/opencode.json` and point the config at environment variables for both the MCP URL and the bearer token.
 
@@ -105,24 +105,24 @@ Detailed OpenCode registration guidance: `docs/guides/opencode-integration.md`
 |---|---|---|
 | `initialize`, `ping`, `tools/list`, `tools/call` | Stable in v1 | Current dashboard authoring MCP method surface |
 | Read-only `hass.*` discovery tools | Stable in v1 | Includes `hass.list_entities`, `hass.search_entities`, `hass.list_services`, `hass.list_areas`, `hass.list_devices` |
-| Frontend panel tools | Experimental in `0.3.9` | Includes `hass.list_frontend_panels` and `hass.get_frontend_panel` for read-only inspection of Home Assistant sidebar panels |
+| Frontend panel tools | Experimental in `0.3.11` | Includes `hass.list_frontend_panels` and `hass.get_frontend_panel` for read-only inspection of Home Assistant sidebar panels |
 | Dashboard tools | Stable in v1 | Includes `lovelace.list_dashboards`, `lovelace.get_dashboard`, `lovelace.create_dashboard`, `lovelace.update_dashboard_metadata`, `lovelace.delete_dashboard`, `lovelace.patch_dashboard`, `lovelace.validate_dashboard` |
-| Native Lovelace dashboard tools | Experimental in `0.3.9` | Includes read-only listing/get plus storage-dashboard writes through `hass.create_lovelace_dashboard`, `hass.update_lovelace_dashboard_metadata`, `hass.save_lovelace_dashboard_config`, and `hass.delete_lovelace_dashboard` |
-| Template sensor tools | Experimental in `0.3.9` | Includes `hass.list_template_sensors`, `hass.get_template_sensor`, `hass.preview_template_sensor`, `hass.create_template_sensor`, `hass.update_template_sensor`, and `hass.delete_template_sensor` |
-| Lovelace resource tools | Experimental in `0.3.9` | Includes `hass.list_lovelace_resources` and `hass.get_lovelace_resource` for installed frontend resource discovery |
+| Native Lovelace dashboard tools | Experimental in `0.3.11` | Includes read-only listing/get plus storage-dashboard writes through `hass.create_lovelace_dashboard`, `hass.update_lovelace_dashboard_metadata`, `hass.save_lovelace_dashboard_config`, and `hass.delete_lovelace_dashboard` |
+| Template sensor tools | Experimental in `0.3.11` | Includes `hass.list_template_sensors`, `hass.get_template_sensor`, `hass.preview_template_sensor`, `hass.create_template_sensor`, `hass.update_template_sensor`, and `hass.delete_template_sensor` |
+| Lovelace resource tools | Experimental in `0.3.11` | Includes `hass.list_lovelace_resources` and `hass.get_lovelace_resource` for installed frontend resource discovery |
 | View tools | Stable in v1 | Includes `lovelace.list_views`, `lovelace.get_view`, `lovelace.create_view`, `lovelace.update_view`, `lovelace.delete_view` |
 | Card tools | Stable in v1 | Includes `lovelace.list_cards`, `lovelace.get_card`, `lovelace.create_card`, `lovelace.update_card`, `lovelace.delete_card` |
 | `completion/complete` | Stable in v1 | Built-in completions are available for `entity_id`, `dashboard_id`, `view_id`, `card_id`, and `icon` |
 | `resources/list`, `resources/read` | Stable in v1 | Built-in resources are available for config, entities, areas, devices, services, and managed dashboards |
-| Native Lovelace dashboard resources | Experimental in `0.3.9` | Includes `hass://lovelace/dashboards` and `hass://lovelace/dashboard/{url_path}` for standard-dashboard inspection |
-| Lovelace resource resources | Experimental in `0.3.9` | Includes `hass://lovelace/resources` and `hass://lovelace/resource/{resource_id}` for installed Lovelace frontend resource inspection |
-| Frontend panel resources | Experimental in `0.3.9` | Includes `hass://frontend/panels` and `hass://frontend/panel/{url_path}` for read-only frontend panel inspection |
+| Native Lovelace dashboard resources | Experimental in `0.3.11` | Includes `hass://lovelace/dashboards` and `hass://lovelace/dashboard/{url_path}` for standard-dashboard inspection |
+| Lovelace resource resources | Experimental in `0.3.11` | Includes `hass://lovelace/resources` and `hass://lovelace/resource/{resource_id}` for installed Lovelace frontend resource inspection |
+| Frontend panel resources | Experimental in `0.3.11` | Includes `hass://frontend/panels` and `hass://frontend/panel/{url_path}` for read-only frontend panel inspection |
 | `prompts/list`, `prompts/get` | Stable in v1 | Built-in prompts include `dashboard.builder`, `dashboard.review`, `dashboard.layout_consistency_review`, `dashboard.entity_card_mapping`, and `dashboard.cleanup_audit` |
 | OAuth browser-client flow | Not shipped yet | Current deployment uses Home Assistant token auth |
 
 ## Capability Status
 
-Stable in `0.3.10`:
+Stable in `0.3.11`:
 
 - typed Lovelace dashboard, view, and card operations
 - read-only `hass.*` discovery tools with bounded result sizes
@@ -130,10 +130,11 @@ Stable in `0.3.10`:
 - built-in read-only MCP resources for Home Assistant context and managed dashboards, including `hass://config`, `hass://entities`, `hass://areas`, `hass://devices`, `hass://services`, and `hass://dashboard/{dashboard_id}`
 - built-in dashboard-focused prompts including `dashboard.builder`, `dashboard.review`, `dashboard.layout_consistency_review`, `dashboard.entity_card_mapping`, and `dashboard.cleanup_audit`
 - bundled contract-driven tool schemas
+- OpenAI-function-compatible tool input schema roots for remote MCP clients
 - stateless Streamable HTTP transport
 - Home Assistant-authenticated remote access
 
-Experimental in `0.3.10`:
+Experimental in `0.3.11`:
 
 - native Home Assistant Lovelace dashboard access via `hass.list_lovelace_dashboards`, `hass.get_lovelace_dashboard`, `hass.create_lovelace_dashboard`, `hass.update_lovelace_dashboard_metadata`, `hass.save_lovelace_dashboard_config`, `hass.delete_lovelace_dashboard`, `hass://lovelace/dashboards`, and `hass://lovelace/dashboard/{url_path}`
 - template sensor helper management via `hass.list_template_sensors`, `hass.get_template_sensor`, `hass.preview_template_sensor`, `hass.create_template_sensor`, `hass.update_template_sensor`, and `hass.delete_template_sensor`
@@ -185,10 +186,10 @@ No. The recommended OpenCode setup keeps `oauth: false` and sends a Home Assista
 ## Troubleshooting
 
 - Enable `custom_components.homeassistant_mcp: debug` in the Home Assistant logger when diagnosing setup or request issues.
-- Verify the active build in Home Assistant logs with `Loaded Home Assistant MCP version 0.3.10 entry ...` and `Home Assistant MCP server version 0.3.10 started successfully ...`.
+- Verify the active build in Home Assistant logs with `Loaded Home Assistant MCP version 0.3.11 entry ...` and `Home Assistant MCP server version 0.3.11 started successfully ...`.
 - Confirm clients use `POST` requests to `/api/homeassistant_mcp`.
 - Confirm remote clients send a valid Home Assistant bearer token.
-- If `opencode mcp list` shows `Failed to get tools`, verify the Home Assistant instance is running a build that emits object-rooted MCP tool input schemas.
+- If `opencode mcp list` shows `Failed to get tools`, verify the Home Assistant instance is running a build that emits top-level object tool schemas without top-level JSON Schema combinators.
 
 ## Documentation
 
